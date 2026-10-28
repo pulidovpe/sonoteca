@@ -10,6 +10,7 @@ Item {
     property real duration: 0
     property int plays: -1   // < 0: no se muestra
     property int trackId: 0
+    property int albumId: 0   // > 0: miniatura de la portada del álbum
     property int count: 0    // filas de la lista (para reordenar arrastrando)
     signal reorderRequested(int dst)
     property bool current: false
@@ -65,8 +66,25 @@ Item {
             font.pixelSize: 13
         }
     }
+    Rectangle {
+        id: thumb
+        visible: row.albumId > 0
+        width: visible ? 40 : 0
+        height: 40
+        radius: 4
+        color: "#222224"
+        anchors { left: marker.right; leftMargin: 6; verticalCenter: parent.verticalCenter }
+        Image {
+            anchors.fill: parent
+            source: row.albumId > 0 ? "image://cover/" + row.albumId + "?v=" + Theme.dataRevision : ""
+            sourceSize.width: 80
+            sourceSize.height: 80
+            fillMode: Image.PreserveAspectCrop
+            asynchronous: true
+        }
+    }
     Column {
-        anchors { left: marker.right; leftMargin: 8; right: actions.left; rightMargin: 12; verticalCenter: parent.verticalCenter }
+        anchors { left: thumb.right; leftMargin: 10; right: actions.left; rightMargin: 12; verticalCenter: parent.verticalCenter }
         spacing: 2
         Text { width: parent.width; text: row.title; color: row.current ? Theme.accent : Theme.text; font.pixelSize: 15; elide: Text.ElideRight }
         Text { width: parent.width; text: row.subtitle; color: Theme.textDim; font.pixelSize: 12; elide: Text.ElideRight }

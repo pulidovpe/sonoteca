@@ -101,7 +101,7 @@ def test_playlist_page_plays_reorders_removes_and_queues(qml_env):
     pid = env.playlists.createWithTracks("L", ids)["id"]
     act("showSection('playlists')", 400)
     act(f"openPlaylist({pid})", 400)
-    assert js("stack.depth") == 2 and js("stack.currentItem.info.name") == "L"
+    assert js("win.canBack") is True and js("stack.currentItem.info.name") == "L"
     assert titles(js("stack.currentItem.items.map(function (x) { return x.title })")) == [
         "Pista 1", "Pista 2", "Pista 3"]
     act("stack.currentItem.moveDown(0)", 250)
@@ -135,7 +135,8 @@ def test_rename_and_delete_with_confirmation(qml_env):
     assert js("confirmDialog.visible") is True
     assert env.playlists.info(pid)["name"] == "Nueva"  # nada se borra hasta confirmar
     act("confirmDialog.confirm()", 400)
-    assert env.playlists.info(pid) == {} and js("stack.depth") == 1  # volvió a la lista de listas
+    assert env.playlists.info(pid) == {}
+    assert js("win.section") == "playlists" and js("win.canForward") is True  # volvió a la lista de listas
     assert js("toastText.text") == "Lista «Nueva» eliminada"
     assert [lst["name"] for lst in env.playlists.lists()] == ["Existente"]
     assert env.warnings == []

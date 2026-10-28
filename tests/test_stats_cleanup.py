@@ -70,3 +70,48 @@ def test_purge_missing_removes_vanished_files_but_protects_against_unplugged_dis
     r = purge_missing(conn)
     assert r["removed"] == 0 and r["skipped"] == 2
     assert conn.execute("SELECT COUNT(*) FROM tracks").fetchone()[0] == 3
+
+
+def _plays(conn, track_id, n):
+    for _ in range(n):
+        stats.record_play(conn, track_id)
+
+
+def test_artist_top_tracks_two_per_album_sorted_by_plays():
+    conn = connect(":memory:")
+    a1 = [add_track(conn, i, f"/a{i}.mp3", album="Uno") for i in range(1, 5)]
+    b1 = [add_track(conn, i, f"/b{i}.mp3", album="Dos") for i in range(11, 14)]
+    add_track(conn, 99, "/z.mp3", artist="Otro", album="Ajeno")
+    _plays(conn, a1[2], 5); _plays(conn, a1[1], 2); _plays(conn, a1[0], 1)
+    _plays(conn, b1[1], 9)
+    artist = conn.execute("SELECT id FROM artists WHERE name='X'").fetchone()[0]
+    rows = stats.artist_top_tracks(conn, artist)
+    assert [(r["title"], r["plays"]) for r in rows] == [
+        ("Pista 12", 9), ("Pista 3", 5), ("Pista 2", 2), ("Pista 11", 0)]  # 2 por álbum; Uno: las 2 más oídas
+    assert {r["album"] for r in rows} == {"Uno", "Dos"}
+    # sin reproducciones: se queda con las primeras de cada álbum, en orden
+    conn2 = connect(":memory:")
+    [add_track(conn2, i, f"/c{i}.mp3", album="Solo") for i in range(1, 4)]
+    art2 = conn2.execute("SELECT id FROM artists").fetchone()[0]
+    assert [r["title"] for r in stats.artist_top_tracks(conn2, art2)] == ["Pista 1", "Pista 2"]
+
+
+def test_home_rankings():
+    conn = connect(":memory:")
+    t1 = add_track(conn, 1, "/1.mp3", artist="Uno", album="A1")
+    t2 = add_track(conn, 2, "/2.mp3", artist="Dos", album="A2")
+    t3 = add_track(conn, 3, "/3.mp3", artist="Dos", album="A2")
+    assert stats.top_tracks(conn) == [] and stats.top_albums(conn) == [] and stats.top_artists(conn) == []
+    _plays(conn, t1, 1); _plays(conn, t2, 2); _plays(conn, t3, 2)
+    assert [r["name"] for r in stats.top_artists(conn)] == ["Dos", "Uno"]
+    assert stats.top_artists(conn)[0]["plays"] == 4
+    assert [(r["title"], r["plays"]) for r in stats.top_albums(conn)] == [("A2", 4), ("A1", 1)]
+    assert [r["title"] for r in stats.top_tracks(conn)][2] == "Pista 1"
+    # listas: se ordenan por lo escuchado de sus canciones; las no escuchadas, por nombre
+    conn.execute("INSERT INTO playlists(name) VALUES ('Zeta'), ('Alfa'), ('Beta')")
+    ids = {r["name"]: r["id"] for r in conn.execute("SELECT id, name FROM playlists")}
+    conn.execute("INSERT INTO playlist_tracks(playlist_id, track_id, position) VALUES (?,?,0)", (ids["Zeta"], t2))
+    conn.execute("INSERT INTO playlist_tracks(playlist_id, track_id, position) VALUES (?,?,1)", (ids["Zeta"], t3))
+    conn.commit()
+    top = stats.top_playlists(conn)
+    assert [(r["name"], r["plays"], r["tracks"]) for r in top] == [("Zeta", 4, 2), ("Alfa", 0, 0), ("Beta", 0, 0)]

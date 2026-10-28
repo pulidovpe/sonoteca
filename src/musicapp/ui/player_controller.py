@@ -277,7 +277,8 @@ class PlayerController(QObject):
                 continue
             rows.append({"position": position, "id": row["id"], "title": row["title"],
                          "artist": row["artist"], "album": album_display(row["album"]),
-                         "duration": row["duration"], "current": position == current_pos})
+                         "albumId": row["album_id"], "duration": row["duration"],
+                         "current": position == current_pos})
         return rows
 
     @Slot(QObject)

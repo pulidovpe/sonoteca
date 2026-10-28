@@ -70,6 +70,7 @@ Item {
             duration: modelData.duration
             plays: (player.statsRevision, player.playsOf(modelData.id))
             trackId: modelData.id
+            albumId: modelData.albumId
             count: page.items.length
             onReorderRequested: (dst) => player.moveInQueue(index, dst)
             current: modelData.current

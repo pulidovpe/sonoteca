@@ -25,6 +25,7 @@ ApplicationWindow {
         }
         AppMenu {
             title: "Ver"
+            AppMenuItem { action: actHome }
             AppMenuItem { action: actAlbums }
             AppMenuItem { action: actArtists }
             AppMenuItem { action: actReview }
@@ -32,6 +33,8 @@ ApplicationWindow {
             AppMenuItem { action: actQueue }
             AppMenuItem { action: actLyrics }
             AppMenuSeparator { }
+            AppMenuItem { action: actBack }
+            AppMenuItem { action: actForward }
             AppMenuItem { action: actSearch }
         }
         AppMenu {
@@ -58,6 +61,11 @@ ApplicationWindow {
     Action { id: actEditCurrent; text: "Editar tags de la pista actual\u2026"; shortcut: "Ctrl+E"; enabled: player.hasTrack; onTriggered: win.editTags([player.currentId]) }
     Action { id: actInternet; text: "Internet\u2026"; onTriggered: win.openInternetSettings() }
     Action { id: actQuit; text: "Salir"; shortcut: "Ctrl+Q"; onTriggered: Qt.quit() }
+    Action { id: actHome; text: "Inicio"; shortcut: "Ctrl+0"; onTriggered: win.showSection("home") }
+    Action { id: actBack; text: "Atr\u00e1s"; shortcut: "Alt+Left"; enabled: win.canBack; onTriggered: win.back() }
+    Shortcut { sequence: "Ctrl+["; enabled: win.canBack; onActivated: win.back() }
+    Action { id: actForward; text: "Adelante"; shortcut: "Alt+Right"; enabled: win.canForward; onTriggered: win.forward() }
+    Shortcut { sequence: "Ctrl+]"; enabled: win.canForward; onActivated: win.forward() }
     Action { id: actAlbums; text: "Álbumes"; shortcut: "Ctrl+1"; onTriggered: win.showSection("albums") }
     Action { id: actArtists; text: "Artistas"; shortcut: "Ctrl+2"; onTriggered: win.showSection("artists") }
     Action { id: actReview; text: "Por revisar"; shortcut: "Ctrl+3"; onTriggered: win.showSection("review") }
@@ -112,7 +120,7 @@ ApplicationWindow {
         }
     }
 
-    property string section: "albums"
+    property string section: "home"
     property bool searching: false
     property bool videoOpen: false
     property var stats: (Theme.dataRevision, library.stats())
@@ -121,32 +129,83 @@ ApplicationWindow {
         var r = library.cleanup()
         if (r.removed > 0 || r.pruned > 0) Theme.dataRevision++
     }
-    function showSection(sec) {
-        if (sec === "albums" || sec === "artists" || sec === "review") cleanup()
-        section = sec
-        searching = false
-        searchField.text = ""
-        if (sec === "albums") stack.replace(null, albumsComp)
-        else if (sec === "artists") stack.replace(null, artistsComp)
-        else if (sec === "queue") stack.replace(null, queueComp)
-        else if (sec === "playlists") stack.replace(null, playlistsComp)
-        else if (sec === "lyrics") stack.replace(null, lyricsComp)
-        else stack.replace(null, reviewComp)
+    // ---- Navegación con historial (atrás / adelante, como en un navegador) ----
+    property var navHistory: [{ t: "section", sec: "home" }]
+    property int navIndex: 0
+    readonly property bool canBack: navIndex > 0
+    readonly property bool canForward: navIndex < navHistory.length - 1
+
+    function go(loc) {
+        if (JSON.stringify(navHistory[navIndex]) === JSON.stringify(loc)) { render(loc); return }
+        var h = navHistory.slice(0, navIndex + 1)   // lo que había "adelante" se descarta
+        h.push(loc)
+        if (h.length > 60) h = h.slice(h.length - 60)
+        navHistory = h
+        navIndex = h.length - 1
+        render(loc)
     }
-    function showLyrics(trackId) { stack.push(lyricsComp, { followPlayer: false, trackId: trackId }) }
-    function openAlbum(id) { stack.push(albumComp, { albumId: id }) }
-    function openArtist(id, name) { stack.push(albumsComp, { artistId: id, heading: name }) }
+    function replaceCurrent(loc) {
+        var h = navHistory.slice()
+        h[navIndex] = loc
+        navHistory = h
+        render(loc)
+    }
+    function valid(loc) {   // un álbum o lista que ya no existe se salta al navegar
+        if (loc.t === "album") return !!library.album(loc.id).id
+        if (loc.t === "playlist") return !!playlists.info(loc.id).id
+        return true
+    }
+    function step(dir) {
+        var i = navIndex + dir
+        while (i >= 0 && i < navHistory.length && !valid(navHistory[i])) i += dir
+        if (i < 0 || i >= navHistory.length) return
+        navIndex = i
+        render(navHistory[i])
+    }
+    function back() { step(-1) }
+    function forward() { step(1) }
+    function render(loc) {
+        searching = (loc.t === "search")
+        if (loc.t === "section") {
+            if (loc.sec === "albums" || loc.sec === "artists" || loc.sec === "review") cleanup()
+            section = loc.sec
+            searchField.text = ""
+            if (loc.sec === "home") stack.replace(null, homeComp)
+            else if (loc.sec === "albums") stack.replace(null, albumsComp)
+            else if (loc.sec === "artists") stack.replace(null, artistsComp)
+            else if (loc.sec === "queue") stack.replace(null, queueComp)
+            else if (loc.sec === "playlists") stack.replace(null, playlistsComp)
+            else if (loc.sec === "lyrics") stack.replace(null, lyricsComp)
+            else stack.replace(null, reviewComp)
+            return
+        }
+        if (loc.t === "search") {
+            stack.replace(null, searchComp, { query: loc.q })
+            if (searchField.text.trim() !== loc.q) searchField.text = loc.q
+            return
+        }
+        if (loc.from) section = loc.from
+        if (loc.t === "album") stack.replace(null, albumComp, { albumId: loc.id })
+        else if (loc.t === "artist") stack.replace(null, albumsComp, { artistId: loc.id, heading: loc.name })
+        else if (loc.t === "playlist") stack.replace(null, playlistComp, { playlistId: loc.id })
+        else if (loc.t === "lyrics") stack.replace(null, lyricsComp, { followPlayer: false, trackId: loc.trackId })
+    }
+    function showSection(sec) { go({ t: "section", sec: sec }) }
+    function showLyrics(trackId) { go({ t: "lyrics", trackId: trackId, from: section }) }
+    function openAlbum(id) { go({ t: "album", id: id, from: section }) }
+    function openArtist(id, name) { go({ t: "artist", id: id, name: name, from: section }) }
     function runSearch(q) {
         if (q.length < 2) {
             if (searching) showSection(section)
             return
         }
-        // Si se navegó a un álbum/artista desde los resultados, una nueva búsqueda reemplaza todo
-        if (!searching || stack.depth > 1) {
-            searching = true
-            stack.replace(null, searchComp, { query: q })
-        } else {
+        if (searching) {   // misma página de búsqueda: solo cambia el texto, sin llenar el historial
+            var h = navHistory.slice()
+            h[navIndex] = { t: "search", q: q }
+            navHistory = h
             stack.currentItem.query = q
+        } else {
+            go({ t: "search", q: q })
         }
     }
     function openInternetSettings() { onlineSettings.openDialog() }
@@ -158,7 +217,7 @@ ApplicationWindow {
         }
         albumLookup.openFor(albumId, ids, unknownAlbum)
     }
-    function openPlaylist(id) { stack.push(playlistComp, { playlistId: id }) }
+    function openPlaylist(id) { go({ t: "playlist", id: id, from: section }) }
     function newPlaylist() {
         namePrompt.ask("Nueva lista de reproducci\u00f3n", "", "Crear", function (name) {
             var r = playlists.create(name)
@@ -174,7 +233,7 @@ ApplicationWindow {
     function deletePlaylist(id, name) {
         confirmDialog.ask("Eliminar lista", "Se eliminar\u00e1 \u00ab" + name + "\u00bb. Las canciones no se borran de tu biblioteca.", "Eliminar", function () {
             playlists.remove(id)
-            if (stack.depth > 1) stack.pop()
+            if (stack.currentItem && stack.currentItem.playlistId === id) win.back()
         })
     }
     function saveQueueAsPlaylist() {
@@ -229,7 +288,8 @@ ApplicationWindow {
         return text
     }
 
-    Component { id: albumsComp; AlbumsPage { onAlbumClicked: (id) => win.openAlbum(id); onNeedInternet: win.openInternetSettings(); onEditArtistRequested: (id, name) => win.editArtistTags(id, name) } }
+    Component { id: homeComp; HomePage { onAlbumClicked: (id) => win.openAlbum(id); onArtistClicked: (id, name) => win.openArtist(id, name); onPlaylistClicked: (id) => win.openPlaylist(id); onMenuRequested: (ids) => win.showTrackMenu(ids) } }
+    Component { id: albumsComp; AlbumsPage { onMenuRequested: (ids) => win.showTrackMenu(ids); onAlbumClicked: (id) => win.openAlbum(id); onNeedInternet: win.openInternetSettings(); onEditArtistRequested: (id, name) => win.editArtistTags(id, name) } }
     Component { id: albumComp; AlbumDetail { onEditRequested: (ids) => win.editTags(ids); onMenuRequested: (ids) => win.showTrackMenu(ids); onListRequested: (ids) => win.showPlaylistPicker(ids); onLookupRequested: (id, ids, unknown) => win.lookupAlbum(id, ids, unknown) } }
     Component { id: artistsComp; ArtistsPage { onArtistClicked: (id, name) => win.openArtist(id, name) } }
     Component {
@@ -296,6 +356,12 @@ ApplicationWindow {
                     font.weight: Font.Bold
                 }
                 Item { width: 1; height: 20 }
+                SideButton {
+                    width: parent.width
+                    label: "Inicio"
+                    active: win.section === "home"
+                    onClicked: win.showSection("home")
+                }
                 SideButton {
                     width: parent.width
                     label: "Álbumes"
@@ -461,28 +527,48 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 68
 
-                Rectangle {
-                    id: backBtn
-                    visible: stack.depth > 1
+                Row {
+                    id: navButtons
                     x: 24
+                    spacing: 8
                     anchors.verticalCenter: parent.verticalCenter
-                    width: 40; height: 40; radius: 20
-                    color: backMouse.containsMouse ? Theme.surfaceHover : Theme.surface
-                    Behavior on color { ColorAnimation { duration: Theme.fast } }
-                    Text { anchors.centerIn: parent; text: "\u2039"; color: Theme.text; font.pixelSize: 28 }
-                    MouseArea {
-                        id: backMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: stack.pop()
+                    Rectangle {
+                        id: backBtn
+                        width: 40; height: 40; radius: 20
+                        opacity: win.canBack ? 1 : 0.35
+                        color: backMouse.containsMouse && win.canBack ? Theme.surfaceHover : Theme.surface
+                        Behavior on color { ColorAnimation { duration: Theme.fast } }
+                        Text { anchors.centerIn: parent; text: "\u2039"; color: Theme.text; font.pixelSize: 28 }
+                        MouseArea {
+                            id: backMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            enabled: win.canBack
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: win.back()
+                        }
+                    }
+                    Rectangle {
+                        id: forwardBtn
+                        width: 40; height: 40; radius: 20
+                        opacity: win.canForward ? 1 : 0.35
+                        color: forwardMouse.containsMouse && win.canForward ? Theme.surfaceHover : Theme.surface
+                        Behavior on color { ColorAnimation { duration: Theme.fast } }
+                        Text { anchors.centerIn: parent; text: "\u203a"; color: Theme.text; font.pixelSize: 28 }
+                        MouseArea {
+                            id: forwardMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            enabled: win.canForward
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: win.forward()
+                        }
                     }
                 }
                 TextField {
                     id: searchField
                     anchors.verticalCenter: parent.verticalCenter
-                    x: backBtn.visible ? 76 : 24
-                    Behavior on x { NumberAnimation { duration: Theme.fast; easing.type: Easing.OutCubic } }
+                    x: navButtons.x + navButtons.width + 16
                     width: Math.min(420, parent.width - x - 24)
                     implicitHeight: 40
                     placeholderText: "Buscar canción, artista o álbum"
@@ -536,7 +622,7 @@ ApplicationWindow {
                 id: stack
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                initialItem: albumsComp
+                initialItem: homeComp
 
                 pushEnter: Transition {
                     ParallelAnimation {
@@ -613,8 +699,8 @@ ApplicationWindow {
             // Si el álbum abierto cambió de identidad (p. ej. se renombró), seguir al nuevo
             var page = stack.currentItem
             if (page && page.albumId !== undefined && !library.album(page.albumId).id) {
-                stack.pop()
-                if (result.albumId) win.openAlbum(result.albumId)
+                if (result.albumId) win.replaceCurrent({ t: "album", id: result.albumId, from: win.section })
+                else win.back()
             }
         }
     }
