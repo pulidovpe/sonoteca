@@ -31,7 +31,7 @@ para Apple Silicon; uno hecho en un Mac Intel, para Intel. Lo mismo con Linux (x
 Copia **solo el código**, no los entornos ni resultados de compilaciones anteriores: los entornos virtuales y las
 carpetas `build/` y `dist/` son específicos de cada sistema y romperían la compilación.
 
-**Excluye** siempre: `.venv/`, `.venv-build/`, `build/`, `dist/`, `__pycache__/`, `*.egg-info/`, `.git/` (si no la necesitas).
+**Excluye** siempre: `.venv/`, `venv/` (o como llames a tu entorno), `.venv-build/`, `build/`, `dist/`, `__pycache__/`, `*.egg-info/`, `.git/` (si no la necesitas).
 
 Formas de llevarlo:
 
@@ -41,7 +41,7 @@ Formas de llevarlo:
   ```bash
   cd /ruta/al/proyecto/..
   zip -r sonoteca-para-compilar.zip sonoteca \
-      -x 'sonoteca/.venv/*' 'sonoteca/.venv-build/*' 'sonoteca/build/*' 'sonoteca/dist/*' \
+      -x 'sonoteca/.venv/*' 'sonoteca/venv/*' 'sonoteca/.venv-build/*' 'sonoteca/build/*' 'sonoteca/dist/*' \
          '*/__pycache__/*' '*.egg-info/*' 'sonoteca/.git/*'
   ```
   (Sustituye `sonoteca` por el nombre real de tu carpeta.) En Windows, comprime la carpeta con el explorador y borra

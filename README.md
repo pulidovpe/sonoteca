@@ -103,6 +103,11 @@ sonoteca --version
 ```
 (con `uv`: `uv sync --extra ui --extra dev` y `uv run sonoteca gui`). Sin instalar nada también sirve `PYTHONPATH=src python -m sonoteca gui`.
 
+**`ModuleNotFoundError: No module named 'sonoteca'`** (el comando existe pero el paquete no se encuentra): el entorno virtual quedó desconectado del código (carpeta movida o sustituida, otro Python…). Se arregla recreándolo:
+```bash
+deactivate 2>/dev/null; VENV_DIR=venv ./packaging/dev_setup.sh    # sin VENV_DIR crea «.venv»
+```
+
 Si un comando nuevo «no existe»: `sonoteca --version` muestra de dónde se ejecuta el código; si apunta a `site-packages`, la instalación no es editable. Reinstala con `pip install -e ".[ui,dev]"`.
 
 ## Licencia
