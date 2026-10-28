@@ -132,6 +132,9 @@ def qml_env(qapp, db_file, tmp_path):
     engine.rootContext().setContextProperty("harvest", harvester)
     portable_io = PortableController(db_file)
     engine.rootContext().setContextProperty("portable", portable_io)
+    from sonoteca.ui.servers_controller import ServersController
+    server_config = ServersController()
+    engine.rootContext().setContextProperty("serverConfig", server_config)
     engine.load(QUrl.fromLocalFile(str(QML_DIR / "Main.qml")))
     assert engine.rootObjects(), warnings
     win = engine.rootObjects()[0]

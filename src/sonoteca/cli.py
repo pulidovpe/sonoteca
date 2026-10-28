@@ -56,6 +56,9 @@ def build_parser() -> argparse.ArgumentParser:
     im = sub.add_parser("import", help="importar un archivo .sonoteca (reemplaza la biblioteca; guarda una copia)")
     im.add_argument("archivo")
     im.add_argument("--carpeta-musica", help="carpeta donde está la música en este equipo (si cambió la ruta)")
+    rs = sub.add_parser("reset", help="vaciar la biblioteca y empezar desde cero (guarda una copia salvo --sin-copia)")
+    rs.add_argument("--yes", action="store_true", help="confirmar (sin esto no se hace nada)")
+    rs.add_argument("--sin-copia", action="store_true", help="no guardar copia de seguridad (irreversible)")
     sub.add_parser("harvest", help="descargar portadas y fotos que falten (solo música bien identificada)")
     sub.add_parser("gui", help="abrir la interfaz gráfica")
     sub.add_parser("paths", help="mostrar dónde se guardan la base de datos y la caché")
@@ -201,6 +204,18 @@ def _run(argv: list[str] | None = None) -> int:
         if report["missing"]:
             print(f"AVISO: {report['missing']} archivos no están en las rutas guardadas; usa --carpeta-musica "
                   "si la música cambió de carpeta.", file=out)
+        return 0
+    if args.cmd == "reset":
+        from .core import portable
+
+        if not args.yes:
+            print("Esto vacía la biblioteca (base de datos, portadas y fotos descargadas). "
+                  "Repite con --yes para confirmar.", file=sys.stderr)
+            return 2
+        portable.stage_reset(keep_backup=not args.sin_copia)
+        report = portable.apply_pending_reset()
+        print("Biblioteca vaciada." + (f" Copia en {report['backup']}" if report["backup"] else " Sin copia de seguridad."),
+              file=out)
         return 0
     if args.cmd == "harvest":
         from .online import harvest

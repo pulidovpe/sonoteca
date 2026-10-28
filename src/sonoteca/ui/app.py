@@ -24,6 +24,7 @@ def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int
     from .harvest_controller import HarvestController
     from .player_controller import PlayerController
     from .portable_controller import PortableController
+    from .servers_controller import ServersController
     from .playlist_controller import PlaylistController
     from .scan_controller import ScanController
 
@@ -40,6 +41,9 @@ def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int
         applied = portable.apply_pending_import()   # importaci\u00f3n preparada en la sesi\u00f3n anterior (antes de abrir la base)
         if applied:
             print(f"[sonoteca] biblioteca importada; copia de la anterior en {applied['backup']}", file=sys.stderr)
+        cleared = portable.apply_pending_reset()   # «empezar desde cero» preparado en la sesi\u00f3n anterior
+        if cleared:
+            print(f"[sonoteca] biblioteca vaciada (copia en {cleared['backup'] or 'ninguna'})", file=sys.stderr)
 
     app = QGuiApplication(argv if argv is not None else sys.argv)
     app.setApplicationName("sonoteca")
@@ -64,6 +68,8 @@ def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int
     engine.rootContext().setContextProperty("harvest", harvester)
     portable_io = PortableController(db_path)
     engine.rootContext().setContextProperty("portable", portable_io)
+    server_config = ServersController()
+    engine.rootContext().setContextProperty("serverConfig", server_config)
     engine.load(QUrl.fromLocalFile(str(QML_DIR / "Main.qml")))
     if not engine.rootObjects():
         return 1

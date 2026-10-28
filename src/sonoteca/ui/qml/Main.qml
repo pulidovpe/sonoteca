@@ -21,10 +21,12 @@ ApplicationWindow {
             AppMenuItem { action: actNewPlaylist }
             AppMenuItem { action: actEditCurrent }
             AppMenuItem { action: actInternet }
+            AppMenuItem { action: actServers }
             AppMenuItem { action: actHarvest }
             AppMenuSeparator { }
             AppMenuItem { action: actExport }
             AppMenuItem { action: actImport }
+            AppMenuItem { action: actReset }
             AppMenuSeparator { }
             AppMenuItem { action: actQuit }
         }
@@ -64,9 +66,11 @@ ApplicationWindow {
     }
 
     Action { id: actEditCurrent; text: "Editar tags de la pista actual\u2026"; shortcut: "Ctrl+E"; enabled: player.hasTrack; onTriggered: win.editTags([player.currentId]) }
+    Action { id: actServers; text: "Servidores de letras y portadas\u2026"; onTriggered: serversDialog.openDialog() }
     Action { id: actHarvest; text: "Descargar portadas e informaci\u00f3n\u2026"; onTriggered: harvestDialog.offer(true) }
     Action { id: actExport; text: "Exportar biblioteca\u2026"; onTriggered: transfer.exportLibrary() }
     Action { id: actImport; text: "Importar biblioteca\u2026"; onTriggered: transfer.importLibrary() }
+    Action { id: actReset; text: "Empezar desde cero\u2026"; onTriggered: transfer.resetLibrary() }
     Action { id: actInternet; text: "Internet\u2026"; onTriggered: win.openInternetSettings() }
     Action { id: actQuit; text: "Salir"; shortcut: "Ctrl+Q"; onTriggered: Qt.quit() }
     Action { id: actScan; text: "Buscar m\u00fasica\u2026"; shortcut: "Ctrl+Shift+O"; onTriggered: scanDialog.openDialog(false) }
@@ -749,7 +753,7 @@ ApplicationWindow {
     }
 
     TagEditor { id: tagEditor }
-    TrackMenu { id: trackMenu; onPlayOneRequested: (id) => queueChoice.ask(id); onLyricsRequested: (id) => win.showLyrics(id); onEditRequested: (ids) => win.editTags(ids); onListPickerRequested: (ids) => win.showPlaylistPicker(ids) }
+    TrackMenu { id: trackMenu; onPlayOneRequested: (id) => queueChoice.ask(id); onArtistRequested: (id, name) => win.openArtist(id, name); onAlbumRequested: (id) => win.openAlbum(id); onLyricsRequested: (id) => win.showLyrics(id); onEditRequested: (ids) => win.editTags(ids); onListPickerRequested: (ids) => win.showPlaylistPicker(ids) }
     NamePrompt { id: namePrompt }
     ConfirmDialog { id: confirmDialog }
     QueueChoiceDialog { id: queueChoice }
@@ -771,6 +775,10 @@ ApplicationWindow {
                 harvestDialog.offer(false)   // portadas y fotos de lo bien identificado, avisando cu\u00e1nto tardar\u00e1
             }
         }
+    }
+    ServersDialog {
+        id: serversDialog
+        onToastRequested: (text) => win.toast(text, 4000)
     }
     HarvestDialog {
         id: harvestDialog

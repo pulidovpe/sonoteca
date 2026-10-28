@@ -44,3 +44,4 @@ QueueChoiceDialog 1.0 QueueChoiceDialog.qml
 LyricsEditor 1.0 LyricsEditor.qml
 HarvestDialog 1.0 HarvestDialog.qml
 LibraryTransfer 1.0 LibraryTransfer.qml
+ServersDialog 1.0 ServersDialog.qml

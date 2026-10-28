@@ -12,8 +12,6 @@ Item {
 
     function refresh() { items = player.queueItems() }
     function removeAt(i) { player.removeFromQueue(i) }
-    function moveUp(i) { if (i > 0) player.moveInQueue(i, i - 1) }
-    function moveDown(i) { if (i < items.length - 1) player.moveInQueue(i, i + 1) }
     Component.onCompleted: refresh()
     Connections {
         target: player
@@ -78,8 +76,6 @@ Item {
             onActivated: player.playQueueAt(modelData.position)
             onMenuRequested: page.menuRequested([modelData.id])
             onEditRequested: page.editRequested([modelData.id])
-            onMoveUp: page.moveUp(index)
-            onMoveDown: page.moveDown(index)
             onRemoveRequested: page.removeAt(index)
         }
         ScrollBar.vertical: ScrollBar { }

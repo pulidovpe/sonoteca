@@ -14,8 +14,6 @@ Item {
     signal deleteRequested(int playlistId, string name)
 
     function playAll() { if (ids.length > 0) player.playTrackIds(ids, 0) }
-    function moveUp(i) { if (i > 0) playlists.moveTrack(playlistId, i, i - 1) }
-    function moveDown(i) { if (i < items.length - 1) playlists.moveTrack(playlistId, i, i + 1) }
     function removeAt(i) { playlists.removeAt(playlistId, i) }
 
     property alias cover: heroCover   // para las pruebas
@@ -106,8 +104,6 @@ Item {
             onActivated: player.playTrackIds(page.ids, index)
             onMenuRequested: page.menuRequested([modelData.id])
             onEditRequested: page.editRequested([modelData.id])
-            onMoveUp: page.moveUp(index)
-            onMoveDown: page.moveDown(index)
             onRemoveRequested: page.removeAt(index)
         }
         ScrollBar.vertical: ScrollBar { }

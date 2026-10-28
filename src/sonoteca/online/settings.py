@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from sonoteca import __version__
@@ -15,6 +15,11 @@ class Settings:
     offline: bool = True  # sin conexión hasta que el usuario lo active
     contact: str = ""  # correo o URL: MusicBrainz y Wikimedia piden identificar la aplicación
     translate_lang: str = "ES"  # idioma al que se traducen las letras (código de DeepL)
+    # Servidores alternativos (ver online/servers.py): los que añade el usuario y cuál está en uso
+    lyrics_servers: list = field(default_factory=list)   # [{"id", "name", "url"}]  (compatibles con LRCLIB)
+    lyrics_active: str = "default"
+    meta_servers: list = field(default_factory=list)     # [{"id", "name", "musicbrainz", "coverart", "wikipedia"}]
+    meta_active: str = "default"
 
 
 def settings_path() -> Path:
@@ -36,6 +41,10 @@ def load(apply_env: bool = True) -> Settings:
         settings.offline = bool(data.get("offline", settings.offline))
         settings.contact = str(data.get("contact", settings.contact))
         settings.translate_lang = str(data.get("translate_lang", settings.translate_lang))
+        settings.lyrics_servers = [x for x in data.get("lyrics_servers", []) if isinstance(x, dict) and x.get("id")]
+        settings.meta_servers = [x for x in data.get("meta_servers", []) if isinstance(x, dict) and x.get("id")]
+        settings.lyrics_active = str(data.get("lyrics_active", settings.lyrics_active))
+        settings.meta_active = str(data.get("meta_active", settings.meta_active))
     except (OSError, ValueError):
         pass
     if not apply_env:

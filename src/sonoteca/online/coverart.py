@@ -3,9 +3,10 @@ from __future__ import annotations
 
 from sonoteca.core.tag_writer import image_mime
 
+from . import servers
 from .http import HttpClient
 
-BASE = "https://coverartarchive.org"
+BASE = servers.DEFAULT_COVERART   # predeterminado; el activo sale de servers.coverart_base()
 SIZES = (250, 500, 1200)  # tamaños que ofrece el servicio
 
 
@@ -13,7 +14,7 @@ def fetch_front(client: HttpClient, release_group_id: str, size: int = 500) -> b
     """Portada frontal del grupo de lanzamientos (None si no hay). Sigue la redirección a archive.org."""
     if size not in SIZES:
         raise ValueError(f"Tamaño no disponible: {size}. Usa uno de {SIZES}")
-    result = client.get_bytes(f"{BASE}/release-group/{release_group_id}/front-{size}")
+    result = client.get_bytes(f"{servers.coverart_base()}/release-group/{release_group_id}/front-{size}")
     if result is None:
         return None
     data, _content_type = result

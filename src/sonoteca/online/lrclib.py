@@ -8,10 +8,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from . import servers
 from .http import HttpClient
 from .musicbrainz import clean_title, similarity
 
-BASE = "https://lrclib.net/api"
+BASE = servers.DEFAULT_LYRICS   # predeterminado; el activo sale de servers.lyrics_base()
 MAX_DURATION_GAP = 4.0  # segundos: más diferencia suele ser otra versión (en vivo, remix...)
 MIN_SIMILARITY = 0.8  # parecido mínimo de título y de artista en los resultados de /api/search
 
@@ -62,12 +63,12 @@ def get_exact(client: HttpClient, artist: str, title: str, album: str = "",
         params["album_name"] = album
     if 1 <= duration <= 3600:
         params["duration"] = int(round(duration))
-    return _parse(client.get_json(f"{BASE}/get", params, cache=False))
+    return _parse(client.get_json(f"{servers.lyrics_base()}/get", params, cache=False))
 
 
 def search(client: HttpClient, artist: str, title: str) -> list[LyricsResult]:
     """`/api/search` por título y artista (hasta 20 resultados)."""
-    data = client.get_json(f"{BASE}/search", {"track_name": title, "artist_name": artist},
+    data = client.get_json(f"{servers.lyrics_base()}/search", {"track_name": title, "artist_name": artist},
                            cache=False)
     if not isinstance(data, list):
         return []

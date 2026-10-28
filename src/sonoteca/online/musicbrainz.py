@@ -7,9 +7,10 @@ from difflib import SequenceMatcher
 
 from sonoteca.core.search import normalize
 
+from . import servers
 from .http import HttpClient, OnlineError
 
-BASE = "https://musicbrainz.org/ws/2"
+BASE = servers.DEFAULT_MUSICBRAINZ   # predeterminado; el activo sale de servers.musicbrainz_base()
 _YEAR = re.compile(r"(\d{4})")
 
 
@@ -95,12 +96,12 @@ def _mark_confident(ordered: list[AlbumCandidate]) -> list[AlbumCandidate]:
 def search_albums(client: HttpClient, artist: str, album: str, limit: int = 6) -> list[AlbumCandidate]:
     """Busca el álbum por nombre y artista."""
     data = client.get_json(
-        f"{BASE}/release-group/",
+        f"{servers.musicbrainz_base()}/release-group/",
         {"query": f"releasegroup:{phrase(album)} AND artist:{phrase(artist)}",
          "fmt": "json", "limit": limit}) or {}
     if not data.get("release-groups"):  # p. ej. "The X" frente a "X": palabras sueltas
         words = f"{tokens_clause('releasegroup', clean_title(album))} AND {tokens_clause('artist', artist)}"
-        data = client.get_json(f"{BASE}/release-group/",
+        data = client.get_json(f"{servers.musicbrainz_base()}/release-group/",
                                {"query": words, "fmt": "json", "limit": limit}) or {}
     found = []
     for rg in data.get("release-groups", []):
@@ -163,7 +164,7 @@ def search_by_track(client: HttpClient, artist: str, title: str, limit: int = 10
     data: dict = {}
     for query in ladder:
         try:
-            data = client.get_json(f"{BASE}/recording/", {**params, "query": query}) or {}
+            data = client.get_json(f"{servers.musicbrainz_base()}/recording/", {**params, "query": query}) or {}
         except OnlineError:
             data = {}  # consulta no aceptada: se prueba la siguiente
         if data.get("recordings"):
@@ -204,7 +205,7 @@ def search_by_track(client: HttpClient, artist: str, title: str, limit: int = 10
 
 
 def search_artists(client: HttpClient, name: str, limit: int = 5) -> list[ArtistCandidate]:
-    data = client.get_json(f"{BASE}/artist/",
+    data = client.get_json(f"{servers.musicbrainz_base()}/artist/",
                            {"query": f"artist:{phrase(name)}", "fmt": "json", "limit": limit}) or {}
     out = []
     for a in data.get("artists", []):
@@ -219,7 +220,7 @@ def search_artists(client: HttpClient, name: str, limit: int = 5) -> list[Artist
 
 def artist_wikidata_id(client: HttpClient, mbid: str) -> str | None:
     """Q-id de Wikidata del artista (a partir de las relaciones de URL de MusicBrainz)."""
-    data = client.get_json(f"{BASE}/artist/{mbid}", {"inc": "url-rels", "fmt": "json"}) or {}
+    data = client.get_json(f"{servers.musicbrainz_base()}/artist/{mbid}", {"inc": "url-rels", "fmt": "json"}) or {}
     for rel in data.get("relations", []):
         if rel.get("type") == "wikidata":
             resource = (rel.get("url") or {}).get("resource", "")

@@ -224,3 +224,34 @@ def test_import_dialog_flow_and_harvest_dialog(qml_env, db_file, tmp_path, monke
     assert portable.has_pending_import(tmp_path / "datos")
     env.act("transfer.importDialog.close(); harvestDialog.offer(true)", 300)   # el plan se calcula sin internet
     assert env.warnings == []
+
+
+# ---- 0.9.1 ----
+@needs_ffmpeg
+def test_track_menu_has_artist_and_album_links_for_a_single_track(qml_env):
+    env = qml_env
+    album, ids = _ids(env)
+    env.act("trackMenu.ids = [%d]" % ids[0], 200)
+    assert env.js("trackMenu.artistItem.enabled") is True and env.js("trackMenu.albumItem.enabled") is True
+    env.act("trackMenu.ids = [%d, %d]" % (ids[0], ids[1]), 200)       # varias pistas: sin enlaces
+    assert env.js("trackMenu.artistItem.enabled") is False
+    env.act("trackMenu.ids = [%d]; trackMenu.albumRequested(%d)" % (ids[0], album), 600)
+    assert env.js("stack.currentItem.albumId") == album
+    assert env.warnings == []
+
+
+@needs_ffmpeg
+def test_reset_dialog_stages_a_reset_and_servers_dialog_adds_a_server(qml_env, tmp_path, monkeypatch):
+    from sonoteca.core import portable
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path / "datos"))
+    env = qml_env
+    env.act("transfer.resetLibrary()", 300)
+    assert env.js("transfer.resetDialog.visible") is True and env.js("transfer.resetDialog.stage") == "confirm"
+    env.act("transfer.resetDialog.doReset()", 300)
+    assert env.js("transfer.resetDialog.stage") == "restart" and portable.has_pending_reset(tmp_path / "datos")
+    env.act("transfer.resetDialog.close(); serversDialog.openDialog()", 300)
+    env.act("serversDialog.nameField.text = 'Mi LRCLIB'; serversDialog.addLyrics()", 300)   # falta la direcci\u00f3n: error claro
+    assert env.js("serversDialog.messageOk") is False
+    r = env.js("serverConfig.addLyrics('Mi LRCLIB', 'https://letras.casa/api').ok")
+    assert r is True and len(env.js("serverConfig.state().lyrics")) == 2
+    assert env.warnings == []
