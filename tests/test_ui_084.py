@@ -15,8 +15,8 @@ from conftest import make_cover, make_mp3, needs_ffmpeg
 from fakes import FakeBackend
 from test_ui_edit import album_ids
 
-from musicapp.ui.player_controller import PlayerController
-from musicapp.ui.scan_controller import ScanController, suggested_folders
+from sonoteca.ui.player_controller import PlayerController
+from sonoteca.ui.scan_controller import ScanController, suggested_folders
 
 
 class AudioBackend(FakeBackend):
@@ -39,8 +39,8 @@ class AudioBackend(FakeBackend):
 
 @pytest.fixture
 def audio_env(tmp_path, monkeypatch):
-    monkeypatch.setenv("MUSICAPP_DATA_DIR", str(tmp_path / "datos"))
-    from musicapp.core.db import connect
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path / "datos"))
+    from sonoteca.core.db import connect
     db = tmp_path / "a.db"
     connect(db).close()
     return AudioBackend(), db, tmp_path
@@ -72,7 +72,7 @@ def test_audio_devices_list_choice_is_remembered_and_unplugged_falls_back(qapp, 
 def test_scan_controller_scans_folders_and_reports(qapp, tmp_path, monkeypatch):
     if not os.path.exists("/usr/bin/ffmpeg") and not any(os.access(os.path.join(p, "ffmpeg"), os.X_OK) for p in os.environ["PATH"].split(os.pathsep)):
         pytest.skip("necesita ffmpeg")
-    monkeypatch.setenv("MUSICAPP_DATA_DIR", str(tmp_path / "datos"))
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path / "datos"))
     cover = make_cover(tmp_path / "c.jpg")
     make_mp3(tmp_path / "musica/Artista/1.mp3", cover, title="Uno", artist="Artista", album="Disco")
     make_mp3(tmp_path / "musica/Artista/2.mp3", cover, title="Dos", artist="Artista", album="Disco")
@@ -88,7 +88,7 @@ def test_scan_controller_scans_folders_and_reports(qapp, tmp_path, monkeypatch):
     while not results and time.time() < end:
         qapp.processEvents(); time.sleep(0.02)
     assert results and results[0]["added"] == 2 and results[0]["folders"] == 1
-    from musicapp.core.db import connect
+    from sonoteca.core.db import connect
     assert connect(db).execute("SELECT COUNT(*) FROM tracks").fetchone()[0] == 2
 
 

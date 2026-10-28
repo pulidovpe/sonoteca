@@ -1,18 +1,18 @@
 import pytest
 from conftest import make_cover, make_mp3, needs_ffmpeg
 
-from musicapp.core import library, tag_edit
-from musicapp.core.db import connect
-from musicapp.core.scanner import scan
-from musicapp.core.tag_writer import read_cover_file
-from musicapp.core.tags import read_tags
+from sonoteca.core import library, tag_edit
+from sonoteca.core.db import connect
+from sonoteca.core.scanner import scan
+from sonoteca.core.tag_writer import read_cover_file
+from sonoteca.core.tags import read_tags
 
 pytestmark = needs_ffmpeg
 
 
 @pytest.fixture
 def env(tmp_path, monkeypatch):
-    monkeypatch.setenv("MUSICAPP_DATA_DIR", str(tmp_path / "datos"))
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path / "datos"))
     root = tmp_path / "music"
     for n in (1, 2, 3):
         make_mp3(root / f"A/{n}.mp3", title=f"Pista {n}", artist="FOR NON BLONDIES",
@@ -112,7 +112,7 @@ def test_apply_without_changes_is_rejected(env):
 def test_title_stays_clean_after_editing_other_fields(tmp_path, monkeypatch):
     """Regresión: editar artista/álbum de archivos sin título en los tags no debe convertir el
     título en el nombre completo del archivo."""
-    monkeypatch.setenv("MUSICAPP_DATA_DIR", str(tmp_path / "datos"))
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path / "datos"))
     root = tmp_path / "music"
     make_mp3(root / "03- Ace Of Base - Happy Nation.mp3")
     make_mp3(root / "04- Ace Of Base - The Sign.mp3")

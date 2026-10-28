@@ -16,20 +16,20 @@ from pathlib import Path
 from conftest import make_cover, make_mp3, needs_ffmpeg
 from test_online import ARTIST_SEARCH, RG_SEARCH, Net, js, make_client, url_has, wiki_net
 
-from musicapp.core import library
-from musicapp.core.db import connect
-from musicapp.core.scanner import scan
-from musicapp.core.tags import read_tags
+from sonoteca.core import library
+from sonoteca.core.db import connect
+from sonoteca.core.scanner import scan
+from sonoteca.core.tags import read_tags
 
 pytestmark = needs_ffmpeg
 
 
 @pytest.fixture
 def db_file(tmp_path, monkeypatch):
-    monkeypatch.setenv("MUSICAPP_DATA_DIR", str(tmp_path / "datos"))
-    monkeypatch.setenv("MUSICAPP_CACHE_DIR", str(tmp_path / "cache"))
-    monkeypatch.delenv("MUSICAPP_OFFLINE", raising=False)
-    monkeypatch.delenv("MUSICAPP_CONTACT", raising=False)
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path / "datos"))
+    monkeypatch.setenv("SONOTECA_CACHE_DIR", str(tmp_path / "cache"))
+    monkeypatch.delenv("SONOTECA_OFFLINE", raising=False)
+    monkeypatch.delenv("SONOTECA_CONTACT", raising=False)
     root = tmp_path / "music"
     for n in (1, 2):
         make_mp3(root / f"A/{n}.mp3", title=f"Pista {n}", artist="4 Non Blondes",

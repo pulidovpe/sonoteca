@@ -1,13 +1,13 @@
 from conftest import make_cover, make_m4a, make_mp3, needs_ffmpeg
 
-from musicapp.core.covers import (
+from sonoteca.core.covers import (
     album_cover_source,
     artist_cover_album,
     extract_embedded_cover,
     find_folder_cover,
 )
-from musicapp.core.db import connect
-from musicapp.core.scanner import scan
+from sonoteca.core.db import connect
+from sonoteca.core.scanner import scan
 
 pytestmark = needs_ffmpeg
 
@@ -78,7 +78,7 @@ def _library_with_covers(tmp_path):
 
 
 def test_current_cover_state(tmp_path):
-    from musicapp.core.covers import current_cover_state
+    from sonoteca.core.covers import current_cover_state
 
     conn, t = _library_with_covers(tmp_path)
     one = current_cover_state(conn, [t["B"]])
@@ -95,11 +95,11 @@ def test_current_cover_state(tmp_path):
 
 
 def test_artist_has_image_and_artist_track_ids(tmp_path, monkeypatch):
-    from musicapp.core import library
-    from musicapp.core.covers import artist_has_image
+    from sonoteca.core import library
+    from sonoteca.core.covers import artist_has_image
 
-    monkeypatch.setenv("MUSICAPP_DATA_DIR", str(tmp_path / "datos"))
-    monkeypatch.setenv("MUSICAPP_CACHE_DIR", str(tmp_path / "cache"))
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path / "datos"))
+    monkeypatch.setenv("SONOTECA_CACHE_DIR", str(tmp_path / "cache"))
     conn, t = _library_with_covers(tmp_path)
     ids = {r["name"]: r["id"] for r in conn.execute("SELECT id, name FROM artists")}
     assert artist_has_image(conn, ids["Uno"]) is True      # portada de uno de sus álbumes

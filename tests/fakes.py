@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from musicapp.player.backend import PlayerBackend
+from sonoteca.player.backend import PlayerBackend
 
 
 class FakeBackend(PlayerBackend):

@@ -1,7 +1,7 @@
 import pytest
 
-from musicapp.core import playlists
-from musicapp.core.db import connect
+from sonoteca.core import playlists
+from sonoteca.core.db import connect
 
 
 @pytest.fixture

@@ -1,9 +1,9 @@
 """0.8.1: contador de reproducciones y limpieza de álbumes/artistas vacíos (sin Qt)."""
 import sqlite3
 
-from musicapp.core import library, stats
-from musicapp.core.cleanup import purge_missing, prune_empty
-from musicapp.core.db import SCHEMA_VERSION, connect
+from sonoteca.core import library, stats
+from sonoteca.core.cleanup import purge_missing, prune_empty
+from sonoteca.core.db import SCHEMA_VERSION, connect
 
 
 def add_track(conn, n, path, artist="X", album="Disco", album_artist=None):
@@ -119,7 +119,7 @@ def test_home_rankings():
 
 
 def test_playlist_cover_albums_distinct_in_order_max_four():
-    from musicapp.core import playlists as store
+    from sonoteca.core import playlists as store
 
     conn = connect(":memory:")
     tracks = [add_track(conn, i, f"/{i}.mp3", album=f"Disco {i // 2}") for i in range(12)]  # 6 álbumes

@@ -1,6 +1,6 @@
 [project]
-name = "musicapp"
-dynamic = ["version"]   # sale de src/musicapp/__init__.py (una sola fuente)
+name = "sonoteca"
+dynamic = ["version"]   # sale de src/sonoteca/__init__.py (una sola fuente)
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -21,20 +21,20 @@ build = ["pyinstaller>=6.10"]
 # Se añadirá en fases posteriores: watchdog
 
 [project.scripts]
-musicapp = "musicapp.cli:main"
+sonoteca = "sonoteca.cli:main"
 
 [project.gui-scripts]
-musicapp-gui = "musicapp.ui.app:main"
+sonoteca-gui = "sonoteca.ui.app:main"
 
 [build-system]
 requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
-path = "src/musicapp/__init__.py"
+path = "src/sonoteca/__init__.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/musicapp"]
+packages = ["src/sonoteca"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

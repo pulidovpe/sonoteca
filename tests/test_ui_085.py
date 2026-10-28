@@ -9,8 +9,8 @@ import pytest
 
 from conftest import needs_ffmpeg
 
-from musicapp.core import playlists as store
-from musicapp.core.db import connect
+from sonoteca.core import playlists as store
+from sonoteca.core.db import connect
 
 
 
@@ -51,7 +51,7 @@ def test_describe_artists_orders_by_count_and_summarises(tmp_path):
 def db_file(tmp_path):
     pytest.importorskip("PySide6.QtQml")
     from conftest import make_mp3
-    from musicapp.core.scanner import scan
+    from sonoteca.core.scanner import scan
     root = tmp_path / "music"
     for n in (1, 2, 3):
         make_mp3(root / f"A/{n}.mp3", title=f"Pista {n}", artist="Artista", album="Disco",
@@ -117,7 +117,7 @@ def test_lyrics_opens_in_a_side_panel_while_playing(qml_env):
 
 # ---- 0.8.6 ----
 def test_manual_lyrics_roundtrip_and_sync_detection(tmp_path):
-    from musicapp.core import lyrics as lyr
+    from sonoteca.core import lyrics as lyr
     conn = connect(tmp_path / "l.db")
     ids = _seed(conn, ["A"])
     tid = ids[0]
@@ -135,7 +135,7 @@ def test_manual_lyrics_roundtrip_and_sync_detection(tmp_path):
 
 
 def test_audio_device_classification():
-    from musicapp.player.devices import classify_audio_device as c
+    from sonoteca.player.devices import classify_audio_device as c
     assert c("AirPods de Pablo") == "headphones" and c("Audífonos Bluetooth") == "headphones"
     assert c("LG HDMI") == "display" and c("MacBook Pro Speakers") == "speaker" and c("") == "speaker"
 
@@ -191,9 +191,9 @@ def test_player_bar_links_to_artist_and_album_from_any_page(qml_env):
 
 def test_set_artist_image_only_changes_the_photo(tmp_path, monkeypatch):
     pytest.importorskip("PySide6.QtCore")
-    monkeypatch.setenv("MUSICAPP_DATA_DIR", str(tmp_path / "data"))
-    monkeypatch.setenv("MUSICAPP_CACHE_DIR", str(tmp_path / "cache"))
-    from musicapp.ui.online_controller import OnlineController
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("SONOTECA_CACHE_DIR", str(tmp_path / "cache"))
+    from sonoteca.ui.online_controller import OnlineController
     db = tmp_path / "i.db"
     conn = connect(db)
     _seed(conn, ["Solo foto"])
@@ -207,3 +207,20 @@ def test_set_artist_image_only_changes_the_photo(tmp_path, monkeypatch):
     bad = tmp_path / "x.txt"
     bad.write_bytes(b"no es imagen")
     assert ctrl.setArtistImage(aid, str(bad))["ok"] is False
+
+
+# ---- 0.9.0 ----
+@needs_ffmpeg
+def test_import_dialog_flow_and_harvest_dialog(qml_env, db_file, tmp_path, monkeypatch):
+    from sonoteca.core import portable
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path / "datos"))
+    bundle = tmp_path / "b.sonoteca"
+    portable.export_library(db_file, bundle, data=tmp_path / "datos")
+    env = qml_env
+    env.act("transfer.importDialog.begin(%r)" % str(bundle), 300)
+    assert env.js("transfer.importDialog.visible") is True and env.js("transfer.importDialog.stage") == "confirm"
+    env.act("transfer.importDialog.doImport()", 300)
+    assert env.js("transfer.importDialog.stage") == "restart"       # nada cambia hasta reiniciar
+    assert portable.has_pending_import(tmp_path / "datos")
+    env.act("transfer.importDialog.close(); harvestDialog.offer(true)", 300)   # el plan se calcula sin internet
+    assert env.warnings == []

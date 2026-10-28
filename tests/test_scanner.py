@@ -3,9 +3,9 @@ import os
 import pytest
 from conftest import make_mp3, needs_ffmpeg
 
-from musicapp.core import library
-from musicapp.core.db import connect
-from musicapp.core.scanner import scan, sort_name
+from sonoteca.core import library
+from sonoteca.core.db import connect
+from sonoteca.core.scanner import scan, sort_name
 
 pytestmark = needs_ffmpeg
 
@@ -126,7 +126,7 @@ def test_force_rescan_rereads_everything(conn, library_dir):
 def test_migration_v1_to_v2_keeps_data():
     import sqlite3
 
-    from musicapp.core import db
+    from sonoteca.core import db
 
     raw = sqlite3.connect(":memory:")
     raw.row_factory = sqlite3.Row
@@ -143,7 +143,7 @@ def test_migration_v1_to_v2_keeps_data():
 def test_migration_v2_to_v3_flags_filename_titles_for_rescan(tmp_path):
     import sqlite3
 
-    from musicapp.core import db
+    from sonoteca.core import db
 
     raw = sqlite3.connect(":memory:")
     raw.row_factory = sqlite3.Row

@@ -3,9 +3,9 @@ import pytest
 
 from conftest import make_mp3, needs_ffmpeg
 
-from musicapp.core import library, review
-from musicapp.core.db import SCHEMA_VERSION, connect
-from musicapp.core.scanner import scan
+from sonoteca.core import library, review
+from sonoteca.core.db import SCHEMA_VERSION, connect
+from sonoteca.core.scanner import scan
 
 pytestmark = needs_ffmpeg
 

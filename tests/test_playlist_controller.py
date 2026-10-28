@@ -8,8 +8,8 @@ pytest.importorskip("PySide6.QtCore")
 
 from test_playlists import conn as _seed_conn  # noqa: F401  (reutiliza los datos de ejemplo)
 
-from musicapp.core.db import connect
-from musicapp.ui.playlist_controller import PlaylistController
+from sonoteca.core.db import connect
+from sonoteca.ui.playlist_controller import PlaylistController
 
 
 @pytest.fixture

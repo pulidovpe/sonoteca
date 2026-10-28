@@ -1,5 +1,5 @@
-from musicapp.core.db import connect
-from musicapp.core.search import SearchIndex, normalize, tokenize
+from sonoteca.core.db import connect
+from sonoteca.core.search import SearchIndex, normalize, tokenize
 
 
 def test_normalize():

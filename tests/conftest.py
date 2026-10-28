@@ -99,14 +99,14 @@ def qml_env(qapp, db_file, tmp_path):
     from PySide6.QtCore import QCoreApplication, QEvent, QEventLoop, QTimer, QUrl
     from PySide6.QtQml import QQmlApplicationEngine, QQmlExpression
 
-    from musicapp.ui.app import QML_DIR
-    from musicapp.ui.controller import LibraryController
-    from musicapp.ui.cover_provider import CoverProvider
-    from musicapp.ui.lyrics_controller import LyricsController
-    from musicapp.ui.online_controller import OnlineController
-    from musicapp.ui.player_controller import PlayerController
-    from musicapp.ui.playlist_controller import PlaylistController
-    from musicapp.ui.scan_controller import ScanController
+    from sonoteca.ui.app import QML_DIR
+    from sonoteca.ui.controller import LibraryController
+    from sonoteca.ui.cover_provider import CoverProvider
+    from sonoteca.ui.lyrics_controller import LyricsController
+    from sonoteca.ui.online_controller import OnlineController
+    from sonoteca.ui.player_controller import PlayerController
+    from sonoteca.ui.playlist_controller import PlaylistController
+    from sonoteca.ui.scan_controller import ScanController
 
     gc.collect()
     engine = QQmlApplicationEngine()
@@ -126,6 +126,12 @@ def qml_env(qapp, db_file, tmp_path):
     engine.rootContext().setContextProperty("lyrics", lyrics)
     scan = ScanController(db_file)
     engine.rootContext().setContextProperty("scanner", scan)
+    from sonoteca.ui.harvest_controller import HarvestController
+    from sonoteca.ui.portable_controller import PortableController
+    harvester = HarvestController(db_file)
+    engine.rootContext().setContextProperty("harvest", harvester)
+    portable_io = PortableController(db_file)
+    engine.rootContext().setContextProperty("portable", portable_io)
     engine.load(QUrl.fromLocalFile(str(QML_DIR / "Main.qml")))
     assert engine.rootObjects(), warnings
     win = engine.rootObjects()[0]

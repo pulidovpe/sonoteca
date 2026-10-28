@@ -12,7 +12,7 @@ pytest.importorskip("PySide6.QtQml")
 from conftest import needs_ffmpeg
 from test_ui_edit import album_ids
 
-from musicapp.core import stats
+from sonoteca.core import stats
 
 pytestmark = needs_ffmpeg
 

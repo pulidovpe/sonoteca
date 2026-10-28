@@ -10,13 +10,13 @@ import httpx
 import pytest
 from test_online import FakeTime, Net, js, make_client, url_has
 
-from musicapp.core import lyrics as store
-from musicapp.core.db import SCHEMA_VERSION, connect
-from musicapp.online import lrclib
-from musicapp.online import lyrics as flow
-from musicapp.online.http import OfflineError, OnlineError
-from musicapp.online.settings import Settings
-from musicapp.online.translate import DeepLTranslator, KeyStore, normalize_lang
+from sonoteca.core import lyrics as store
+from sonoteca.core.db import SCHEMA_VERSION, connect
+from sonoteca.online import lrclib
+from sonoteca.online import lyrics as flow
+from sonoteca.online.http import OfflineError, OnlineError
+from sonoteca.online.settings import Settings
+from sonoteca.online.translate import DeepLTranslator, KeyStore, normalize_lang
 
 LRC = "[ar:Wheatus]\n[00:01.50]First line\n[00:03.25]Second line\n[00:05.00]\n[00:07.00]Chorus"
 PLAIN = "First line\nSecond line\n\nChorus"
@@ -85,7 +85,7 @@ def test_store_roundtrip_translation_and_not_found_retry():
 def test_schema_v5_migrates_from_v4():
     import sqlite3
 
-    from musicapp.core import db
+    from sonoteca.core import db
 
     raw = sqlite3.connect(":memory:")
     raw.row_factory = sqlite3.Row
@@ -310,14 +310,14 @@ class FakeKeyring:
 
 
 def test_key_store_roundtrip_and_environment_priority(monkeypatch):
-    monkeypatch.delenv("MUSICAPP_DEEPL_KEY", raising=False)
+    monkeypatch.delenv("SONOTECA_DEEPL_KEY", raising=False)
     store_ = KeyStore(FakeKeyring())
     assert store_.get() == ""
     store_.set("  mi-clave:fx  ")
     assert store_.get() == "mi-clave:fx"
-    monkeypatch.setenv("MUSICAPP_DEEPL_KEY", "de-entorno")
+    monkeypatch.setenv("SONOTECA_DEEPL_KEY", "de-entorno")
     assert store_.get() == "de-entorno"
-    monkeypatch.delenv("MUSICAPP_DEEPL_KEY")
+    monkeypatch.delenv("SONOTECA_DEEPL_KEY")
     store_.delete()
     assert store_.get() == ""
     with pytest.raises(OnlineError, match="vacía"):
@@ -332,5 +332,5 @@ def test_key_store_roundtrip_and_environment_priority(monkeypatch):
 
     broken = KeyStore(Broken())
     assert broken.get() == ""  # sin llavero = sin clave, no un error
-    with pytest.raises(OnlineError, match="MUSICAPP_DEEPL_KEY"):
+    with pytest.raises(OnlineError, match="SONOTECA_DEEPL_KEY"):
         broken.set("x")

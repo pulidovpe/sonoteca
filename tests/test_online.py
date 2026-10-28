@@ -5,12 +5,12 @@ import json
 import httpx
 import pytest
 
-from musicapp.cli import main
-from musicapp.core.db import connect
-from musicapp.online import coverart, enrich, musicbrainz, wikipedia
-from musicapp.online import settings as online_settings
-from musicapp.online.http import HttpClient, OfflineError, OnlineError, RateLimiter
-from musicapp.online.settings import Settings
+from sonoteca.cli import main
+from sonoteca.core.db import connect
+from sonoteca.online import coverart, enrich, musicbrainz, wikipedia
+from sonoteca.online import settings as online_settings
+from sonoteca.online.http import HttpClient, OfflineError, OnlineError, RateLimiter
+from sonoteca.online.settings import Settings
 
 JPEG = b"\xff\xd8\xff\xe0" + b"0" * 64
 ARTIST = {"id": "art-1", "name": "4 Non Blondes", "sort-name": "4 Non Blondes"}
@@ -105,14 +105,14 @@ def js(data, status=200):
 
 # ---------------- ajustes ----------------
 def test_settings_default_offline_and_roundtrip(tmp_path, monkeypatch):
-    monkeypatch.setenv("MUSICAPP_DATA_DIR", str(tmp_path))
-    monkeypatch.delenv("MUSICAPP_OFFLINE", raising=False)
-    monkeypatch.delenv("MUSICAPP_CONTACT", raising=False)
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path))
+    monkeypatch.delenv("SONOTECA_OFFLINE", raising=False)
+    monkeypatch.delenv("SONOTECA_CONTACT", raising=False)
     assert online_settings.load() == Settings(offline=True, contact="")
     online_settings.save(Settings(offline=False, contact="yo@correo.com"))
     assert online_settings.load() == Settings(offline=False, contact="yo@correo.com")
-    monkeypatch.setenv("MUSICAPP_OFFLINE", "1")
-    monkeypatch.setenv("MUSICAPP_CONTACT", "otro@correo.com")
+    monkeypatch.setenv("SONOTECA_OFFLINE", "1")
+    monkeypatch.setenv("SONOTECA_CONTACT", "otro@correo.com")
     assert online_settings.load() == Settings(offline=True, contact="otro@correo.com")
     assert online_settings.load(apply_env=False).contact == "yo@correo.com"
     assert "yo@correo.com" in online_settings.user_agent("yo@correo.com")
@@ -142,7 +142,7 @@ def test_get_json_sends_user_agent_caches_and_works_offline_from_cache(tmp_path)
     assert client.get_json("https://example.org/data", {"a": "1"}) == {"ok": 1}
     assert len(net.calls) == 1  # la segunda salió de la caché
     ua = net.calls[0].headers["user-agent"]
-    assert ua.startswith("musicapp/") and "test@example.com" in ua
+    assert ua.startswith("sonoteca/") and "test@example.com" in ua
     # sin conexión: lo guardado se puede usar; lo nuevo no
     offline = make_client(tmp_path, Net(), offline=True)
     assert offline.get_json("https://example.org/data", {"a": "1"}) == {"ok": 1}
@@ -340,7 +340,7 @@ def test_album_candidates_by_album_by_track_and_unknown_artist(tmp_path, conn):
 
 
 def test_preview_cover_is_cached_on_disk(tmp_path, conn, monkeypatch):
-    monkeypatch.setenv("MUSICAPP_CACHE_DIR", str(tmp_path / "cache"))
+    monkeypatch.setenv("SONOTECA_CACHE_DIR", str(tmp_path / "cache"))
     net = Net({url_has("rg-1/front-250"): httpx.Response(200, content=JPEG)})
     client = make_client(tmp_path, net)
     cand = musicbrainz.AlbumCandidate("rg-1", "T", "A", None, 1992, "Album", 100, 1.0)
@@ -384,9 +384,9 @@ def test_schema_v4_has_artist_info_columns():
 
 
 def test_cli_online_toggle_and_offline_message(tmp_path, monkeypatch, capsys):
-    monkeypatch.setenv("MUSICAPP_DATA_DIR", str(tmp_path / "datos"))
-    monkeypatch.delenv("MUSICAPP_OFFLINE", raising=False)
-    monkeypatch.delenv("MUSICAPP_CONTACT", raising=False)
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path / "datos"))
+    monkeypatch.delenv("SONOTECA_OFFLINE", raising=False)
+    monkeypatch.delenv("SONOTECA_CONTACT", raising=False)
     assert main(["online", "status"]) == 0
     assert "Modo sin conexión: SÍ" in capsys.readouterr().out
     assert main(["online", "on"]) == 0
@@ -436,9 +436,9 @@ def test_only_a_clear_winner_is_marked_probable(tmp_path):
 
 
 def test_cli_notes_when_results_come_from_cache_while_offline(tmp_path, monkeypatch, capsys):
-    monkeypatch.setenv("MUSICAPP_DATA_DIR", str(tmp_path / "datos"))
-    monkeypatch.setenv("MUSICAPP_CACHE_DIR", str(tmp_path / "cache"))
-    monkeypatch.delenv("MUSICAPP_OFFLINE", raising=False)
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path / "datos"))
+    monkeypatch.setenv("SONOTECA_CACHE_DIR", str(tmp_path / "cache"))
+    monkeypatch.delenv("SONOTECA_OFFLINE", raising=False)
     db = tmp_path / "t.db"
     seed = connect(db)
     seed.executescript("""
@@ -547,7 +547,7 @@ def test_unknown_album_search_passes_track_duration_and_year(tmp_path):
 
 
 def test_cli_explains_track_based_results(monkeypatch, tmp_path, capsys):
-    monkeypatch.setenv("MUSICAPP_DATA_DIR", str(tmp_path / "datos"))
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path / "datos"))
     candidates = [
         musicbrainz.AlbumCandidate("rg-4", "Wheatus", "Wheatus", "a", 2000, "Album", 100, 1.0,
                                    via="track", length_match=True),
@@ -656,7 +656,7 @@ def test_pick_track_and_explicit_track_choice(tmp_path):
 
 
 def test_cli_says_which_song_it_is_searching_for(tmp_path, monkeypatch, capsys):
-    monkeypatch.setenv("MUSICAPP_DATA_DIR", str(tmp_path / "datos"))
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path / "datos"))
     db = tmp_path / "t.db"
     seed = connect(db)
     seed.executescript("""
@@ -752,7 +752,7 @@ def test_track_candidates_use_the_tracks_own_data(tmp_path):
 
 
 def test_cli_find_track_prints_the_song_caps_output_and_all_shows_everything(tmp_path, monkeypatch, capsys):
-    monkeypatch.setenv("MUSICAPP_DATA_DIR", str(tmp_path / "datos"))
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path / "datos"))
     db = tmp_path / "t.db"
     seed = connect(db)
     seed.executescript("""

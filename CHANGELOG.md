@@ -5,6 +5,24 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.9.0] - 2026-10-24
+### Cambiado
+- **Renombrado completo a Sonoteca**: paquete `sonoteca`, comando `sonoteca` (y `sonoteca-gui`), carpetas de datos y
+  caché `sonoteca`, variables `SONOTECA_*` (las `MUSICAPP_*` se siguen aceptando).
+- Al primer arranque se **migran los datos** de la instalación anterior (`musicapp`): se mueven a las carpetas
+  nuevas la base de datos, portadas, fotos de artistas, copias de respaldo y ajustes; se reescriben las rutas de
+  portadas guardadas en la base y se pasa la clave de DeepL del llavero. Nunca sobrescribe una biblioteca nueva.
+- El paquete ejecutable arranca siempre con una **biblioteca vacía** en la carpeta de datos del usuario; el script
+  `packaging/check_bundle.py` comprueba que no lleve bases de datos, ajustes, letras ni portadas.
+### Añadido
+- **Descarga automática de portadas y fotos** después de escanear: solo música bien identificada (tags reales) y solo
+  lo que falta; coincidencias dudosas se dejan para elegir a mano. Muestra cuánto puede tardar (aviso destacado si
+  son más de 5 minutos), se puede cancelar y ocultar, y no repite lo ya intentado durante 30 días.
+  Archivo ▸ *Descargar portadas e información…* y `sonoteca harvest`. No modifica los archivos de música. Esquema **v8**.
+- **Exportar / importar la biblioteca** (`.sonoteca`): base de datos, listas, letras, contadores y portadas/fotos
+  descargadas; sin ajustes ni claves. Al importar se confirma, se guarda una copia de la biblioteca actual y se puede
+  indicar la nueva carpeta de música. Archivo ▸ *Exportar/Importar biblioteca…*, `sonoteca export` y `sonoteca import`.
+
 ## [0.8.9] - 2026-10-24
 ### Añadido
 - `CHANGELOG.md`.
