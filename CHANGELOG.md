@@ -5,6 +5,13 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.9.2.2] - 2026-10-27
+### Añadido
+- `packaging/dev_setup.sh`: recrea el entorno de desarrollo e instala el proyecto en modo editable con una comprobación
+  final (`VENV_DIR=venv` para una carpeta sin punto). Soluciona `ModuleNotFoundError: No module named 'sonoteca'`.
+### Cambiado
+- `.gitignore` y el manual de compilación excluyen también `venv/`, `build/` y `dist/`.
+
 ## [0.9.2.1] - 2026-10-27
 ### Corregido
 - Al cerrar la ventana aparecían errores `Cannot call method 'stats' of null` / `Cannot read property 'revision' of null`:
