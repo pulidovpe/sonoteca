@@ -173,3 +173,17 @@ def test_lyrics_page_has_manual_button_and_audio_button_tooltip(qml_env):
     assert env.js("lyricsPanelShown") is True
     assert env.js("playerBar.audioButton.toolTip").startswith("Salida de audio")
     assert env.warnings == []
+
+
+@needs_ffmpeg
+def test_player_bar_links_to_artist_and_album_from_any_page(qml_env):
+    env = qml_env
+    album, ids = _ids(env)
+    env.player.playTrackIds(ids, 0)
+    env.act("showSection('home')", 400)
+    assert env.js("playerBar.artistLink.linked") is True and env.js("playerBar.albumLink.linked") is True
+    env.act("playerBar.albumRequested(player.currentTrack.albumId)", 600)
+    assert env.js("stack.currentItem.albumId") == album
+    env.act("playerBar.artistRequested(player.currentTrack.artistId, 'Artista')", 600)
+    assert env.js("stack.currentItem.artistId") == env.player.currentTrack["artistId"]
+    assert env.warnings == []

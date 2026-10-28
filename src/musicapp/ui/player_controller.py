@@ -7,6 +7,7 @@ from PySide6.QtCore import Property, QObject, Signal, Slot
 
 from musicapp.core import library, paths, stats
 from musicapp.core.db import connect
+from musicapp.core.models import UNKNOWN_ALBUM, UNKNOWN_ARTIST
 from musicapp.player.backend import PlayerBackend
 from musicapp.player.devices import classify_audio_device
 from musicapp.player.queue import PlayQueue
@@ -297,6 +298,14 @@ class PlayerController(QObject):
 
     @Slot()
     def clearQueue(self) -> None:
+        """Vacía la lista. Si algo suena, esa pista sigue sonando (queda como única de la lista)."""
+        if self._queue.current is not None:
+            self._queue.clear(keep_current=True)
+            self.queueChanged.emit()
+            return
+        self._stop_and_clear()
+
+    def _stop_and_clear(self) -> None:
         self._queue.clear()
         self._backend.stop()
         self._current = {}
@@ -318,7 +327,7 @@ class PlayerController(QObject):
             if self._queue.current is not None:
                 self._play_current()  # la siguiente ocupa su lugar
             else:
-                self.clearQueue()  # era la última: no queda nada que sonar
+                self._stop_and_clear()  # era la última: no queda nada que sonar
                 return
         self.queueChanged.emit()
 
@@ -352,7 +361,9 @@ class PlayerController(QObject):
         if row is None:
             return
         fresh = {**self._current, "title": row["title"], "artist": row["artist"],
-                 "album": album_display(row["album"]), "albumId": row["album_id"]}
+                 "album": album_display(row["album"]), "albumId": row["album_id"],
+                 "artistId": row["artist_id"], "hasAlbum": row["album"] != UNKNOWN_ALBUM,
+                 "hasArtist": row["artist"] != UNKNOWN_ARTIST}
         if fresh != self._current:
             self._current = fresh
             self.currentChanged.emit()
@@ -402,6 +413,9 @@ class PlayerController(QObject):
             "artist": row["artist"],
             "album": album_display(row["album"]),
             "albumId": row["album_id"],
+            "artistId": row["artist_id"],
+            "hasAlbum": row["album"] != UNKNOWN_ALBUM,   # sin álbum / sin artista no hay enlace
+            "hasArtist": row["artist"] != UNKNOWN_ARTIST,
             "kind": row["kind"],
             "duration": row["duration"],
         }

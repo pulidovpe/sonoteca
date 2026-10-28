@@ -7,6 +7,10 @@ Rectangle {
     property bool videoOpen: false
     property alias audioButton: audioButton   // para las pruebas
     signal videoToggled()
+    signal artistRequested(int artistId, string name)   // enlaces de la canci\u00f3n que suena
+    signal albumRequested(int albumId)
+    property alias artistLink: artistLink
+    property alias albumLink: albumLink
     color: "#141415"
     clip: true
 
@@ -45,11 +49,40 @@ Rectangle {
                 elide: Text.ElideRight
             }
             Text {
-                width: parent.width
+                id: artistLink
+                readonly property bool linked: !!player.currentTrack.hasArtist
+                width: Math.min(parent.width, implicitWidth)
                 text: player.currentTrack.artist || ""
-                color: Theme.textDim
+                color: linked && artistMouse.containsMouse ? Theme.text : Theme.textDim
                 font.pixelSize: 12
+                font.underline: linked && artistMouse.containsMouse
                 elide: Text.ElideRight
+                MouseArea {
+                    id: artistMouse
+                    anchors.fill: parent
+                    enabled: artistLink.linked
+                    hoverEnabled: true
+                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    onClicked: bar.artistRequested(player.currentTrack.artistId, player.currentTrack.artist)
+                }
+            }
+            Text {
+                id: albumLink
+                readonly property bool linked: !!player.currentTrack.hasAlbum
+                visible: linked
+                width: Math.min(parent.width, implicitWidth)
+                text: player.currentTrack.album || ""
+                color: albumMouse.containsMouse ? Theme.text : Theme.textDim
+                font.pixelSize: 12
+                font.underline: albumMouse.containsMouse
+                elide: Text.ElideRight
+                MouseArea {
+                    id: albumMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: bar.albumRequested(player.currentTrack.albumId)
+                }
             }
         }
     }
@@ -127,10 +160,10 @@ Rectangle {
         }
     }
 
-    // Derecha: video y volumen
+    // Derecha: video, salida de audio (grupo propio) y, aparte, el volumen
     Row {
         anchors { right: parent.right; rightMargin: 24; verticalCenter: parent.verticalCenter }
-        spacing: 12
+        spacing: 14
         Chip {
             anchors.verticalCenter: parent.verticalCenter
             height: 28
@@ -147,19 +180,24 @@ Rectangle {
             iconSize: 18
             // El icono indica el tipo de salida activa; el tooltip, cu\u00e1l es
             svg: player.audioDeviceKind === "headphones" ? Theme.iconHeadphones
-                 : (player.audioDeviceKind === "display" ? Theme.iconDisplay : Theme.iconSpeaker)
+                 : (player.audioDeviceKind === "display" ? Theme.iconDisplay : Theme.iconSpeakerBox)
             toolTip: "Salida de audio: " + (player.audioActiveName || "predeterminada del sistema")
             onClicked: audioPopup.openPopup()
         }
-        Text { anchors.verticalCenter: parent.verticalCenter; text: "Vol"; color: Theme.textDim; font.pixelSize: 12 }
-        AppSlider {
-            id: volSlider
+        Rectangle { anchors.verticalCenter: parent.verticalCenter; width: 1; height: 24; color: "#2e2e32" }
+        Row {
             anchors.verticalCenter: parent.verticalCenter
-            width: 110
-            from: 0
-            to: 1
-            onMoved: player.setVolume(value)
-            Binding { target: volSlider; property: "value"; value: player.volume; when: !volSlider.pressed }
+            spacing: 8
+            Icon { anchors.verticalCenter: parent.verticalCenter; svg: Theme.iconSpeaker; size: 18; color: Theme.textDim }
+            AppSlider {
+                id: volSlider
+                anchors.verticalCenter: parent.verticalCenter
+                width: 110
+                from: 0
+                to: 1
+                onMoved: player.setVolume(value)
+                Binding { target: volSlider; property: "value"; value: player.volume; when: !volSlider.pressed }
+            }
         }
     }
     AudioOutputPopup { id: audioPopup; x: bar.width - width - 16; y: -height - 8 }

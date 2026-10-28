@@ -46,7 +46,7 @@ Item {
         PillButton { label: "Reproducir"; primary: true; visible: page.items.length > 0 && !player.hasTrack; onClicked: player.playQueueAt(0) }
         PillButton { label: "Guardar como lista\u2026"; enabled: page.items.length > 0; onClicked: page.saveRequested() }
         PillButton { label: "Nueva lista temporal"; onClicked: player.newTemporaryList() }
-        PillButton { label: "Vaciar"; enabled: page.items.length > 0; onClicked: player.clearQueue() }
+        PillButton { label: "Vaciar"; enabled: page.items.length > (player.hasTrack ? 1 : 0); onClicked: player.clearQueue() }
     }
     Text {
         visible: page.items.length === 0

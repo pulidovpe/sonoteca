@@ -224,11 +224,24 @@ def test_move_in_queue_keeps_the_playing_track(env):
     ctrl.moveInQueue(9, 0)  # inválido: se ignora
 
 
-def test_clear_queue_stops_and_hides_the_player(env):
+def test_clear_queue_keeps_the_current_track_playing(env):
     ctrl, be, album, _, _ = env
-    ctrl.playAlbum(album, 0)
+    ctrl.playAlbum(album, 1)
     ctrl.clearQueue()
+    assert titles(ctrl) == ["Pista 2"] and ctrl.playing and be.state == "playing"
+    assert ctrl.currentTrack["title"] == "Pista 2" and ctrl.hasTrack
+    ctrl.removeFromQueue(0)   # quitar la \u00fanica y actual s\u00ed la detiene
     assert not ctrl.hasTrack and not ctrl.playing and be.state == "stopped" and ctrl.queueLength == 0
+    ctrl.addToQueue([_ids(ctrl, "Pista 1")])   # nada suena: vaciar la deja vac\u00eda
+    ctrl.clearQueue()
+    assert ctrl.queueLength == 0
+
+
+def test_current_track_exposes_artist_and_album_links(env):
+    ctrl, _be, album, _, _ = env
+    ctrl.playAlbum(album, 0)
+    cur = ctrl.currentTrack
+    assert cur["albumId"] == album and cur["artistId"] > 0 and cur["hasAlbum"] and cur["hasArtist"]
 
 
 def test_unknown_track_ids_are_ignored(env):
