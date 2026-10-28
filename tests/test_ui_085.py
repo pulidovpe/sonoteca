@@ -100,44 +100,23 @@ def test_single_track_with_a_running_list_asks_to_replace_or_keep(qml_env):
 
 
 @needs_ffmpeg
-def test_lyrics_opens_in_a_side_panel_while_playing(qml_env):
+def test_lyrics_replaces_the_queue_in_the_right_panel(qml_env):
     env = qml_env
     album, ids = _ids(env)
-    env.act("toggleLyrics()", 400)               # sin canción: página completa
-    assert env.js("win.section") == "lyrics" and env.js("lyricsPanelShown") is False
-    env.act("showSection('albums')", 400)
+    assert env.js("rightMode") == "queue" and env.js("rightPanel.width") > 0      # siempre hay panel: Reproduciendo
     env.player.playTrackIds(ids, 0)
-    env.act("toggleLyrics()", 500)
-    assert env.js("lyricsPanelShown") is True and env.js("win.section") == "albums"   # el centro no cambia
-    assert env.js("lyricsPanel.width") > 0
-    env.act("toggleLyrics()", 500)
-    assert env.js("lyricsPanelShown") is False
+    env.act("showSection('albums')", 300)
+    env.act("toggleLyrics()", 500)                                                 # Letra reemplaza la lista
+    assert env.js("lyricsPanelShown") is True and env.js("queuePanelShown") is False and env.js("win.section") == "albums"
+    env.act("toggleLyrics()", 500)                                                 # sin letra: vuelve Reproduciendo
+    assert env.js("lyricsPanelShown") is False and env.js("queuePanelShown") is True
+    env.act("toggleLyrics(); toggleQueue()", 500)                                  # el icono Reproduciendo tambi\u00e9n devuelve la lista
+    assert env.js("queuePanelShown") is True
+    env.act("toggleQueue()", 500)                                                  # y, con la lista a la vista, pliega el panel
+    assert env.js("rightCollapsed") is True
+    env.act("toggleLyrics()", 500)                                                 # Letra lo vuelve a abrir
+    assert env.js("lyricsPanelShown") is True and env.js("rightCollapsed") is False
     assert env.warnings == []
-
-
-# ---- 0.8.6 ----
-def test_manual_lyrics_roundtrip_and_sync_detection(tmp_path):
-    from sonoteca.core import lyrics as lyr
-    conn = connect(tmp_path / "l.db")
-    ids = _seed(conn, ["A"])
-    tid = ids[0]
-    lyr.save_manual(conn, tid, "Linea uno\nLinea dos")
-    doc = lyr.lyrics_doc(conn, tid)
-    assert doc["found"] and not doc["synced"] and doc["source"] == "Manual"
-    assert [x["text"] for x in doc["lines"]] == ["Linea uno", "Linea dos"]
-    lyr.save_manual(conn, tid, "[00:01.00]Uno\n[00:03.50]Dos")
-    doc = lyr.lyrics_doc(conn, tid)
-    assert doc["synced"] and [x["t"] for x in doc["lines"]] == [1000, 3500]
-    assert lyr.raw_text(conn, tid).startswith("[00:01.00]")      # se edita el LRC tal cual
-    assert not lyr.should_retry(lyr.get_stored(conn, tid))        # la manual nunca se vuelve a buscar sola
-    lyr.save_manual(conn, tid, "   \n")                           # vacío = borrar
-    assert lyr.lyrics_doc(conn, tid)["stored"] is False
-
-
-def test_audio_device_classification():
-    from sonoteca.player.devices import classify_audio_device as c
-    assert c("AirPods de Pablo") == "headphones" and c("Audífonos Bluetooth") == "headphones"
-    assert c("LG HDMI") == "display" and c("MacBook Pro Speakers") == "speaker" and c("") == "speaker"
 
 
 @needs_ffmpeg

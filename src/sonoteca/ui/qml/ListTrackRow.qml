@@ -12,6 +12,7 @@ Item {
     property int trackId: 0
     property int albumId: 0   // > 0: miniatura de la portada del álbum
     property int count: 0    // filas de la lista (para reordenar arrastrando)
+    property bool compact: false   // true: panel estrecho (sin contador de reproducciones; acciones sobre la duración al pasar el ratón)
     signal reorderRequested(int dst)
     property bool current: false
     property bool playing: false
@@ -33,7 +34,7 @@ Item {
     }
     HoverHandler { id: hover }
     Rectangle {
-        anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
+        anchors { fill: parent; leftMargin: row.compact ? 6 : 12; rightMargin: row.compact ? 6 : 12 }
         radius: 6
         color: hover.hovered ? Theme.surfaceHover : "transparent"
         Behavior on color { ColorAnimation { duration: Theme.fast } }
@@ -46,8 +47,8 @@ Item {
     }
     Item {
         id: marker
-        x: 28
-        width: 28
+        x: row.compact ? 10 : 28
+        width: row.compact ? 24 : 28
         height: parent.height
         Icon {
             anchors.centerIn: parent
@@ -67,8 +68,8 @@ Item {
     Rectangle {
         id: thumb
         visible: row.albumId > 0
-        width: visible ? 40 : 0
-        height: 40
+        width: visible ? (row.compact ? 36 : 40) : 0
+        height: row.compact ? 36 : 40
         radius: 4
         color: Theme.placeholder
         anchors { left: marker.right; leftMargin: 6; verticalCenter: parent.verticalCenter }
@@ -82,14 +83,20 @@ Item {
         }
     }
     Column {
-        anchors { left: thumb.right; leftMargin: 10; right: actions.left; rightMargin: 12; verticalCenter: parent.verticalCenter }
+        anchors { left: thumb.right; leftMargin: row.compact ? 8 : 10; right: row.compact ? dur.left : actions.left; rightMargin: row.compact ? 8 : 12; verticalCenter: parent.verticalCenter }
         spacing: 2
         Text { width: parent.width; text: row.title; color: row.current ? Theme.accent : Theme.text; font.pixelSize: 15; elide: Text.ElideRight }
         Text { width: parent.width; text: row.subtitle; color: Theme.textDim; font.pixelSize: 12; elide: Text.ElideRight }
     }
+    Rectangle {   // en el modo compacto las acciones tapan la duración: fondo para que se lean
+        visible: row.compact && hover.hovered
+        anchors { fill: actions; margins: -2 }
+        radius: 6
+        color: Theme.surfaceRaised
+    }
     Row {
         id: actions
-        anchors { right: playsText.visible ? playsText.left : dur.left; rightMargin: 12; verticalCenter: parent.verticalCenter }
+        anchors { right: row.compact ? parent.right : (playsText.visible ? playsText.left : dur.left); rightMargin: row.compact ? 10 : 12; verticalCenter: parent.verticalCenter }
         spacing: 2
         opacity: hover.hovered ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: Theme.fast } }
@@ -98,7 +105,7 @@ Item {
     }
     Text {
         id: playsText
-        visible: row.plays >= 0
+        visible: !row.compact && row.plays >= 0
         text: "\u25b6 " + row.plays
         anchors { right: dur.left; rightMargin: 16; verticalCenter: parent.verticalCenter }
         color: Theme.textDim
@@ -107,8 +114,9 @@ Item {
     Text {
         id: dur
         text: Theme.fmt(row.duration)
-        anchors { right: parent.right; rightMargin: 28; verticalCenter: parent.verticalCenter }
+        anchors { right: parent.right; rightMargin: row.compact ? 14 : 28; verticalCenter: parent.verticalCenter }
         color: Theme.textDim
-        font.pixelSize: 14
+        font.pixelSize: row.compact ? 12 : 14
+        opacity: row.compact && hover.hovered ? 0 : 1
     }
 }

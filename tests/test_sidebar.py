@@ -22,7 +22,7 @@ def test_every_sidebar_button_has_an_icon_and_a_tooltip_label():
     buttons = _blocks(main, "SideButton")
     assert len(buttons) == 7        # Inicio, Álbumes, Artistas, Listas, Reproduciendo, Letra, Por revisar
     for body in buttons:
-        assert re.search(r'label:\s*"', body) and re.search(r"icon:\s*Theme\.icon\w+", body), body[:80]
+        assert re.search(r"label:\s*\S", body) and re.search(r"icon:\s*Theme\.icon\w+", body), body[:80]
 
 
 def test_side_button_shows_no_text_only_a_tooltip():
@@ -43,3 +43,14 @@ def test_sidebar_is_a_narrow_rail_and_the_video_pane_follows_it():
     assert "readonly property int sidebarWidth: 72" in main
     assert "Layout.preferredWidth: win.sidebarWidth" in main and "leftMargin: win.sidebarWidth" in main
     assert "230" not in re.sub(r"\d{4,}", "", main)       # ya no quedan anchos fijos de la barra antigua
+
+
+def test_right_panel_is_always_there_and_lyrics_replaces_the_queue():
+    main = (QML / "Main.qml").read_text(encoding="utf-8")
+    queue = (QML / "QueuePage.qml").read_text(encoding="utf-8")
+    assert 'id: rightPanel' in main and 'id: queueLoader' in main and 'id: lyricsLoader' in main
+    assert 'property string rightMode: "queue"' in main                   # por defecto: Reproduciendo
+    assert 'if (sec === "queue") { showQueue(); return }' in main         # ya no es una página del centro
+    assert re.search(r"id: queueComp\s*QueuePage \{\s*panel: true", main)
+    assert "property bool panel" in queue and "compact: page.panel" in queue
+    assert "stack.replace(null, queueComp)" not in main

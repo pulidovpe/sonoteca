@@ -36,7 +36,7 @@ def ids(env):
 
 
 def page_titles(env):
-    value = env.js("stack.currentItem.items.map(function (x) { return x.title })")
+    value = env.js("queuePage.items.map(function (x) { return x.title })")
     return list(value.toVariant())  # PySide devuelve los arreglos de JS como QJSValue
 
 
@@ -45,7 +45,7 @@ def test_track_menu_adds_to_a_new_temporary_list_and_the_queue_page_shows_it(qml
     js, act = env.js, env.act
     _, track_ids = ids(env)
     act("showSection('queue')", 400)
-    assert js("stack.currentItem.items.length") == 0
+    assert js("queuePage.items.length") == 0
     act(f"trackMenu.ids = [{track_ids[2]}]; trackMenu.addToList()", 300)
     assert "Lista temporal creada con 1 canción" in js("toastText.text")
     assert page_titles(env) == ["Pista 3"]
@@ -66,11 +66,11 @@ def test_queue_page_reorders_removes_and_plays_from_a_row(qml_env):
     assert page_titles(env) == ["Pista 2", "Pista 1", "Pista 3"]
     act("player.moveInQueue(2, 1)", 250)
     assert page_titles(env) == ["Pista 2", "Pista 3", "Pista 1"]
-    act("stack.currentItem.removeAt(1)", 250)
+    act("queuePage.removeAt(1)", 250)
     assert page_titles(env) == ["Pista 2", "Pista 1"]
     act("player.playQueueAt(1)", 300)
     assert js("player.currentTrack.title") == "Pista 1" and js("player.playing")
-    assert js("stack.currentItem.items[1].current") is True  # la fila marca lo que suena
+    assert js("queuePage.items[1].current") is True  # la fila marca lo que suena
 
 
 def test_play_next_new_temporary_list_and_clear(qml_env):

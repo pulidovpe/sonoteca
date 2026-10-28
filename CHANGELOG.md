@@ -5,6 +5,15 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.9.6] - 2026-10-28
+### Cambiado
+- **Panel derecho siempre presente**: muestra la lista *Reproduciendo*. *Letra* la reemplaza por la letra de la canción
+  que suena y, al quitar la letra, vuelve la lista. El icono *Reproduciendo* (Ctrl+4) devuelve la lista desde la letra y,
+  con la lista a la vista, pliega/despliega el panel. «Reproduciendo» deja de ser una página del centro: el centro queda
+  libre para álbumes, artistas y búsquedas.
+- La lista del panel tiene un modo compacto (título y botones más cortos, filas más estrechas; las acciones aparecen sobre
+  la duración al pasar el ratón). «Ver letra» de una canción concreta sigue abriendo la letra en el centro.
+
 ## [0.9.5] - 2026-10-27
 ### Corregido
 - **Teclas multimedia** (reproducir/pausa, siguiente, anterior) no se reconocían: la aplicación no tenía ningún manejador y
