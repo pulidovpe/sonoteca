@@ -83,6 +83,13 @@ ruff check src tests && pytest     # pytest requiere ffmpeg para generar archivo
 ```
 `.gitlab-ci.yml` ejecuta lint, pruebas y paquetes por sistema operativo. Los cambios se registran en [`CHANGELOG.md`](CHANGELOG.md). El repositorio **no debe contener letras** (tienen copyright; viven solo en la base local). Estado y decisiones del proyecto: `CONTEXT_COMPACT.md`.
 
+**Actualizando desde `musicapp`** (`zsh: command not found: sonoteca`): el entorno virtual sigue teniendo instalado el paquete antiguo. Dentro del proyecto y con el entorno activado:
+```bash
+pip uninstall -y musicapp && pip install -e ".[ui,dev]" && hash -r
+sonoteca --version
+```
+(con `uv`: `uv sync --extra ui --extra dev` y `uv run sonoteca gui`). Sin instalar nada también sirve `PYTHONPATH=src python -m sonoteca gui`.
+
 Si un comando nuevo «no existe»: `sonoteca --version` muestra de dónde se ejecuta el código; si apunta a `site-packages`, la instalación no es editable. Reinstala con `pip install -e ".[ui,dev]"`.
 
 ## Licencia

@@ -5,6 +5,13 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.9.0.1] - 2026-10-24
+### Corregido
+- `packaging/sonoteca.spec`: la poda de Qt maneja listas y TOC de PyInstaller de forma explícita.
+### Documentación
+- Guía de actualización desde `musicapp`: reinstalar en modo editable (`pip uninstall musicapp` y `pip install -e ".[ui,dev]"`)
+  para que exista el comando `sonoteca`; alternativa sin instalar: `python -m sonoteca`.
+
 ## [0.9.0] - 2026-10-24
 ### Cambiado
 - **Renombrado completo a Sonoteca**: paquete `sonoteca`, comando `sonoteca` (y `sonoteca-gui`), carpetas de datos y
