@@ -176,6 +176,28 @@ Si al abrirlo aparece un error del tipo *«Could not load the Qt platform plugin
   (`~/Library/Application Support/sonoteca` en macOS, `%LOCALAPPDATA%\sonoteca` en Windows, `~/.local/share/sonoteca` en
   Linux) y abre «Buscar música».
 
+### Icono de la aplicación
+El icono ya está conectado; no tienes que copiar nada a mano. Los archivos viven en `assets/icons/` y se generan desde el
+logo original (`assets/icons/original.png`) con `packaging/make_icons.py`:
+
+| Archivo | Para qué sirve |
+|---|---|
+| `assets/icons/sonoteca.ico` | Icono del `.exe` en Windows (lo incrusta PyInstaller). |
+| `assets/icons/sonoteca.icns` | Icono del `.app` en macOS (Finder y Dock). |
+| `assets/icons/sonoteca.png` y `sonoteca-1024.png` | Imágenes de uso general (README, tienda, Linux). |
+| `src/sonoteca/ui/icon.png` | Icono de la ventana en ejecución (barra de tareas / Dock); se empaqueta junto al QML. |
+
+- **Cambiar el logo**: sustituye `assets/icons/original.png` (admite fondo blanco con márgenes; se recorta y se hace
+  transparente) y ejecuta, con el entorno de desarrollo activado: `pip install pillow numpy && python packaging/make_icons.py`.
+  Después vuelve a compilar.
+- **Windows y macOS**: el icono queda en el propio ejecutable. Si ves el icono viejo, es la caché del sistema: en Windows
+  reinicia el Explorador (o cambia el nombre del `.exe`); en macOS mueve el `.app` a otra carpeta o ejecuta
+  `touch Sonoteca.app` y reabre el Finder.
+- **Linux**: un binario ELF no puede llevar el icono incrustado. El `.tar.gz` incluye `sonoteca.png` y
+  `sonoteca.desktop`; para tener un lanzador con icono, edita las rutas `Exec=` e `Icon=` del `.desktop` (deben ser absolutas)
+  y cópialo a `~/.local/share/applications/`. La ventana sí muestra el icono por `icon.png`.
+- **Ejecutando desde el código fuente** (`sonoteca gui`) la ventana usa también `icon.png`.
+
 ---
 
 ## 7. Verificar que el binario funciona

@@ -6,13 +6,14 @@ import sys
 from pathlib import Path
 
 QML_DIR = Path(__file__).parent / "qml"
+ICON_PATH = Path(__file__).parent / "icon.png"   # icono de la ventana (se empaqueta junto al QML)
 
 
 def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int:
     # El estilo "Basic" permite personalizar los controles por completo
     os.environ.setdefault("QT_QUICK_CONTROLS_STYLE", "Basic")
     from PySide6.QtCore import QUrl
-    from PySide6.QtGui import QGuiApplication
+    from PySide6.QtGui import QGuiApplication, QIcon
     from PySide6.QtQml import QQmlApplicationEngine
 
     from sonoteca.player.qt_backend import QtPlayerBackend
@@ -46,6 +47,8 @@ def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int
             print(f"[sonoteca] biblioteca vaciada (copia en {cleared['backup'] or 'ninguna'})", file=sys.stderr)
 
     app = QGuiApplication(argv if argv is not None else sys.argv)
+    if ICON_PATH.is_file():
+        app.setWindowIcon(QIcon(str(ICON_PATH)))   # barra de tareas / Dock / ventana (el icono del archivo lo pone el empaquetado)
     app.setApplicationName("sonoteca")
     app.setApplicationDisplayName("Sonoteca")
     engine = QQmlApplicationEngine()

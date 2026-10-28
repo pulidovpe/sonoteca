@@ -20,6 +20,7 @@ docker run --rm --platform "${PLATFORM:-linux/amd64}" -v "$PWD":/src python:3.12
   SONOTECA_SELFTEST=1 QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software \
     SONOTECA_DATA_DIR=/tmp/d SONOTECA_CACHE_DIR=/tmp/c dist/sonoteca/sonoteca && echo "Prueba de humo: OK"
   python packaging/check_bundle.py dist/sonoteca
+  cp assets/icons/sonoteca.png dist/sonoteca/sonoteca.png && cp packaging/linux/sonoteca.desktop dist/sonoteca/sonoteca.desktop
   V=$(python -c "import sonoteca; print(sonoteca.__version__)")
   tar -C dist -czf "/src/dist/Sonoteca-$V-alpha-linux-$(uname -m).tar.gz" sonoteca
   du -sh dist/sonoteca

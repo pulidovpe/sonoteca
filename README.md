@@ -1,5 +1,7 @@
 # Sonoteca
 
+<p align="center"><img src="assets/icons/sonoteca.png" width="128" alt="Icono de Sonoteca"></p>
+
 [![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-green.svg)](LICENSE)
 ![Estado: alfa](https://img.shields.io/badge/estado-alfa-orange.svg)
 

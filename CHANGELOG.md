@@ -5,6 +5,12 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.9.2] - 2026-10-26
+### Añadido
+- **Icono de la aplicación**: `assets/icons/` (logo original, PNG, `.ico` para Windows y `.icns` para macOS) generado con
+  `packaging/make_icons.py` (fondo transparente, sin halo). El spec de PyInstaller lo incrusta en el `.exe` y en el `.app`;
+  la ventana usa `src/sonoteca/ui/icon.png`; el paquete de Linux incluye `sonoteca.png` y una plantilla `sonoteca.desktop`.
+
 ## [0.9.1.1] - 2026-10-26
 ### Documentación
 - `docs/COMPILAR.md`: manual para generar el binario en macOS, Windows y Linux (con Docker o sin él) desde una carpeta
