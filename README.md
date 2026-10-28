@@ -35,6 +35,7 @@ Aún no hay binarios publicados. PyInstaller no compila de forma cruzada: **cada
 ./packaging/build_linux_docker.sh   # Linux   -> dist/Sonoteca-<versión>-alpha-linux-<arq>.tar.gz (requiere Docker)
 .\packaging\build_win.ps1            # Windows -> dist\sonoteca\sonoteca.exe + .zip (en una máquina Windows)
 ```
+**Manual paso a paso para cada plataforma: [`docs/COMPILAR.md`](docs/COMPILAR.md).**
 Cada script termina con una prueba de humo y muestra el tamaño. El tamaño se reduce podando los módulos de Qt que la app no usa (ver `packaging/sonoteca.spec`; `SONOTECA_NO_PRUNE=1` desactiva la poda).
 En macOS la app **no está firmada**: en otra Mac, clic derecho ▸ *Abrir* la primera vez (o `xattr -dr com.apple.quarantine Sonoteca.app`). En Linux pueden hacer falta las bibliotecas del sistema `libxcb-cursor0` y `libxkbcommon-x11-0`. El primer arranque abre «Buscar música» si la biblioteca está vacía.
 
