@@ -5,6 +5,11 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.9.1.1] - 2026-10-26
+### Documentación
+- `docs/COMPILAR.md`: manual para generar el binario en macOS, Windows y Linux (con Docker o sin él) desde una carpeta
+  copiada a otra máquina: qué copiar, requisitos, comandos, verificación, solución de problemas y CI.
+
 ## [0.9.1] - 2026-10-24
 ### Añadido
 - **Servidores alternativos** (Archivo ▸ *Servidores de letras y portadas…*): se pueden agregar servidores de letras
