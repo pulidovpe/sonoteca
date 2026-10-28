@@ -106,6 +106,7 @@ Item {
             badge: modelData.badge
             duration: Theme.fmt(modelData.duration)
             plays: (player.statsRevision, player.playsOf(modelData.id))
+            trackId: modelData.id
             current: player.currentId === modelData.id
             onActivated: player.playAlbum(page.albumId, index)
             onContextRequested: page.menuRequested([modelData.id])
