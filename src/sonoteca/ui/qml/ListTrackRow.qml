@@ -18,8 +18,6 @@ Item {
     signal activated()
     signal menuRequested()
     signal editRequested()
-    signal moveUp()
-    signal moveDown()
     signal removeRequested()
     height: 56
     opacity: dragHandler.active ? 0.45 : 1
@@ -96,8 +94,6 @@ Item {
         opacity: hover.hovered ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: Theme.fast } }
         IconButton { width: 30; height: 30; iconSize: 16; svg: Theme.iconMore; onClicked: row.menuRequested() }
-        IconButton { width: 30; height: 30; iconSize: 13; svg: Theme.iconUp; onClicked: row.moveUp() }
-        IconButton { width: 30; height: 30; iconSize: 13; svg: Theme.iconDown; onClicked: row.moveDown() }
         IconButton { width: 30; height: 30; iconSize: 12; svg: Theme.iconClose; onClicked: row.removeRequested() }
     }
     Text {

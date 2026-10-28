@@ -9,7 +9,7 @@ from PySide6.QtCore import QObject, QUrl, Signal, Slot
 from sonoteca import __version__
 from sonoteca.core import cleanup, covers, library, paths, review, stats, tag_edit
 from sonoteca.core.db import connect, default_db_path
-from sonoteca.core.models import UNKNOWN_ALBUM
+from sonoteca.core.models import UNKNOWN_ALBUM, UNKNOWN_ARTIST
 from sonoteca.core.search import SearchIndex, normalize
 
 
@@ -141,7 +141,9 @@ class LibraryController(QObject):
         if row is None:
             return {}
         return {"id": row["id"], "title": row["title"], "artist": row["artist"],
-                "album": album_display(row["album"]), "duration": row["duration"]}
+                "album": album_display(row["album"]), "duration": row["duration"],
+                "artistId": row["artist_id"], "albumId": row["album_id"],
+                "hasArtist": row["artist"] != UNKNOWN_ARTIST, "hasAlbum": row["album"] != UNKNOWN_ALBUM}
 
     @Slot(str, result=str)
     def localPath(self, url: str) -> str:

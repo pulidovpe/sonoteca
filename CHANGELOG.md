@@ -5,6 +5,20 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.9.1] - 2026-10-24
+### Añadido
+- **Servidores alternativos** (Archivo ▸ *Servidores de letras y portadas…*): se pueden agregar servidores de letras
+  (compatibles con la API de LRCLIB) y de portadas/información (compatibles con MusicBrainz, Cover Art Archive y/o
+  Wikipedia) y usarlos **en lugar del servicio predeterminado**. Cada dirección se valida (http/https, sin usuario ni
+  contraseña), hay botón *Probar* y se puede volver al predeterminado en cualquier momento. La fuente de las letras
+  descargadas muestra el nombre del servidor.
+- **Empezar desde cero** (Archivo ▸ *Empezar desde cero…* y `sonoteca reset --yes`): vacía la biblioteca (base de
+  datos, portadas y fotos descargadas, caché de miniaturas) al volver a abrir la app. Guarda antes una copia en
+  `backups/` (se puede desactivar) y conserva los ajustes y claves. No toca los archivos de música.
+- El menú ⋮ de una canción tiene **Ir al artista** e **Ir al álbum** (si existen; con una sola canción seleccionada).
+### Cambiado
+- Se quitaron los botones de flecha arriba/abajo de las listas y de «Reproduciendo»: se reordena arrastrando.
+
 ## [0.9.0.1] - 2026-10-24
 ### Corregido
 - `packaging/sonoteca.spec`: la poda de Qt maneja listas y TOC de PyInstaller de forma explícita.

@@ -62,18 +62,15 @@ def test_queue_page_reorders_removes_and_plays_from_a_row(qml_env):
     env.player.addToQueue(track_ids)  # Pista 1, 2, 3
     act("showSection('queue')", 400)
     assert page_titles(env) == ["Pista 1", "Pista 2", "Pista 3"]
-    act("stack.currentItem.moveDown(0)", 250)
+    act("player.moveInQueue(0, 1)", 250)   # el reordenamiento ahora es solo arrastrando
     assert page_titles(env) == ["Pista 2", "Pista 1", "Pista 3"]
-    act("stack.currentItem.moveUp(2)", 250)
+    act("player.moveInQueue(2, 1)", 250)
     assert page_titles(env) == ["Pista 2", "Pista 3", "Pista 1"]
     act("stack.currentItem.removeAt(1)", 250)
     assert page_titles(env) == ["Pista 2", "Pista 1"]
     act("player.playQueueAt(1)", 300)
     assert js("player.currentTrack.title") == "Pista 1" and js("player.playing")
     assert js("stack.currentItem.items[1].current") is True  # la fila marca lo que suena
-    act("stack.currentItem.moveUp(0)", 250)  # extremos: no hace nada
-    act("stack.currentItem.moveDown(1)", 250)
-    assert page_titles(env) == ["Pista 2", "Pista 1"]
 
 
 def test_play_next_new_temporary_list_and_clear(qml_env):

@@ -9,10 +9,12 @@ Item {
     id: root
     signal toastRequested(string text, int ms)
     property alias importDialog: importPopup
+    property alias resetDialog: resetPopup
     property alias exportFile: exportFile
 
     function exportLibrary() { exportFile.open() }
     function importLibrary() { importFile.open() }
+    function resetLibrary() { resetPopup.begin() }
 
     FileDialog {
         id: exportFile
@@ -147,6 +149,74 @@ Item {
                 PillButton { visible: importPopup.stage === "confirm"; label: "Cancelar"; onClicked: importPopup.close() }
                 PillButton { id: importButton; visible: importPopup.stage === "confirm"; label: "Importar"; primary: true; onClicked: importPopup.doImport() }
                 PillButton { visible: importPopup.stage === "restart"; label: "Cerrar Sonoteca"; primary: true; onClicked: Qt.quit() }
+            }
+        }
+    }
+
+    // Empezar desde cero: vac\u00eda la biblioteca al volver a abrir la app (con copia de seguridad opcional)
+    Popup {
+        id: resetPopup
+        property string stage: "confirm"     // confirm | restart
+        property string error: ""
+        property alias keepBackup: keepBackup
+        property alias resetButton: resetButton
+
+        modal: true
+        focus: true
+        closePolicy: stage === "restart" ? Popup.NoAutoClose : Popup.CloseOnEscape
+        anchors.centerIn: Overlay.overlay
+        width: Math.min(560, Overlay.overlay ? Overlay.overlay.width - 48 : 560)
+        padding: 24
+        background: Rectangle { color: "#1d1d1f"; radius: 12; border.color: "#2e2e32"; border.width: 1 }
+        Overlay.modal: Rectangle { color: "#99000000" }
+
+        function begin() { stage = "confirm"; error = ""; keepBackup.checked = true; open() }
+        function doReset() {
+            var r = portable.stageReset(keepBackup.checked)
+            if (!r.ok) { error = r.error; return }
+            stage = "restart"
+        }
+
+        contentItem: Column {
+            spacing: 14
+            Text {
+                width: parent.width; wrapMode: Text.WordWrap; color: Theme.text; font.pixelSize: 20; font.weight: Font.Bold
+                text: resetPopup.stage === "restart" ? "Todo listo para empezar de cero" : "Empezar desde cero"
+            }
+            Column {
+                width: parent.width
+                spacing: 10
+                visible: resetPopup.stage === "confirm"
+                Text {
+                    width: parent.width; wrapMode: Text.WordWrap; color: Theme.textDim; font.pixelSize: 14
+                    text: "Se vaciar\u00e1 la biblioteca: canciones indexadas, listas, letras, contadores, y las portadas y fotos descargadas. "
+                          + "No se borra ni se modifica ning\u00fan archivo de m\u00fasica, y se conservan tus ajustes (internet, servidores y claves). "
+                          + "Al volver a abrir Sonoteca empezar\u00e1 con una biblioteca vac\u00eda lista para buscar m\u00fasica."
+                }
+                CheckBox {
+                    id: keepBackup
+                    checked: true
+                    text: "Guardar antes una copia de seguridad (carpeta \u00abbackups\u00bb de los datos)"
+                    contentItem: Text { text: keepBackup.text; color: Theme.text; font.pixelSize: 13; leftPadding: keepBackup.indicator.width + 8; wrapMode: Text.WordWrap; verticalAlignment: Text.AlignVCenter }
+                }
+                Text {
+                    visible: !keepBackup.checked
+                    width: parent.width; wrapMode: Text.WordWrap; color: "#e5736b"; font.pixelSize: 13
+                    text: "Sin copia de seguridad no se podr\u00e1 recuperar la biblioteca (salvo que antes la hayas exportado)."
+                }
+                Text { visible: resetPopup.error !== ""; width: parent.width; wrapMode: Text.WordWrap; color: "#e5736b"; font.pixelSize: 13; text: resetPopup.error }
+            }
+            Text {
+                visible: resetPopup.stage === "restart"
+                width: parent.width; wrapMode: Text.WordWrap; color: Theme.textDim; font.pixelSize: 14
+                text: "Cierra Sonoteca y vuelve a abrirla para terminar. Hasta entonces no cambia nada."
+            }
+            Row {
+                anchors.right: parent.right
+                spacing: 10
+                PillButton { visible: resetPopup.stage === "confirm"; label: "Cancelar"; onClicked: resetPopup.close() }
+                PillButton { id: resetButton; visible: resetPopup.stage === "confirm"; label: "Vaciar y empezar de cero"; primary: true; onClicked: resetPopup.doReset() }
+                PillButton { visible: resetPopup.stage === "restart"; label: "Cerrar Sonoteca"; primary: true; onClicked: Qt.quit() }
             }
         }
     }

@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from urllib.parse import quote
 
 from . import musicbrainz
+from . import servers
 from .http import HttpClient
 
 MUSIC_WORDS = (
@@ -36,7 +37,7 @@ def _is_musical(description: str, extract: str) -> bool:
 
 def _summary(client: HttpClient, lang: str, title: str, mbid: str = "", qid: str = "",
              require_music: bool = False) -> ArtistInfo | None:
-    url = f"https://{lang}.wikipedia.org/api/rest_v1/page/summary/{quote(title.replace(' ', '_'), safe='')}"
+    url = f"{servers.wikipedia_base(lang)}/api/rest_v1/page/summary/{quote(title.replace(' ', '_'), safe='')}"
     data = client.get_json(url)
     if not data or data.get("type") == "disambiguation" or not data.get("extract"):
         return None
@@ -45,7 +46,7 @@ def _summary(client: HttpClient, lang: str, title: str, mbid: str = "", qid: str
         return None
     image = (data.get("thumbnail") or data.get("originalimage") or {}).get("source", "")
     page = ((data.get("content_urls") or {}).get("desktop") or {}).get("page") or (
-        f"https://{lang}.wikipedia.org/wiki/{quote(title.replace(' ', '_'))}")
+        f"{servers.wikipedia_base(lang)}/wiki/{quote(title.replace(' ', '_'))}")
     return ArtistInfo(name=data.get("title", title), summary=data["extract"].strip(), url=page,
                       language=lang, description=description, image_url=image,
                       wikidata_id=qid, mbid=mbid)
@@ -63,7 +64,7 @@ def sitelink_titles(client: HttpClient, qid: str, languages: tuple[str, ...]) ->
 
 def search_title(client: HttpClient, lang: str, name: str) -> ArtistInfo | None:
     """Plan B sin Wikidata: busca en Wikipedia y acepta solo un artículo que parezca musical."""
-    data = client.get_json(f"https://{lang}.wikipedia.org/w/api.php", {
+    data = client.get_json(f"{servers.wikipedia_base(lang)}/w/api.php", {
         "action": "query", "list": "search", "srsearch": name, "srlimit": 3, "format": "json"}) or {}
     for hit in (data.get("query") or {}).get("search", []):
         info = _summary(client, lang, hit.get("title", ""), require_music=True)
@@ -79,7 +80,7 @@ def search_candidates(client: HttpClient, name: str, languages: tuple[str, ...] 
     found: list[ArtistInfo] = []
     seen: set[str] = set()
     for lang in languages:
-        data = client.get_json(f"https://{lang}.wikipedia.org/w/api.php", {
+        data = client.get_json(f"{servers.wikipedia_base(lang)}/w/api.php", {
             "action": "query", "list": "search", "srsearch": name, "srlimit": per_language,
             "format": "json"}) or {}
         for hit in (data.get("query") or {}).get("search", []):

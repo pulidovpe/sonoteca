@@ -30,6 +30,7 @@ from .legacy import rewrite_cover_paths
 FORMAT = 1
 EXTENSION = ".sonoteca"
 PENDING = "pending_import"
+RESET_MARKER = "pending_reset"
 _ALLOWED_DIRS = ("covers/chosen/", "artists/")
 
 ProgressCb = Callable[[int, int], None]
@@ -145,6 +146,7 @@ def stage_import(bundle: Path | str, new_music_root: str | None = None, data: Pa
     manifest = inspect_bundle(bundle)
     pending = data / PENDING
     shutil.rmtree(pending, ignore_errors=True)
+    (data / RESET_MARKER).unlink(missing_ok=True)   # si había un «empezar de cero» pendiente, manda esta importación
     pending.mkdir(parents=True)
     try:
         with zipfile.ZipFile(bundle) as z:
@@ -219,3 +221,51 @@ def apply_pending_import(data: Path | None = None) -> dict | None:
     finally:
         conn.close()
     return report
+
+
+# ---- empezar desde cero ----
+def stage_reset(keep_backup: bool = True, data: Path | None = None) -> None:
+    """Prepara «empezar desde cero»: se aplica al volver a abrir la app, antes de abrir la base."""
+    data = data or paths.data_dir()
+    data.mkdir(parents=True, exist_ok=True)
+    shutil.rmtree(data / PENDING, ignore_errors=True)   # una importación pendiente queda anulada
+    (data / RESET_MARKER).write_text(json.dumps({"keep_backup": bool(keep_backup)}), encoding="utf-8")
+
+
+def has_pending_reset(data: Path | None = None) -> bool:
+    return ((data or paths.data_dir()) / RESET_MARKER).exists()
+
+
+def apply_pending_reset(data: Path | None = None, cache: Path | None = None) -> dict | None:
+    """Vacía la biblioteca: base de datos, portadas y fotos descargadas, y la caché de miniaturas (sus nombres
+    dependen de los ids de álbum, que empiezan de nuevo). Se CONSERVAN los ajustes (internet, servidores, contacto)
+    y la clave de DeepL. Con `keep_backup` todo se guarda antes en `backups/antes-de-reiniciar-<fecha>/`."""
+    data = data or paths.data_dir()
+    marker = data / RESET_MARKER
+    if not marker.exists():
+        return None
+    try:
+        keep = bool(json.loads(marker.read_text(encoding="utf-8")).get("keep_backup", True))
+    except (OSError, ValueError):
+        keep = True
+    backup = data / "backups" / f"antes-de-reiniciar-{datetime.now():%Y%m%d-%H%M%S}"
+    if keep:
+        backup.mkdir(parents=True, exist_ok=True)
+    removed = []
+    for name in ("library.db", "library.db-wal", "library.db-shm", "covers", "artists", PENDING):
+        item = data / name
+        if not item.exists():
+            continue
+        if keep and name != PENDING:
+            shutil.move(str(item), str(backup / name))
+        elif item.is_dir():
+            shutil.rmtree(item, ignore_errors=True)
+        else:
+            item.unlink(missing_ok=True)
+        removed.append(name)
+    cache = cache or paths.cache_dir()
+    here, there = data.resolve(), cache.resolve()
+    if cache.is_dir() and there != here and there not in here.parents and here not in there.parents:
+        shutil.rmtree(cache, ignore_errors=True)   # (si la cach\u00e9 y los datos comparten carpeta, no se toca)
+    marker.unlink(missing_ok=True)
+    return {"backup": str(backup) if keep else "", "removed": removed}

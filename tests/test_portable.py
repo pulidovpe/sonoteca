@@ -129,3 +129,37 @@ def test_cli_export_then_import_roundtrip(tmp_path, monkeypatch, capsys=None):
         sys.stdout = old
     n = sqlite3.connect(data / "library.db").execute("SELECT COUNT(*) FROM tracks").fetchone()[0]
     assert n == 2 and "Importado: 2 canciones" in buf.getvalue()
+
+
+def test_reset_backs_up_and_clears_library_but_keeps_settings(tmp_path):
+    data, cache = tmp_path / "d", tmp_path / "c"
+    _library(data, tmp_path / "Music")
+    (data / "settings.json").write_text('{"offline": false}')
+    cache.mkdir()
+    (cache / "thumb.png").write_bytes(b"t")
+    portable.stage_reset(True, data=data)
+    assert portable.has_pending_reset(data) and (data / "library.db").exists()      # aún no se aplicó
+    report = portable.apply_pending_reset(data, cache)
+    assert not portable.has_pending_reset(data)
+    assert not (data / "library.db").exists() and not (data / "artists").exists() and not cache.exists()
+    assert (data / "settings.json").exists()                                         # los ajustes se conservan
+    backup = tmp_path / "d" / "backups"
+    assert report["backup"] and (next(backup.iterdir()) / "library.db").exists()
+    assert (next(backup.iterdir()) / "covers" / "chosen" / "c.jpg").exists()
+    assert portable.apply_pending_reset(data, cache) is None
+
+
+def test_reset_without_backup_and_import_cancels_pending_reset(tmp_path):
+    data = tmp_path / "d"
+    _library(data, tmp_path / "Music")
+    portable.stage_reset(False, data=data)
+    report = portable.apply_pending_reset(data, tmp_path / "c")
+    assert report["backup"] == "" and not (data / "backups").exists() and not (data / "library.db").exists()
+    # un «empezar de cero» pendiente se anula si después se prepara una importación
+    src = tmp_path / "o"
+    _library(src, tmp_path / "Music")
+    bundle = tmp_path / "x.sonoteca"
+    portable.export_library(src / "library.db", bundle, data=src)
+    portable.stage_reset(True, data=data)
+    portable.stage_import(bundle, data=data)
+    assert not portable.has_pending_reset(data) and portable.has_pending_import(data)

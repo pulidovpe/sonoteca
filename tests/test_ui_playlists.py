@@ -104,15 +104,13 @@ def test_playlist_page_plays_reorders_removes_and_queues(qml_env):
     assert js("win.canBack") is True and js("stack.currentItem.info.name") == "L"
     assert titles(js("stack.currentItem.items.map(function (x) { return x.title })")) == [
         "Pista 1", "Pista 2", "Pista 3"]
-    act("stack.currentItem.moveDown(0)", 250)
-    act("stack.currentItem.moveUp(2)", 250)
+    act(f"playlists.moveTrack({pid}, 0, 1)", 250)   # el reordenamiento ahora es solo arrastrando
+    act(f"playlists.moveTrack({pid}, 2, 1)", 250)
     assert env.playlists.trackIds(pid) == [ids[1], ids[2], ids[0]]
     act("stack.currentItem.removeAt(1)", 250)
     assert env.playlists.trackIds(pid) == [ids[1], ids[0]]
     act("stack.currentItem.playAll()", 300)
     assert js("player.currentTrack.title") == "Pista 2" and js("player.playing")
-    act("stack.currentItem.moveUp(0)", 250)  # extremos: no hacen nada
-    assert env.playlists.trackIds(pid) == [ids[1], ids[0]]
     env.player.clearQueue()
     act("player.addToQueue(stack.currentItem.ids)", 250)
     assert js("player.queueLength") == 2

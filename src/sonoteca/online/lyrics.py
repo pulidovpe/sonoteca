@@ -10,7 +10,7 @@ import sqlite3
 from sonoteca.core import lyrics as store
 from sonoteca.core.models import UNKNOWN_ALBUM, UNKNOWN_ARTIST
 
-from . import lrclib
+from . import servers, lrclib
 from .http import HttpClient, OnlineError
 from .translate import DeepLTranslator, normalize_lang
 
@@ -45,7 +45,8 @@ def fetch_lyrics(client: HttpClient, conn: sqlite3.Connection, track_id: int,
               and stored["synced_lrc"] == (found.synced or None)
               and bool(stored["instrumental"]) == found.instrumental):
         store.save_lyrics(conn, track_id, plain=found.plain, synced=found.synced,
-                          instrumental=found.instrumental, lrclib_id=found.id or None)
+                          instrumental=found.instrumental, lrclib_id=found.id or None,
+                          source=servers.lyrics_name())
     return store.lyrics_doc(conn, track_id, lang)
 
 

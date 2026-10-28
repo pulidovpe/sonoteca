@@ -75,3 +75,12 @@ class PortableController(QObject):
         except portable.PortableError as exc:
             return {"ok": False, "error": str(exc)}
         return {"ok": True, "error": ""}
+
+    @Slot(bool, result="QVariantMap")
+    def stageReset(self, keep_backup: bool) -> dict:
+        """Prepara «empezar desde cero»; se aplica al volver a abrir la aplicación."""
+        try:
+            portable.stage_reset(keep_backup, data=paths.data_dir())
+        except OSError as exc:
+            return {"ok": False, "error": str(exc)}
+        return {"ok": True, "error": ""}

@@ -53,6 +53,16 @@ Archivo ▸ *Exportar biblioteca…* guarda un archivo `.sonoteca` con tu base (
 ### Si venías de «musicapp»
 Hasta la 0.8.x la aplicación se llamaba *musicapp*. Al primer arranque de Sonoteca se **mueven** tus datos (base, listas, portadas, fotos, copias de respaldo y ajustes) a las carpetas nuevas y se reescriben las rutas guardadas; si ya existe una biblioteca de Sonoteca, no se toca nada. Las variables `MUSICAPP_*` siguen funcionando, pero usa `SONOTECA_*`.
 
+### Servidores alternativos
+Por defecto se usan servicios públicos y gratuitos: **LRCLIB** para las letras y **MusicBrainz + Cover Art Archive + Wikipedia** para portadas e información. En Archivo ▸ *Servidores de letras y portadas…* puedes agregar los tuyos y elegir cuál usar **en lugar** del predeterminado:
+- *Letras*: un servidor compatible con la API de LRCLIB (p. ej. una instancia propia): la dirección es la raíz de la API, como `https://mi-servidor/api`.
+- *Portadas e información*: direcciones compatibles con MusicBrainz (`…/ws/2`), Cover Art Archive y/o Wikipedia (`https://{lang}.mi-wiki.org`; `{lang}` es el idioma de la ficha). Los que dejes vacíos siguen usando el servicio por defecto.
+
+Las direcciones deben ser `http://` o `https://` y no pueden llevar usuario ni contraseña; *Probar* comprueba que el servidor responde con el formato esperado. Se guardan en `settings.json`.
+
+### Empezar desde cero
+Archivo ▸ *Empezar desde cero…* (o `sonoteca reset --yes`) vacía la biblioteca —base de datos, listas, letras, portadas y fotos descargadas— y se completa al volver a abrir la aplicación. Antes guarda una copia en `backups/` (puedes desactivarla). No borra tus archivos de música y conserva tus ajustes y claves.
+
 ## Atajos
 Espacio = pausa · doble clic = reproducir · Ctrl+0…6 = secciones (Inicio, Álbumes, Artistas, Por revisar, Reproduciendo, Listas, Letra) · Alt+←/→ = historial · Ctrl+Shift+O = Buscar música.
 
