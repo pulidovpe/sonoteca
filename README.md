@@ -1,9 +1,9 @@
-# musicapp (nombre provisional)
+# Sonoteca
 
 [![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-green.svg)](LICENSE)
 ![Estado: alfa](https://img.shields.io/badge/estado-alfa-orange.svg)
 
-Reproductor y organizador de **música local** de escritorio: tu biblioteca de mp3, m4a y mp4 (video) organizada por artista, álbum y año, con edición de tags. Funciona **sin conexión por defecto**; internet es opcional y solo se usa para portadas, información de artistas y álbumes, letras y traducción.
+Sonoteca (paquete y comando `musicapp`) es un reproductor y organizador de **música local** de escritorio: tu biblioteca de mp3, m4a y mp4 (video) organizada por artista, álbum y año, con edición de tags. Funciona **sin conexión por defecto**; internet es opcional y solo se usa para portadas, información de artistas y álbumes, letras y traducción.
 
 > **Versión alfa.** Pensada para usarse y probarse, pero puede tener errores. Haz copia de tu música antes de editar tags en masa (la app guarda una copia de respaldo en cada edición: `musicapp restore`).
 
@@ -28,13 +28,15 @@ Otros comandos: `musicapp stats | artists | albums --decade 1990 | search "nombr
 Rutas: por defecto, las carpetas estándar del sistema; se fijan con `MUSICAPP_DATA_DIR` y `MUSICAPP_CACHE_DIR`.
 
 ## Aplicación empaquetada (alfa)
-Aún no hay binarios publicados. Para generarlo en tu máquina (PyInstaller):
+Aún no hay binarios publicados. PyInstaller no compila de forma cruzada: **cada sistema se construye en ese sistema** (o en Docker, para Linux).
 
 ```bash
-./packaging/build_mac.sh          # macOS  -> dist/musicapp.app y dist/musicapp-<versión>-alpha-macos-<arq>.zip
-.\packaging\build_win.ps1         # Windows -> dist\musicapp\musicapp.exe y un .zip
+./packaging/build_mac.sh            # macOS   -> dist/Sonoteca.app + dist/Sonoteca-<versión>-alpha-macos-<arq>.zip
+./packaging/build_linux_docker.sh   # Linux   -> dist/Sonoteca-<versión>-alpha-linux-<arq>.tar.gz (requiere Docker)
+.\packaging\build_win.ps1            # Windows -> dist\musicapp\musicapp.exe + .zip (en una máquina Windows)
 ```
-La app **no está firmada**: en otra Mac, clic derecho ▸ *Abrir* la primera vez (o `xattr -dr com.apple.quarantine musicapp.app`). El primer arranque abre la ventana «Buscar música» si la biblioteca está vacía.
+Cada script termina con una prueba de humo y muestra el tamaño. El tamaño se reduce podando los módulos de Qt que la app no usa (ver `packaging/musicapp.spec`; `MUSICAPP_NO_PRUNE=1` desactiva la poda).
+En macOS la app **no está firmada**: en otra Mac, clic derecho ▸ *Abrir* la primera vez (o `xattr -dr com.apple.quarantine Sonoteca.app`). En Linux pueden hacer falta las bibliotecas del sistema `libxcb-cursor0` y `libxkbcommon-x11-0`. El primer arranque abre «Buscar música» si la biblioteca está vacía.
 
 ## Atajos
 Espacio = pausa · doble clic = reproducir · Ctrl+0…6 = secciones (Inicio, Álbumes, Artistas, Por revisar, Reproduciendo, Listas, Letra) · Alt+←/→ = historial · Ctrl+Shift+O = Buscar música.
@@ -64,7 +66,7 @@ La sección **Por revisar** (Ctrl+3) lista las canciones sin artista o álbum, o
 ```bash
 ruff check src tests && pytest     # pytest requiere ffmpeg para generar archivos de prueba
 ```
-`.gitlab-ci.yml` ejecuta lint, pruebas y paquetes por sistema operativo. El repositorio **no debe contener letras** (tienen copyright; viven solo en la base local). Estado y decisiones del proyecto: `CONTEXT_COMPACT.md`.
+`.gitlab-ci.yml` ejecuta lint, pruebas y paquetes por sistema operativo. Los cambios se registran en [`CHANGELOG.md`](CHANGELOG.md). El repositorio **no debe contener letras** (tienen copyright; viven solo en la base local). Estado y decisiones del proyecto: `CONTEXT_COMPACT.md`.
 
 Si un comando nuevo «no existe»: `musicapp --version` muestra de dónde se ejecuta el código; si apunta a `site-packages`, la instalación no es editable. Reinstala con `pip install -e ".[ui,dev]"`.
 
