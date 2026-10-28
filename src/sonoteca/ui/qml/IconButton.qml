@@ -32,7 +32,9 @@ Item {
         cursorShape: Qt.PointingHandCursor
         onClicked: root.clicked()
     }
-    ToolTip.visible: mouse.containsMouse && root.toolTip !== ""
-    ToolTip.delay: 400
-    ToolTip.text: root.toolTip
+    AppToolTip {
+        visible: mouse.containsMouse && root.toolTip !== ""
+        delay: 400
+        text: root.toolTip
+    }
 }

@@ -255,3 +255,13 @@ def test_reset_dialog_stages_a_reset_and_servers_dialog_adds_a_server(qml_env, t
     r = env.js("serverConfig.addLyrics('Mi LRCLIB', 'https://letras.casa/api').ok")
     assert r is True and len(env.js("serverConfig.state().lyrics")) == 2
     assert env.warnings == []
+
+
+# ---- 0.9.4: barra lateral de iconos ----
+@needs_ffmpeg
+def test_sidebar_is_an_icon_rail(qml_env):
+    env = qml_env
+    assert env.js("sidebarRail.width") == 72
+    env.act("listsGroup.expanded = true", 200)
+    assert env.js("listsGroup.open") is True and env.js("onlineBadge.text") in ("En línea", "Sin conexión")
+    assert env.warnings == []

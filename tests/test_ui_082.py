@@ -23,7 +23,7 @@ def test_sidebar_lists_expand_and_show_existing_playlists(qml_env):
     assert env.js("listsGroup.expanded") is False and env.js("listsGroup.open") is False
     env.act("listsGroup.expanded = true", 300)
     assert env.js("listsGroup.open") is True
-    assert env.js("listsBox.contentHeight") >= 64  # una fila de 32 px por lista
+    assert env.js("listsBox.contentHeight") >= 64  # una fila de 48 px por lista (miniatura)
     assert env.warnings == []
 
 

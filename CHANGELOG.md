@@ -5,6 +5,16 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.9.4] - 2026-10-27
+### Cambiado
+- **Menú izquierdo con iconos**: la barra lateral pasa de 230 a 72 px. Cada sección (Inicio, Álbumes, Artistas, Listas,
+  Reproduciendo, Letra, Por revisar) es un icono y su nombre aparece como *tooltip*; los contadores (listas, canciones en
+  cola, pendientes de revisar) son insignias en la esquina del icono. Arriba va el logo (con las estadísticas de la
+  biblioteca en su tooltip) y abajo el estado de la conexión (clic = alternar modo en línea).
+- Las listas desplegables de la barra muestran su miniatura (el nombre y las canciones, en el tooltip) y siguen aceptando
+  canciones arrastradas.
+- Los tooltips de toda la aplicación usan el estilo del tema.
+
 ## [0.9.3.1] - 2026-10-27
 ### Corregido
 - La app no arrancaba con el tema nuevo (`Theme.qml: Cannot assign a value to a signal`): el token `onAccent` se
