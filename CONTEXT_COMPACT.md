@@ -1,4 +1,4 @@
-# musicapp — CONTEXTO COMPACTO (v0.8.5)
+# musicapp — CONTEXTO COMPACTO (v0.8.6)
 
 > Pégalo al inicio de un chat nuevo junto con el zip del proyecto. Reemplaza al CONTEXT.md largo (que sigue siendo el historial detallado de las fases 1-5).
 
@@ -7,7 +7,7 @@
 - **Entregar un zip descargable (sub-versión) en cada respuesta** y no avanzar de fase hasta cerrar los pedidos. Nada se cambia en archivos/tags sin confirmar. Probar siempre en la Mac (el entorno de Claude no tiene red ni PySide6/mutagen/pytest: solo se ejecuta la lógica pura; la UI Qt llega SIN ejecutar).
 
 ## Qué es
-App de escritorio **local** (Mac M4 Pro, portable a Win/Linux) para ~2000 archivos (mp3, m4a, mp4 de video), por artista/álbum/año; edita tags; internet **solo** para portadas, info de artistas/álbumes, letras y traducción. Python 3.12 + PySide6/QML, `uv`/pip editable (`pip install -e ".[ui,dev]"`; un `pip install .` no editable usa copia vieja). SQLite con `PRAGMA user_version` (esquema actual **v6**). Modo sin conexión **activo por defecto**; red solo en `online/`.
+App de escritorio **local** (Mac M4 Pro, portable a Win/Linux) para ~2000 archivos (mp3, m4a, mp4 de video), por artista/álbum/año; edita tags; internet **solo** para portadas, info de artistas/álbumes, letras y traducción. Python 3.12 + PySide6/QML, `uv`/pip editable (`pip install -e ".[ui,dev]"`; un `pip install .` no editable usa copia vieja). SQLite con `PRAGMA user_version` (esquema actual **v7**). Modo sin conexión **activo por defecto**; red solo en `online/`.
 
 ## Mapa del código (`src/musicapp/`)
 - `core/`: `db.py` (migraciones v1-v6), `tags.py`, `scanner.py` (incremental), `library.py` (consultas; `list_artists/albums` ocultan vacíos), `covers.py`, `cover_store.py`, `tag_writer.py` (copia temporal + verificación), `tag_edit.py`, `search.py`, `playlists.py` (+`cover_album_ids`), `lyrics.py` (parser LRC, almacenamiento, `lyrics_doc`), `stats.py` (contador y rankings), `cleanup.py` (`purge_missing`: no borra si falta >50 % de archivos = disco desconectado), `paths.py`.
@@ -23,6 +23,7 @@ App de escritorio **local** (Mac M4 Pro, portable a Win/Linux) para ~2000 archiv
 - **0.8.3**: historial adelante/atrás (`go/back/forward`, Alt+←/→, Ctrl+[ ]); canciones destacadas por artista; miniaturas en listas; página **Inicio** (la app arranca ahí).
 - **0.8.4**: destacadas: máx. 5 (si hay más: 4 + «Mostrar más»); **una reproducción cuenta tras 3 s de sonar** (cualquier origen, aunque no termine); collage de portada de listas (2-4 álbumes); «¿Artista equivocado?» (elegir artículo de Wikipedia o escribir descripción + imagen); salida de audio (menú del altavoz, recuerda la elección, sigue la predeterminada al conectar audífonos); ventana «Buscar música» (se abre sola con biblioteca vacía; Archivo ▸ Buscar música…, Ctrl+Shift+O).
 - **0.8.5**: página de lista con cabecera como la de un álbum (portada/collage 190 px, «LISTA», nombre, descripción derivada: «Con A, B y C» + nº de canciones y duración; `describe_artists`); al activar una canción suelta del álbum (o «Reproducir ahora» con una sola canción) y haber lista en marcha, `QueueChoiceDialog` pregunta: vaciar y reproducir solo esa (`playOnly`) o conservar (`playKeepingQueue`: suena ya, la lista sigue después); «Letra» (clic/Ctrl+6) con canción sonando abre un panel lateral derecho (`lyricsPanelShown`), sin canción abre la página completa.
+- **0.8.6**: botón «Ir al artista» en el álbum; «Por revisar»: *Re-escanear tags* (relee los archivos de la lista, hilo aparte, `core/review.py`), *Vaciar lista* (tabla `review_dismissed`, v7, persiste tras escanear) y *Restaurar descartadas*; Letra en panel: búsqueda automática con internet (`autoSearch`, solo en el panel) y botón «Agregar/Editar texto» (`LyricsEditor`, `save_manual`, fuente «Manual», nunca se reemplaza sola); icono de la salida de audio activa (altavoz/audífonos/pantalla por nombre, `player/devices.py`) con tooltip; **Fase 7 iniciada**: `pyproject` con versión dinámica, `packaging/musicapp.spec` (PyInstaller), `.gitlab-ci.yml` (lint, hygiene, test, build por SO), README. Sin ejecutar: UI Qt, CI y PyInstaller.
 
 ## Trampas técnicas (no repetir)
 - QML: `Action` NO tiene `shortcuts` (usar `shortcut` + `Shortcut{sequence}`); no llamar `data` a una propiedad de Item; la navegación se llama `showSection` (no `show`); emitir señales desde hilos de trabajo (GIL con `image://`); `Theme.dataRevision++` refresca páginas; textos con tildes/escapes `\uXXXX` coherentes.
@@ -33,4 +34,4 @@ App de escritorio **local** (Mac M4 Pro, portable a Win/Linux) para ~2000 archiv
 ## Pendiente / ideas
 - **Probar en la Mac todo lo de 0.8.x** (UI sin ejecutar): arrastrar a listas, historial, salida de audio con Bluetooth real, collage, búsqueda de música, DeepL con clave real.
 - No hecho: importar/exportar M3U, listas inteligentes, lotes 5.3, ficha de álbum con Wikipedia, elegir pista en «Sin álbum» múltiple, teclas multimedia globales, gapless, recordar volumen/cola entre sesiones, soltar canciones sobre «Reproduciendo».
-- **Siguiente fase: 7 — empaquetado y CI** (GitLab CI: ruff, pytest, PyInstaller/Briefcase por SO, README con capturas, licencia; repo público: **no incluir letras**).
+- **Fase 7 en curso**: falta probar el CI en GitLab y PyInstaller en la Mac, definir licencia, `bundle_identifier`, icono y capturas del README; repo público: **no incluir letras**.

@@ -13,6 +13,7 @@ Item {
     signal playOneRequested(int trackId)   // con una lista ya en marcha, Main pregunta qué hacer
     function addAllToQueue() { player.addToQueue(page.tracks.map(function (x) { return x.id })) }
     signal lookupRequested(int albumId, var ids, bool unknownAlbum)
+    signal artistRequested(int artistId, string name)   // ir a la ficha del artista (con su descripción)
     // ¿Lo que suena ahora pertenece a este álbum?
     readonly property bool isCurrentAlbum: player.hasTrack && player.currentTrack.albumId === albumId
 
@@ -52,6 +53,7 @@ Item {
                 elide: Text.ElideRight
             }
             Text {
+                id: infoLine
                 width: parent.width
                 color: Theme.textDim
                 font.pixelSize: 14
@@ -83,6 +85,7 @@ Item {
                     onClicked: page.isCurrentAlbum ? player.toggle() : player.playAlbum(page.albumId, 0)
                 }
             }
+            PillButton { height: 44; label: "Ir al artista"; enabled: (page.info.artist_id || 0) > 0; onClicked: page.artistRequested(page.info.artist_id, page.info.artist || "") }
             PillButton { height: 44; label: "Agregar a la lista"; onClicked: page.addAllToQueue() }
             PillButton { height: 44; label: "Guardar en lista\u2026"; onClicked: page.listRequested(page.tracks.map(function (x) { return x.id })) }
             PillButton {

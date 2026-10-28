@@ -278,6 +278,24 @@ ApplicationWindow {
         searchField.text = ""
         searchField.forceActiveFocus()
     }
+    function rescanReview(page) {
+        page.rescanning = true
+        win.reviewTarget = page
+        library.rescanReview()
+    }
+    property var reviewTarget: null
+    function dismissReview(n) {
+        confirmDialog.ask("Vaciar «Por revisar»", "Se quitar\u00e1n " + Theme.plural(n, "pista", "pistas") + " de esta lista. No se modifica ning\u00fan archivo ni tag y siguen en tu biblioteca; podr\u00e1s restaurarlas con \u00abRestaurar descartadas\u00bb.", "Vaciar lista", function () {
+            var removed = library.dismissReview()
+            Theme.dataRevision++
+            toast("Lista vaciada (" + Theme.plural(removed, "pista", "pistas") + ")", 3500)
+        })
+    }
+    function restoreReview() {
+        var n = library.restoreDismissed()
+        Theme.dataRevision++
+        toast(n + " restauradas; las que sigan incompletas vuelven a la lista", 3500)
+    }
     function toast(msg, ms) {
         toastText.text = msg
         toastBox.opacity = 1
@@ -302,16 +320,36 @@ ApplicationWindow {
 
     Component { id: homeComp; HomePage { onAlbumClicked: (id) => win.openAlbum(id); onArtistClicked: (id, name) => win.openArtist(id, name); onPlaylistClicked: (id) => win.openPlaylist(id); onMenuRequested: (ids) => win.showTrackMenu(ids) } }
     Component { id: albumsComp; AlbumsPage { onMenuRequested: (ids) => win.showTrackMenu(ids); onAlbumClicked: (id) => win.openAlbum(id); onNeedInternet: win.openInternetSettings(); onEditArtistRequested: (id, name) => win.editArtistTags(id, name) } }
-    Component { id: albumComp; AlbumDetail { onEditRequested: (ids) => win.editTags(ids); onMenuRequested: (ids) => win.showTrackMenu(ids); onListRequested: (ids) => win.showPlaylistPicker(ids); onLookupRequested: (id, ids, unknown) => win.lookupAlbum(id, ids, unknown); onPlayOneRequested: (id) => queueChoice.ask(id) } }
+    Component { id: albumComp; AlbumDetail { onEditRequested: (ids) => win.editTags(ids); onMenuRequested: (ids) => win.showTrackMenu(ids); onListRequested: (ids) => win.showPlaylistPicker(ids); onLookupRequested: (id, ids, unknown) => win.lookupAlbum(id, ids, unknown); onPlayOneRequested: (id) => queueChoice.ask(id); onArtistRequested: (id, name) => win.openArtist(id, name) } }
     Component { id: artistsComp; ArtistsPage { onArtistClicked: (id, name) => win.openArtist(id, name) } }
     Component {
         id: reviewComp
         TrackListPage {
             heading: "Por revisar"
             hint: "sin artista o álbum en los tags, o deducidos del nombre del archivo"
+            id: reviewPage
+            property bool rescanning: false
+            property int dismissed: (Theme.dataRevision, library.dismissedCount())
             items: (Theme.dataRevision, library.incomplete())
             onEditRequested: (ids) => win.editTags(ids)
             onMenuRequested: (ids) => win.showTrackMenu(ids)
+            actions: [
+                PillButton {
+                    label: reviewPage.rescanning ? "Re-escaneando\u2026" : "Re-escanear tags"
+                    enabled: !reviewPage.rescanning && reviewPage.items.length > 0
+                    onClicked: win.rescanReview(reviewPage)
+                },
+                PillButton {
+                    label: "Vaciar lista"
+                    enabled: reviewPage.items.length > 0
+                    onClicked: win.dismissReview(reviewPage.items.length)
+                },
+                PillButton {
+                    visible: reviewPage.dismissed > 0
+                    label: "Restaurar descartadas (" + reviewPage.dismissed + ")"
+                    onClicked: win.restoreReview()
+                }
+            ]
         }
     }
     Component {
@@ -670,6 +708,7 @@ ApplicationWindow {
                 height: parent.height
                 sourceComponent: LyricsPage {
                     panel: true
+                    autoSearch: true   // con internet, busca sola la letra de la canción que suena
                     onCloseRequested: win.lyricsPanelOpen = false
                     onSettingsRequested: lyricsSettings.openDialog()
                     onNeedInternet: win.openInternetSettings()
@@ -733,6 +772,15 @@ ApplicationWindow {
         function onEditProgress(done, total) {
             tagEditor.done = done
             tagEditor.total = total
+        }
+        function onRescanFinished(result) {
+            if (win.reviewTarget) win.reviewTarget.rescanning = false
+            Theme.dataRevision++
+            if (result.error) { win.toast("No se pudo re-escanear: " + result.error, 6000); return }
+            var msg = result.resolved + " de " + Theme.plural(result.total, "pista", "pistas") + " ya no necesitan revisi\u00f3n"
+            if (result.missing > 0) msg += " \u00b7 " + Theme.plural(result.missing, "archivo ausente", "archivos ausentes")
+            if (result.errors > 0) msg += " \u00b7 " + Theme.plural(result.errors, "error de lectura", "errores de lectura")
+            win.toast(msg, 6000)
         }
         function onEditFinished(result) {
             tagEditor.close()      // sin ventana de resultado: solo un aviso breve

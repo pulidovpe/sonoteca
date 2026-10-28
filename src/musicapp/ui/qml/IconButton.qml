@@ -6,6 +6,7 @@ Item {
     property string svg
     property real iconSize: 20
     property color color: Theme.text
+    property string toolTip: ""
     signal clicked()
     width: 36
     height: 36
@@ -30,4 +31,7 @@ Item {
         cursorShape: Qt.PointingHandCursor
         onClicked: root.clicked()
     }
+    ToolTip.visible: mouse.containsMouse && root.toolTip !== ""
+    ToolTip.delay: 400
+    ToolTip.text: root.toolTip
 }

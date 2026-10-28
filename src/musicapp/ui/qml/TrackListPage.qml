@@ -9,6 +9,7 @@ Item {
     property var items: []
     signal editRequested(var ids)
     signal menuRequested(var ids)
+    property alias actions: actionRow.data   // botones opcionales junto al título
     property var ids: items.map(function (x) { return x.id })
 
     Text {
@@ -28,10 +29,16 @@ Item {
         elide: Text.ElideRight
         anchors { left: parent.left; right: parent.right; top: title.bottom; leftMargin: 24; rightMargin: 24; topMargin: 2 }
     }
+    Flow {
+        id: actionRow
+        visible: children.length > 0
+        spacing: 10
+        anchors { left: parent.left; right: parent.right; top: sub.bottom; leftMargin: 24; rightMargin: 24; topMargin: 10 }
+    }
     ListView {
         id: list
         clip: true
-        anchors { left: parent.left; right: parent.right; bottom: parent.bottom; top: sub.bottom; topMargin: 12 }
+        anchors { left: parent.left; right: parent.right; bottom: parent.bottom; top: actionRow.visible ? actionRow.bottom : sub.bottom; topMargin: 12 }
         model: page.items
         delegate: TrackRow {
             width: list.width

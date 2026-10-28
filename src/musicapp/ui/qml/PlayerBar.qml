@@ -5,6 +5,7 @@ import "."
 Rectangle {
     id: bar
     property bool videoOpen: false
+    property alias audioButton: audioButton   // para las pruebas
     signal videoToggled()
     color: "#141415"
     clip: true
@@ -144,7 +145,10 @@ Rectangle {
             width: 30
             height: 30
             iconSize: 18
-            svg: Theme.iconSpeaker
+            // El icono indica el tipo de salida activa; el tooltip, cu\u00e1l es
+            svg: player.audioDeviceKind === "headphones" ? Theme.iconHeadphones
+                 : (player.audioDeviceKind === "display" ? Theme.iconDisplay : Theme.iconSpeaker)
+            toolTip: "Salida de audio: " + (player.audioActiveName || "predeterminada del sistema")
             onClicked: audioPopup.openPopup()
         }
         Text { anchors.verticalCenter: parent.verticalCenter; text: "Vol"; color: Theme.textDim; font.pixelSize: 12 }

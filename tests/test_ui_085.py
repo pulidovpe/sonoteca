@@ -113,3 +113,63 @@ def test_lyrics_opens_in_a_side_panel_while_playing(qml_env):
     env.act("toggleLyrics()", 500)
     assert env.js("lyricsPanelShown") is False
     assert env.warnings == []
+
+
+# ---- 0.8.6 ----
+def test_manual_lyrics_roundtrip_and_sync_detection(tmp_path):
+    from musicapp.core import lyrics as lyr
+    conn = connect(tmp_path / "l.db")
+    ids = _seed(conn, ["A"])
+    tid = ids[0]
+    lyr.save_manual(conn, tid, "Linea uno\nLinea dos")
+    doc = lyr.lyrics_doc(conn, tid)
+    assert doc["found"] and not doc["synced"] and doc["source"] == "Manual"
+    assert [x["text"] for x in doc["lines"]] == ["Linea uno", "Linea dos"]
+    lyr.save_manual(conn, tid, "[00:01.00]Uno\n[00:03.50]Dos")
+    doc = lyr.lyrics_doc(conn, tid)
+    assert doc["synced"] and [x["t"] for x in doc["lines"]] == [1000, 3500]
+    assert lyr.raw_text(conn, tid).startswith("[00:01.00]")      # se edita el LRC tal cual
+    assert not lyr.should_retry(lyr.get_stored(conn, tid))        # la manual nunca se vuelve a buscar sola
+    lyr.save_manual(conn, tid, "   \n")                           # vacío = borrar
+    assert lyr.lyrics_doc(conn, tid)["stored"] is False
+
+
+def test_audio_device_classification():
+    from musicapp.player.devices import classify_audio_device as c
+    assert c("AirPods de Pablo") == "headphones" and c("Audífonos Bluetooth") == "headphones"
+    assert c("LG HDMI") == "display" and c("MacBook Pro Speakers") == "speaker" and c("") == "speaker"
+
+
+@needs_ffmpeg
+def test_album_has_go_to_artist_button(qml_env):
+    env = qml_env
+    album, _ = _ids(env)
+    info = env.controller.album(album)
+    env.act(f"openAlbum({album})", 600)
+    env.act("stack.currentItem.artistRequested(%d, 'Artista')" % info["artist_id"], 600)
+    assert env.js("stack.currentItem.artistId") == info["artist_id"]
+    assert env.warnings == []
+
+
+@needs_ffmpeg
+def test_review_page_dismiss_and_restore(qml_env):
+    env = qml_env
+    env.act("showSection('review')", 500)
+    before = env.js("stack.currentItem.items.length")
+    env.act("dismissReview(%d); confirmDialog.confirm()" % before, 400)
+    assert env.js("stack.currentItem.items.length") == 0
+    env.act("restoreReview()", 400)
+    assert env.js("stack.currentItem.items.length") == before
+    assert env.warnings == []
+
+
+@needs_ffmpeg
+def test_lyrics_page_has_manual_button_and_audio_button_tooltip(qml_env):
+    env = qml_env
+    album, ids = _ids(env)
+    env.player.playTrackIds(ids, 0)
+    env.act("showSection('albums')", 300)
+    env.act("toggleLyrics()", 500)
+    assert env.js("lyricsPanelShown") is True
+    assert env.js("playerBar.audioButton.toolTip").startswith("Salida de audio")
+    assert env.warnings == []

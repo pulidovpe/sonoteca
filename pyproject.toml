@@ -1,6 +1,7 @@
 [project]
 name = "musicapp"
-version = "0.1.0"
+dynamic = ["version"]   # sale de src/musicapp/__init__.py (una sola fuente)
+readme = "README.md"
 description = "Reproductor y organizador de música local (clon tipo Spotify, solo local)"
 requires-python = ">=3.11"
 dependencies = [
@@ -13,6 +14,7 @@ dependencies = [
 [project.optional-dependencies]
 ui = ["PySide6>=6.7"]
 dev = ["pytest>=8", "ruff>=0.6"]
+build = ["pyinstaller>=6.10"]
 # Se añadirá en fases posteriores: watchdog
 
 [project.scripts]
@@ -25,6 +27,9 @@ musicapp-gui = "musicapp.ui.app:main"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.version]
+path = "src/musicapp/__init__.py"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/musicapp"]
 
@@ -35,3 +40,4 @@ pythonpath = ["src"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+extend-exclude = ["packaging"]

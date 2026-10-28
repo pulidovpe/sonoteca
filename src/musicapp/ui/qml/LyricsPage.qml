@@ -15,6 +15,7 @@ Item {
     property var times: []
     property string viewMode: "both"   // preferencia del usuario: original | translation | both
     property string status: ""
+    property bool autoSearch: false   // buscar sola la letra al abrir / cambiar de canción (con internet)
     property bool panel: false   // true: panel lateral (más estrecho, con botón de cerrar)
     readonly property int pad: panel ? 16 : 24
     signal closeRequested()
@@ -23,6 +24,8 @@ Item {
     // Para las pruebas
     property alias listItem: list
     property alias searchButton: searchButton
+    property alias manualButton: manualButton
+    property alias editor: editor
 
     readonly property bool hasTranslation: doc.hasTranslation === true
     readonly property string mode: hasTranslation ? viewMode : "original"
@@ -70,9 +73,26 @@ Item {
         lyrics.translate(shownId, false)
     }
 
-    onShownIdChanged: reload()
+    // Búsqueda automática: solo con internet activo, si nunca se buscó (o la búsqueda fallida es
+    // antigua) y la pista tiene artista. Una pausa corta evita consultar al saltar canciones.
+    function scheduleAuto() { if (autoSearch) autoTimer.restart() }
+    function autoFetch() {
+        if (!autoSearch || shownId <= 0 || online.offline || !info.title) return
+        if (doc.stored === true && doc.retry !== true) return
+        if (info.artist === "Artista desconocido") return
+        if (lyrics.busy) { autoTimer.restart(); return }
+        search(false)
+    }
+    Timer { id: autoTimer; interval: 600; onTriggered: page.autoFetch() }
+    onAutoSearchChanged: scheduleAuto()
+    Connections {
+        target: online
+        function onOfflineChanged() { page.scheduleAuto() }
+    }
+
+    onShownIdChanged: { reload(); scheduleAuto() }
     onActiveIndexChanged: list.currentIndex = activeIndex
-    Component.onCompleted: reload()
+    Component.onCompleted: { reload(); scheduleAuto() }
 
     Connections {
         target: lyrics
@@ -125,8 +145,15 @@ Item {
             height: 34
             enabled: !lyrics.busy
             primary: !page.doc.stored
-            label: !page.doc.stored ? "Buscar letra" : (page.doc.found ? "Actualizar letra" : "Buscar de nuevo")
+            label: !page.doc.stored ? "Buscar letra" : (page.doc.source === "Manual" ? "Buscar en l\u00ednea (reemplaza la manual)" : (page.doc.found ? "Actualizar letra" : "Buscar de nuevo"))
             onClicked: page.search(page.doc.stored === true)
+        }
+        PillButton {
+            id: manualButton
+            height: 34
+            enabled: !lyrics.busy
+            label: page.doc.found === true ? "Editar texto" : "Agregar texto"
+            onClicked: editor.edit(page.shownId, (page.info.artist || "") + " \u2014 " + (page.info.title || ""))
         }
         PillButton {
             id: translateButton
@@ -241,5 +268,9 @@ Item {
         font.pixelSize: 15
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.WordWrap
+    }
+    LyricsEditor {
+        id: editor
+        onSaved: (d) => { page.status = ""; page.applyDoc(d) }
     }
 }
