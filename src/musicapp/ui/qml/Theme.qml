@@ -16,6 +16,7 @@ QtObject {
     readonly property string iconClose: "M7 5 L12 10 L17 5 L19 7 L14 12 L19 17 L17 19 L12 14 L7 19 L5 17 L10 12 L5 7 Z"
     // Sube cuando cambian los datos (p. ej. tras editar tags); las páginas lo leen para refrescarse
     property int dataRevision: 0
+    readonly property string iconSpeaker: "M3 9 H7 L12 4 V20 L7 15 H3 Z M14.5 8.5 A5 5 0 0 1 14.5 15.5 L16 17 A7 7 0 0 0 16 7 Z"
     readonly property string iconMore: "M12 4 A2 2 0 1 0 12 8 A2 2 0 1 0 12 4 Z M12 10 A2 2 0 1 0 12 14 A2 2 0 1 0 12 10 Z M12 16 A2 2 0 1 0 12 20 A2 2 0 1 0 12 16 Z"
     readonly property string iconUp: "M12 7 L19 17 L5 17 Z"
     readonly property string iconDown: "M12 17 L19 7 L5 7 Z"

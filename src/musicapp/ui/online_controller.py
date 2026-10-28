@@ -19,6 +19,7 @@ from musicapp.core.tag_writer import image_mime
 from musicapp.online import coverart, enrich
 from musicapp.online import settings as online_settings
 from musicapp.online.http import HttpClient, OfflineError, OnlineError
+from musicapp.online.wikipedia import ArtistInfo
 
 MAX_PHOTO_BYTES = 5 * 1024 * 1024
 MAX_CANDIDATES = 8
@@ -37,6 +38,7 @@ class OnlineController(QObject):
     progress = Signal(str)
     artistInfoReady = Signal(int, "QVariantMap")  # id de artista, datos ({} si no se encontró)
     albumCandidatesReady = Signal(int, "QVariantList")
+    artistCandidatesReady = Signal(int, "QVariantList")  # id de artista, artículos posibles
     coverReady = Signal(str)  # ruta de la portada ya guardada en la carpeta de la app
     onlineError = Signal(str)
 
@@ -140,19 +142,72 @@ class OnlineController(QObject):
         self._spawn(work)
 
     @staticmethod
+    def _store_photo(artist_id: int, data: bytes) -> None:
+        image_mime(data)  # solo JPG/PNG (ValueError si no lo es)
+        target = artist_photo_path(artist_id)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        tmp = target.with_name(target.name + ".tmp")
+        tmp.write_bytes(data)
+        os.replace(tmp, target)
+
+    @staticmethod
     def _download_photo(client: HttpClient, artist_id: int, url: str) -> None:
         try:
             result = client.get_bytes(url, max_bytes=MAX_PHOTO_BYTES)
             if result is None:
                 return
-            image_mime(result[0])  # solo JPG/PNG
-            target = artist_photo_path(artist_id)
-            target.parent.mkdir(parents=True, exist_ok=True)
-            tmp = target.with_name(target.name + ".tmp")
-            tmp.write_bytes(result[0])
-            os.replace(tmp, target)
+            OnlineController._store_photo(artist_id, result[0])
         except (OnlineError, ValueError, OSError):
             pass  # la foto es opcional
+
+    @Slot(int, str)
+    def requestArtistCandidates(self, artist_id: int, query: str) -> None:
+        """Artículos de Wikipedia que podrían ser el artista, para elegir el correcto."""
+        def work(client: HttpClient, conn) -> None:
+            self.progress.emit("Buscando en Wikipedia\u2026")
+            found = enrich.artist_candidates(client, conn, artist_id, query)
+            self.artistCandidatesReady.emit(artist_id, [
+                {"name": c.name, "summary": c.summary, "description": c.description,
+                 "url": c.url, "language": c.language, "imageUrl": c.image_url}
+                for c in found])
+
+        self._spawn(work)
+
+    @Slot(int, "QVariantMap")
+    def applyArtistCandidate(self, artist_id: int, candidate: dict) -> None:
+        """Usa el artículo elegido: reemplaza la ficha y la foto anteriores."""
+        def work(client: HttpClient, conn) -> None:
+            info = ArtistInfo(name=str(candidate.get("name", "")), summary=str(candidate.get("summary", "")),
+                              url=str(candidate.get("url", "")), language=str(candidate.get("language", "")),
+                              description=str(candidate.get("description", "")),
+                              image_url=str(candidate.get("imageUrl", "")))
+            if not info.summary:
+                raise OnlineError("El artículo elegido no tiene texto")
+            enrich.apply_artist_info(conn, artist_id, info)
+            old = artist_photo(artist_id)
+            if old:
+                old.unlink(missing_ok=True)  # la foto anterior era del artista equivocado
+            if info.image_url:
+                self._download_photo(client, artist_id, info.image_url)
+            stored = enrich.stored_artist_info(conn, artist_id)
+            self.artistInfoReady.emit(artist_id, self._artist_payload(artist_id, stored) if stored else {})
+
+        self._spawn(work)
+
+    @Slot(int, str, str, result="QVariantMap")
+    def saveManualArtistInfo(self, artist_id: int, text: str, image_path: str) -> dict:
+        """Descripción propia (y foto opcional). No usa internet."""
+        try:
+            enrich.set_manual_artist_info(self._conn, artist_id, text)
+            if image_path:
+                data = Path(image_path).read_bytes()
+                if len(data) > MAX_PHOTO_BYTES:
+                    raise ValueError("La imagen pesa m\u00e1s de 5 MB")
+                self._store_photo(artist_id, data)
+        except (ValueError, OSError) as exc:
+            return {"ok": False, "error": str(exc), "info": {}}
+        info = enrich.stored_artist_info(self._conn, artist_id)
+        return {"ok": True, "error": "", "info": self._artist_payload(artist_id, info) if info else {}}
 
     @Slot(int, int)
     def requestAlbumCandidates(self, album_id: int, track_id: int) -> None:

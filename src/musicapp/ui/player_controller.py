@@ -5,7 +5,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Property, QObject, Signal, Slot
 
-from musicapp.core import library, stats
+from musicapp.core import library, paths, stats
 from musicapp.core.db import connect
 from musicapp.player.backend import PlayerBackend
 from musicapp.player.queue import PlayQueue
@@ -24,6 +24,7 @@ class PlayerController(QObject):
     errorMessage = Signal(str)
     queueChanged = Signal()  # cambió la lista o la posición dentro de ella
     playsChanged = Signal()  # se contó una reproducción nueva
+    audioChanged = Signal()  # cambió la lista de salidas de audio o la elegida
     queueMessage = Signal(str)  # aviso breve para mostrar al usuario
 
     def __init__(self, backend: PlayerBackend, db_path: Path | str | None = None,
@@ -46,6 +47,8 @@ class PlayerController(QObject):
         backend.positionChanged.connect(self._on_position)
         backend.durationChanged.connect(self._on_duration)
         backend.stateChanged.connect(self._on_state)
+        backend.audioDevicesChanged.connect(self.audioChanged)
+        self._restore_audio_device()
         backend.ended.connect(self._on_ended)
         backend.failed.connect(self._on_failed)
         backend.set_volume(self._volume)
@@ -82,6 +85,52 @@ class PlayerController(QObject):
     @Property(int, notify=currentChanged)
     def currentId(self) -> int:
         return self._current.get("id", 0)
+
+    # ---- salida de audio ----
+    @staticmethod
+    def _audio_file() -> Path:
+        return paths.data_dir() / "audio_output.txt"
+
+    def _restore_audio_device(self) -> None:
+        """Vuelve a la salida que el usuario eligió; si ya no está conectada, queda en automático."""
+        try:
+            saved = self._audio_file().read_text(encoding="utf-8").strip()
+        except OSError:
+            return
+        if saved:
+            self._backend.set_audio_device(saved)
+
+    @Slot(result="QVariantList")
+    def audioDevices(self) -> list:
+        """Salidas de audio disponibles; la primera es «Automático» (sigue la del sistema)."""
+        current = self._backend.audio_device()
+        out = [{"id": "", "name": "Autom\u00e1tico (la que use el sistema)", "current": current == ""}]
+        for d in self._backend.audio_devices():
+            out.append({"id": d["id"], "name": d["name"] + (" \u00b7 predeterminada" if d["isDefault"] else ""),
+                        "current": d["id"] == current})
+        return out
+
+    @Slot(str)
+    def setAudioDevice(self, device_id: str) -> None:
+        if not self._backend.set_audio_device(device_id):
+            self.queueMessage.emit("Esa salida de audio ya no est\u00e1 disponible")
+            self.audioChanged.emit()
+            return
+        try:
+            self._audio_file().parent.mkdir(parents=True, exist_ok=True)
+            self._audio_file().write_text(device_id, encoding="utf-8")
+        except OSError:
+            pass  # no poder recordar la elección no impide usarla
+
+    @Property(str, notify=audioChanged)
+    def audioDeviceName(self) -> str:
+        current = self._backend.audio_device()
+        if not current:
+            return "Autom\u00e1tico"
+        for d in self._backend.audio_devices():
+            if d["id"] == current:
+                return d["name"]
+        return "Autom\u00e1tico"
 
     @Property(int, notify=playsChanged)
     def statsRevision(self) -> int:

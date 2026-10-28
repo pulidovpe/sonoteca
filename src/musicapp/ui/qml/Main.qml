@@ -17,6 +17,7 @@ ApplicationWindow {
     menuBar: AppMenuBar {
         AppMenu {
             title: "Archivo"
+            AppMenuItem { action: actScan }
             AppMenuItem { action: actNewPlaylist }
             AppMenuItem { action: actEditCurrent }
             AppMenuItem { action: actInternet }
@@ -61,6 +62,7 @@ ApplicationWindow {
     Action { id: actEditCurrent; text: "Editar tags de la pista actual\u2026"; shortcut: "Ctrl+E"; enabled: player.hasTrack; onTriggered: win.editTags([player.currentId]) }
     Action { id: actInternet; text: "Internet\u2026"; onTriggered: win.openInternetSettings() }
     Action { id: actQuit; text: "Salir"; shortcut: "Ctrl+Q"; onTriggered: Qt.quit() }
+    Action { id: actScan; text: "Buscar m\u00fasica\u2026"; shortcut: "Ctrl+Shift+O"; onTriggered: scanDialog.openDialog(false) }
     Action { id: actHome; text: "Inicio"; shortcut: "Ctrl+0"; onTriggered: win.showSection("home") }
     Action { id: actBack; text: "Atr\u00e1s"; shortcut: "Alt+Left"; enabled: win.canBack; onTriggered: win.back() }
     Shortcut { sequence: "Ctrl+["; enabled: win.canBack; onActivated: win.back() }
@@ -121,6 +123,8 @@ ApplicationWindow {
     }
 
     property string section: "home"
+    property bool firstRunPrompt: true   // con la biblioteca vacía, ofrece buscar la música al abrir
+    Component.onCompleted: if (firstRunPrompt && library.stats().tracks === 0) scanDialog.openDialog(true)
     property bool searching: false
     property bool videoOpen: false
     property var stats: (Theme.dataRevision, library.stats())
@@ -677,6 +681,15 @@ ApplicationWindow {
     }
     OnlineSettings { id: onlineSettings }
     LyricsSettings { id: lyricsSettings }
+    ScanDialog {
+        id: scanDialog
+        onFinished: (added) => {
+            Theme.dataRevision++
+            win.cleanup()
+            win.toast(added > 0 ? added + " canciones a\u00f1adidas" : "No hay canciones nuevas")
+            if (added > 0) win.showSection("home")
+        }
+    }
     AlbumLookup { id: albumLookup }
 
     Connections {

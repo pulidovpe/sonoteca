@@ -138,6 +138,15 @@ Rectangle {
             active: bar.videoOpen
             onClicked: bar.videoToggled()
         }
+        IconButton {
+            id: audioButton
+            anchors.verticalCenter: parent.verticalCenter
+            width: 30
+            height: 30
+            iconSize: 18
+            svg: Theme.iconSpeaker
+            onClicked: audioPopup.openPopup()
+        }
         Text { anchors.verticalCenter: parent.verticalCenter; text: "Vol"; color: Theme.textDim; font.pixelSize: 12 }
         AppSlider {
             id: volSlider
@@ -149,4 +158,5 @@ Rectangle {
             Binding { target: volSlider; property: "value"; value: player.volume; when: !volSlider.pressed }
         }
     }
+    AudioOutputPopup { id: audioPopup; x: bar.width - width - 16; y: -height - 8 }
 }

@@ -72,6 +72,25 @@ def search_title(client: HttpClient, lang: str, name: str) -> ArtistInfo | None:
     return None
 
 
+def search_candidates(client: HttpClient, name: str, languages: tuple[str, ...] = ("es", "en"),
+                      per_language: int = 4) -> list[ArtistInfo]:
+    """Artículos de Wikipedia que podrían ser el artista (para que el usuario elija el correcto).
+    Los que parecen de música van primero; no se descarta ninguno."""
+    found: list[ArtistInfo] = []
+    seen: set[str] = set()
+    for lang in languages:
+        data = client.get_json(f"https://{lang}.wikipedia.org/w/api.php", {
+            "action": "query", "list": "search", "srsearch": name, "srlimit": per_language,
+            "format": "json"}) or {}
+        for hit in (data.get("query") or {}).get("search", []):
+            info = _summary(client, lang, hit.get("title", ""))
+            if info and info.url not in seen:
+                seen.add(info.url)
+                found.append(info)
+    found.sort(key=lambda i: not _is_musical(i.description, i.summary))  # estable
+    return found
+
+
 def artist_info(client: HttpClient, name: str, mbid: str = "",
                 languages: tuple[str, ...] = ("es", "en")) -> ArtistInfo | None:
     """Resumen del artista. Con `mbid` se llega por Wikidata (muy fiable); si no, por búsqueda."""

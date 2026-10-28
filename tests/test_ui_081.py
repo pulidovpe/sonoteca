@@ -22,13 +22,15 @@ def test_play_counts_after_listening_half_and_not_on_seek(env):  # noqa: F811
     be.positionChanged.emit(5000)          # salto con la barra: no cuenta como escuchar
     assert ctrl.playsOf(tid) == 0
     be.positionChanged.emit(5300)
-    be.positionChanged.emit(5700)          # 700 ms escuchados >= mitad de ~1 s
+    be.positionChanged.emit(5700)          # 700 ms escuchados: la pista dura ~1 s, aún no cuenta
+    assert ctrl.playsOf(tid) == 0
+    be.positionChanged.emit(6100)          # 1,1 s escuchados: la pista (corta) cuenta aunque no se oiga entera
     assert ctrl.playsOf(tid) == 1 and ctrl.statsRevision == rev + 1
-    be.positionChanged.emit(5900)
-    be.positionChanged.emit(6300)
+    be.positionChanged.emit(6500)
+    be.positionChanged.emit(6900)
     assert ctrl.playsOf(tid) == 1          # una sola vez por reproducción
     ctrl.playAlbum(album, 0)               # volver a empezar la pista cuenta otra
-    be.positionChanged.emit(0); be.positionChanged.emit(400); be.positionChanged.emit(800)
+    be.positionChanged.emit(0); be.positionChanged.emit(500); be.positionChanged.emit(1000); be.positionChanged.emit(1500)
     assert ctrl.playsOf(tid) == 2
 
 

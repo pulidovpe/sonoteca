@@ -110,7 +110,7 @@ class LibraryController(QObject):
         return [{"id": r["id"], "title": r["title"], "duration": r["duration"],
                  "albumId": r["album_id"], "album": album_display(r["album"]),
                  "artist": r["artist"], "plays": r["plays"]}
-                for r in stats.artist_top_tracks(self._conn, artist_id)]
+                for r in stats.artist_top_tracks(self._conn, artist_id, limit=30)]
 
     @Slot(result="QVariantMap")
     def home(self) -> dict:

@@ -106,6 +106,7 @@ def qml_env(qapp, db_file, tmp_path):
     from musicapp.ui.online_controller import OnlineController
     from musicapp.ui.player_controller import PlayerController
     from musicapp.ui.playlist_controller import PlaylistController
+    from musicapp.ui.scan_controller import ScanController
 
     gc.collect()
     engine = QQmlApplicationEngine()
@@ -123,6 +124,8 @@ def qml_env(qapp, db_file, tmp_path):
     engine.rootContext().setContextProperty("playlists", playlists)
     lyrics = LyricsController(db_file)
     engine.rootContext().setContextProperty("lyrics", lyrics)
+    scan = ScanController(db_file)
+    engine.rootContext().setContextProperty("scanner", scan)
     engine.load(QUrl.fromLocalFile(str(QML_DIR / "Main.qml")))
     assert engine.rootObjects(), warnings
     win = engine.rootObjects()[0]
@@ -148,12 +151,12 @@ def qml_env(qapp, db_file, tmp_path):
         wait(settle)
 
     yield SimpleNamespace(engine=engine, win=win, controller=controller, player=player, online=online, playlists=playlists,
-                          lyrics=lyrics, warnings=warnings, wait=wait, js=js, act=act)
+                          lyrics=lyrics, scan=scan, warnings=warnings, wait=wait, js=js, act=act)
 
     wait(500)  # deja terminar las cargas de imágenes pendientes antes de destruir el motor
     engine.deleteLater()
     for _ in range(10):
         qapp.processEvents()
         QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
-    del provider, controller, player, online, playlists, lyrics
+    del provider, controller, player, online, playlists, lyrics, scan
     gc.collect()

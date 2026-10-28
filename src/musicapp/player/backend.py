@@ -13,6 +13,7 @@ class PlayerBackend(QObject):
     stateChanged = Signal(str)  # "playing" | "paused" | "stopped"
     ended = Signal()  # la pista terminó de forma natural
     failed = Signal(str)  # mensaje de error
+    audioDevicesChanged = Signal()  # cambió la lista de salidas o la que se está usando
 
     def load(self, path: Path) -> None:
         raise NotImplementedError
@@ -35,3 +36,16 @@ class PlayerBackend(QObject):
 
     def set_video_sink(self, sink) -> None:
         raise NotImplementedError
+
+    # ---- salida de audio (los backends sin soporte dejan estos valores) ----
+    def audio_devices(self) -> list[dict]:
+        """[{"id": str, "name": str, "isDefault": bool}] de las salidas disponibles."""
+        return []
+
+    def audio_device(self) -> str:
+        """Id de la salida elegida; "" = automática (sigue la predeterminada del sistema)."""
+        return ""
+
+    def set_audio_device(self, device_id: str) -> bool:
+        """"" = automática. Devuelve False si esa salida no existe (ya no está conectada)."""
+        return False

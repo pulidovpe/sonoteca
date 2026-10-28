@@ -63,6 +63,11 @@ class PlaylistController(QObject):
                 for r in store.tracks(self._conn, playlist_id)]
 
     @Slot(int, result="QVariantList")
+    def coverAlbums(self, playlist_id: int) -> list[int]:
+        """Hasta 4 álbumes de la lista: con 2 o más se dibuja un collage como portada."""
+        return store.cover_album_ids(self._conn, playlist_id, 4)
+
+    @Slot(int, result="QVariantList")
     def trackIds(self, playlist_id: int) -> list[int]:
         return store.track_ids(self._conn, playlist_id)
 
