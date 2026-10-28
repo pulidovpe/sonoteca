@@ -26,7 +26,7 @@ Item {
         height: 270
         anchors { left: parent.left; right: parent.right; top: parent.top }
         gradient: Gradient {
-            GradientStop { position: 0.0; color: "#2c2c34" }
+            GradientStop { position: 0.0; color: Theme.heroTop }
             GradientStop { position: 1.0; color: Theme.bg }
         }
         // Misma portada y mismo tamaño que en un álbum; con varios álbumes es un collage
@@ -34,7 +34,7 @@ Item {
             id: heroCover
             x: 24; y: 40
             width: 190; height: 190
-            fallback: Qt.hsla(((page.playlistId * 61) % 360) / 360, 0.45, 0.32, 1)
+            fallback: Theme.coverColor(page.playlistId)
             albumIds: (playlists.revision, Theme.dataRevision, playlists.coverAlbums(page.playlistId))
         }
         Column {

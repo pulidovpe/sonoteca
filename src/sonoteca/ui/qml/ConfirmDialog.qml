@@ -14,8 +14,8 @@ Popup {
     anchors.centerIn: Overlay.overlay
     width: 460
     padding: 24
-    background: Rectangle { color: "#1d1d1f"; radius: 12; border.color: "#2e2e32"; border.width: 1 }
-    Overlay.modal: Rectangle { color: "#99000000" }
+    background: Rectangle { color: Theme.panel; radius: 12; border.color: Theme.border; border.width: 1 }
+    Overlay.modal: Rectangle { color: Theme.scrim }
     enter: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 160 } }
     exit: Transition { NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 120 } }
 

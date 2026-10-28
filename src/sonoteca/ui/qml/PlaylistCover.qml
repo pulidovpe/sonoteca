@@ -5,7 +5,7 @@ import "."
 Item {
     id: root
     property var albumIds: []
-    property color fallback: "#222224"
+    property color fallback: Theme.placeholder
     readonly property int n: Math.min(albumIds.length, 4)
     // Cada baldosa en fracciones del tamaño total
     readonly property var tiles: {

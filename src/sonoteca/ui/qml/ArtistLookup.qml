@@ -27,8 +27,8 @@ Popup {
     width: 640
     padding: 24
     closePolicy: searching ? Popup.NoAutoClose : (Popup.CloseOnEscape | Popup.CloseOnPressOutside)
-    background: Rectangle { color: "#1d1d1f"; radius: 12; border.color: "#2e2e32"; border.width: 1 }
-    Overlay.modal: Rectangle { color: "#99000000" }
+    background: Rectangle { color: Theme.panel; radius: 12; border.color: Theme.border; border.width: 1 }
+    Overlay.modal: Rectangle { color: Theme.scrim }
     enter: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 160 } }
     exit: Transition { NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 120 } }
 
@@ -126,7 +126,7 @@ Popup {
                     placeholderTextColor: Theme.textDim
                     font.pixelSize: 14
                     leftPadding: 12
-                    background: Rectangle { radius: 18; color: Theme.surface; border.color: queryField.activeFocus ? Theme.accent : "#2e2e32" }
+                    background: Rectangle { radius: 18; color: Theme.surface; border.color: queryField.activeFocus ? Theme.accent : Theme.border }
                     onAccepted: root.search()
                 }
                 PillButton { id: searchButton; height: 36; enabled: !root.searching; label: "Buscar"; onClicked: root.search() }
@@ -142,7 +142,7 @@ Popup {
                     width: candidateList.width
                     height: 76
                     radius: 8
-                    color: index === root.selected ? "#2a3a30" : (rowMouse.containsMouse ? Theme.surfaceHover : Theme.surface)
+                    color: index === root.selected ? Theme.accentSoft : (rowMouse.containsMouse ? Theme.surfaceHover : Theme.surface)
                     border.width: index === root.selected ? 1 : 0
                     border.color: Theme.accent
                     Column {
@@ -184,7 +184,7 @@ Popup {
                 height: 190
                 radius: 8
                 color: Theme.surface
-                border.color: descriptionField.activeFocus ? Theme.accent : "#2e2e32"
+                border.color: descriptionField.activeFocus ? Theme.accent : Theme.border
                 ScrollView {
                     anchors { fill: parent; margins: 6 }
                     TextArea {
@@ -228,7 +228,7 @@ Popup {
         }
 
         Text { width: parent.width; visible: root.status !== ""; text: root.status; color: Theme.textDim; font.pixelSize: 13; wrapMode: Text.WordWrap }
-        Text { width: parent.width; visible: root.error !== ""; text: root.error; color: "#ff6b6b"; font.pixelSize: 13; wrapMode: Text.WordWrap }
+        Text { width: parent.width; visible: root.error !== ""; text: root.error; color: Theme.danger; font.pixelSize: 13; wrapMode: Text.WordWrap }
         Row {
             anchors.right: parent.right
             PillButton { label: "Cerrar"; enabled: !root.searching; onClicked: root.close() }

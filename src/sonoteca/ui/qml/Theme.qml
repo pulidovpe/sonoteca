@@ -2,13 +2,47 @@ pragma Singleton
 import QtQuick
 
 QtObject {
-    readonly property color bg: "#0f0f10"
-    readonly property color sidebar: "#000000"
-    readonly property color surface: "#181819"
-    readonly property color surfaceHover: "#262628"
-    readonly property color text: "#ffffff"
-    readonly property color textDim: "#a7a7ab"
-    readonly property color accent: "#1ed760"
+    // ===== Tema «Neón»: paleta tomada del logo (assets/icons/original.png) =====
+    // Colores de marca
+    readonly property color cyan: "#00d0fc"          // auriculares, copa izquierda
+    readonly property color blue: "#0396fd"          // centro del arco
+    readonly property color violet: "#9849fd"        // nota musical
+    readonly property color magenta: "#ba38fc"       // copa derecha
+    // Fondos (azul casi negro, como el icono)
+    readonly property color bg: "#060e16"            // fondo de las páginas
+    readonly property color sidebar: "#040a10"       // barra lateral
+    readonly property color bar: "#050b11"           // barra de menú superior
+    readonly property color playerBar: "#0a141d"     // barra de reproducción
+    readonly property color surface: "#0c1822"       // tarjetas y fichas
+    readonly property color surfaceHover: "#152536"  // al pasar el ratón
+    readonly property color surfaceRaised: "#14212e" // botones y campos elevados
+    readonly property color panel: "#0f1b27"         // diálogos y menús emergentes
+    readonly property color field: "#08121a"         // campos de texto
+    readonly property color placeholder: "#101d29"   // portada que aún no carga
+    readonly property color heroTop: "#162a44"       // inicio del degradado de las cabeceras
+    // Líneas
+    readonly property color border: "#1e3043"
+    readonly property color divider: "#172636"
+    readonly property color track: "#2b3d50"         // ranuras de deslizadores
+    // Texto
+    readonly property color text: "#f4f9ff"
+    readonly property color textSoft: "#c9d6e2"
+    readonly property color textDim: "#8da2b6"
+    readonly property color textFaint: "#5d7184"     // deshabilitado
+    // Acento
+    readonly property color accent: cyan
+    readonly property color accentHover: "#4fe3ff"
+    readonly property color accentSoft: "#0e2d3d"    // fila seleccionada
+    readonly property color onAccent: "#031018"      // texto o icono sobre el acento
+    // Estados
+    readonly property color warn: "#f5c26b"
+    readonly property color warnBorder: "#e0a23f"
+    readonly property color warnBg: "#2f2511"
+    readonly property color danger: "#ff6b81"
+    readonly property color scrim: "#b0020a12"       // velo detrás de los diálogos
+    // Color de una portada sin imagen: tono estable por id dentro de la gama cian → violeta del logo
+    function coverColor(id) { return Qt.hsla((185 + ((id * 61) % 105)) / 360, 0.55, 0.28, 1) }
+
     readonly property string iconPlay: "M8 4 L20 12 L8 20 Z"
     readonly property string iconPause: "M6 4 H10 V20 H6 Z M14 4 H18 V20 H14 Z"
     readonly property string iconNext: "M5 4 L16 12 L5 20 Z M17 4 H20 V20 H17 Z"

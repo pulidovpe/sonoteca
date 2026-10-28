@@ -12,7 +12,7 @@ CheckBox {
         radius: 4
         color: root.checked ? Theme.accent : "transparent"
         border.color: root.checked ? Theme.accent : Theme.textDim
-        Text { anchors.centerIn: parent; text: "\u2713"; visible: root.checked; color: "#000000"; font.pixelSize: 12; font.weight: Font.Bold }
+        Text { anchors.centerIn: parent; text: "\u2713"; visible: root.checked; color: Theme.onAccent; font.pixelSize: 12; font.weight: Font.Bold }
     }
     contentItem: Text {
         text: root.text

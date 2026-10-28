@@ -10,14 +10,14 @@ Rectangle {
     width: t.width + 36
     radius: 19
     opacity: enabled ? 1 : 0.4
-    color: primary ? (mouse.containsMouse ? "#3be477" : Theme.accent)
-                   : (mouse.containsMouse ? Theme.surfaceHover : "#2a2a2d")
+    color: primary ? (mouse.containsMouse ? Theme.accentHover : Theme.accent)
+                   : (mouse.containsMouse ? Theme.surfaceHover : Theme.surfaceRaised)
     Behavior on color { ColorAnimation { duration: Theme.fast } }
     Text {
         id: t
         anchors.centerIn: parent
         text: root.label
-        color: root.primary ? "#000000" : Theme.text
+        color: root.primary ? Theme.onAccent : Theme.text
         font.pixelSize: 14
         font.weight: Font.DemiBold
     }

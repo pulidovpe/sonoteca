@@ -11,7 +11,7 @@ Popup {
     padding: 8
     width: 360
     focus: true
-    background: Rectangle { color: "#1d1d1f"; radius: 10; border.color: "#2e2e32"; border.width: 1 }
+    background: Rectangle { color: Theme.panel; radius: 10; border.color: Theme.border; border.width: 1 }
     enter: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 120 } }
     exit: Transition { NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 100 } }
 

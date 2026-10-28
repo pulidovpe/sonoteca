@@ -27,7 +27,7 @@ Item {
             Item {
                 width: parent.width
                 height: width
-                Rectangle { anchors.fill: parent; radius: 6; color: "#222224" }
+                Rectangle { anchors.fill: parent; radius: 6; color: Theme.placeholder }
                 Image {
                     anchors.fill: parent
                     source: root.coverSource

@@ -22,10 +22,10 @@ Item {
         height: 270
         anchors { left: parent.left; right: parent.right; top: parent.top }
         gradient: Gradient {
-            GradientStop { position: 0.0; color: "#2c2c34" }
+            GradientStop { position: 0.0; color: Theme.heroTop }
             GradientStop { position: 1.0; color: Theme.bg }
         }
-        Rectangle { id: artBg; x: 24; y: 40; width: 190; height: 190; radius: 6; color: "#222224" }
+        Rectangle { id: artBg; x: 24; y: 40; width: 190; height: 190; radius: 6; color: Theme.placeholder }
         Image {
             anchors.fill: artBg
             source: "image://cover/" + page.albumId + "?v=" + Theme.dataRevision
@@ -67,15 +67,15 @@ Item {
                 spacing: 12
             Rectangle {
                 width: 150; height: 44; radius: 22
-                color: playMouse.containsMouse ? "#3be477" : Theme.accent
+                color: playMouse.containsMouse ? Theme.accentHover : Theme.accent
                 scale: playMouse.containsMouse ? 1.04 : 1.0
                 Behavior on color { ColorAnimation { duration: Theme.fast } }
                 Behavior on scale { NumberAnimation { duration: Theme.fast; easing.type: Easing.OutCubic } }
                 Row {
                     anchors.centerIn: parent
                     spacing: 8
-                    Icon { anchors.verticalCenter: parent.verticalCenter; svg: page.isCurrentAlbum && player.playing ? Theme.iconPause : Theme.iconPlay; size: 18; color: "#000000" }
-                    Text { anchors.verticalCenter: parent.verticalCenter; text: !page.isCurrentAlbum ? "Reproducir" : (player.playing ? "Pausar" : "Reanudar"); color: "#000000"; font.pixelSize: 14; font.weight: Font.DemiBold }
+                    Icon { anchors.verticalCenter: parent.verticalCenter; svg: page.isCurrentAlbum && player.playing ? Theme.iconPause : Theme.iconPlay; size: 18; color: Theme.onAccent }
+                    Text { anchors.verticalCenter: parent.verticalCenter; text: !page.isCurrentAlbum ? "Reproducir" : (player.playing ? "Pausar" : "Reanudar"); color: Theme.onAccent; font.pixelSize: 14; font.weight: Font.DemiBold }
                 }
                 MouseArea {
                     id: playMouse

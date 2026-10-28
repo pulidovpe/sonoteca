@@ -15,7 +15,7 @@ MenuItem {
         Text {
             anchors.verticalCenter: parent.verticalCenter
             text: item.text
-            color: item.enabled ? Theme.text : "#6b6b70"
+            color: item.enabled ? Theme.text : Theme.textFaint
             font.pixelSize: 13
         }
         Text {
