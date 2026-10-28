@@ -22,7 +22,7 @@ o usa un token que no existe.
 | `panel` / `field` | `#0f1b27` / `#08121a` | diálogos y menús / campos de texto |
 | `border` / `divider` / `track` | `#1e3043` / `#172636` / `#2b3d50` | bordes, separadores, ranuras |
 | `text` / `textSoft` / `textDim` / `textFaint` | `#f4f9ff` / `#c9d6e2` / `#8da2b6` / `#5d7184` | texto normal, suave, secundario, deshabilitado |
-| `warn` / `danger` / `onAccent` | `#f5c26b` / `#ff6b81` / `#031018` | avisos, errores, texto sobre el acento |
+| `warn` / `danger` / `textOnAccent` | `#f5c26b` / `#ff6b81` / `#031018` | avisos, errores, texto sobre el acento |
 
 ## Cómo cambiarlo
 1. Edita los valores de `Theme.qml` (no hace falta tocar nada más).

@@ -37,3 +37,9 @@ def test_brand_palette_matches_the_logo_colors():
     for name, value in (("cyan", "#00d0fc"), ("blue", "#0396fd"), ("violet", "#9849fd"), ("magenta", "#ba38fc")):
         assert f'property color {name}: "{value}"' in theme
     assert "property color accent: cyan" in theme
+
+
+def test_no_token_looks_like_a_signal_handler():
+    # En QML un nombre «on» + Mayúscula se lee como manejador de señal y rompe la carga («Cannot assign a value to a signal»)
+    bad = [name for name in _defined() if re.match(r"on[A-Z]", name)]
+    assert bad == [], f"Tokens que QML tomaría por manejadores de señal: {bad}"

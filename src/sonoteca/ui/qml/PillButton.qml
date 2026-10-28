@@ -17,7 +17,7 @@ Rectangle {
         id: t
         anchors.centerIn: parent
         text: root.label
-        color: root.primary ? Theme.onAccent : Theme.text
+        color: root.primary ? Theme.textOnAccent : Theme.text
         font.pixelSize: 14
         font.weight: Font.DemiBold
     }

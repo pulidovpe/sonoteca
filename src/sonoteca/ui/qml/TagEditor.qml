@@ -311,7 +311,7 @@ Popup {
                     radius: 4
                     color: backupBox.checked ? Theme.accent : "transparent"
                     border.color: backupBox.checked ? Theme.accent : Theme.textDim
-                    Text { anchors.centerIn: parent; text: "\u2713"; visible: backupBox.checked; color: Theme.onAccent; font.pixelSize: 12; font.weight: Font.Bold }
+                    Text { anchors.centerIn: parent; text: "\u2713"; visible: backupBox.checked; color: Theme.textOnAccent; font.pixelSize: 12; font.weight: Font.Bold }
                 }
                 contentItem: Text {
                     text: backupBox.text

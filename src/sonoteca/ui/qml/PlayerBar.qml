@@ -115,7 +115,7 @@ Rectangle {
                     anchors.centerIn: parent
                     svg: player.playing ? Theme.iconPause : Theme.iconPlay
                     size: 22
-                    color: Theme.onAccent
+                    color: Theme.textOnAccent
                 }
                 MouseArea {
                     id: playMouse

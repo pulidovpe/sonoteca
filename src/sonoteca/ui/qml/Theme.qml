@@ -33,7 +33,7 @@ QtObject {
     readonly property color accent: cyan
     readonly property color accentHover: "#4fe3ff"
     readonly property color accentSoft: "#0e2d3d"    // fila seleccionada
-    readonly property color onAccent: "#031018"      // texto o icono sobre el acento
+    readonly property color textOnAccent: "#031018"      // texto o icono sobre el acento
     // Estados
     readonly property color warn: "#f5c26b"
     readonly property color warnBorder: "#e0a23f"

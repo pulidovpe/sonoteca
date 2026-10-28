@@ -74,8 +74,8 @@ Item {
                 Row {
                     anchors.centerIn: parent
                     spacing: 8
-                    Icon { anchors.verticalCenter: parent.verticalCenter; svg: page.isCurrentAlbum && player.playing ? Theme.iconPause : Theme.iconPlay; size: 18; color: Theme.onAccent }
-                    Text { anchors.verticalCenter: parent.verticalCenter; text: !page.isCurrentAlbum ? "Reproducir" : (player.playing ? "Pausar" : "Reanudar"); color: Theme.onAccent; font.pixelSize: 14; font.weight: Font.DemiBold }
+                    Icon { anchors.verticalCenter: parent.verticalCenter; svg: page.isCurrentAlbum && player.playing ? Theme.iconPause : Theme.iconPlay; size: 18; color: Theme.textOnAccent }
+                    Text { anchors.verticalCenter: parent.verticalCenter; text: !page.isCurrentAlbum ? "Reproducir" : (player.playing ? "Pausar" : "Reanudar"); color: Theme.textOnAccent; font.pixelSize: 14; font.weight: Font.DemiBold }
                 }
                 MouseArea {
                     id: playMouse
