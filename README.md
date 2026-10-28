@@ -66,6 +66,14 @@ Las direcciones deben ser `http://` o `https://` y no pueden llevar usuario ni c
 ### Empezar desde cero
 Archivo ▸ *Empezar desde cero…* (o `sonoteca reset --yes`) vacía la biblioteca —base de datos, listas, letras, portadas y fotos descargadas— y se completa al volver a abrir la aplicación. Antes guarda una copia en `backups/` (puedes desactivarla). No borra tus archivos de música y conserva tus ajustes y claves.
 
+### Teclas multimedia
+Reproducir/pausa, siguiente y anterior del teclado funcionan con la ventana en primer plano en cualquier sistema. En **macOS**
+también funcionan con la app en segundo plano: Sonoteca se registra como la aplicación de «Ahora suena» (necesita
+`pyobjc-framework-MediaPlayer`, que se instala solo con `pip install -e ".[ui]"` en Mac). Mientras suene otra aplicación que
+macOS considere «Ahora suena» más reciente (el navegador, Música…), las teclas irán a esa; empieza a reproducir en Sonoteca
+para recuperarlas. En Windows y Linux las teclas globales (con la ventana sin foco) no están implementadas todavía.
+Para diagnosticar: `SONOTECA_DEBUG_MEDIA=1 sonoteca gui` muestra cada tecla recibida y el estado de la integración.
+
 ## Atajos
 Espacio = pausa · doble clic = reproducir · Ctrl+0…6 = secciones (Inicio, Álbumes, Artistas, Por revisar, Reproduciendo, Listas, Letra) · Alt+←/→ = historial · Ctrl+Shift+O = Buscar música.
 

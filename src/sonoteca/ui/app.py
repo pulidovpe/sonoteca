@@ -26,6 +26,7 @@ def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int
     from .online_controller import OnlineController
     from .harvest_controller import HarvestController
     from .player_controller import PlayerController
+    from .media_keys import MediaKeys
     from .portable_controller import PortableController
     from .servers_controller import ServersController
     from .playlist_controller import PlaylistController
@@ -75,6 +76,23 @@ def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int
     engine.rootContext().setContextProperty("portable", portable_io)
     server_config = ServersController()
     engine.rootContext().setContextProperty("serverConfig", server_config)
+
+    # Teclas multimedia (reproducir/pausa, siguiente, anterior): en la app y, en macOS, tambi\u00e9n globales
+    media = MediaKeys()
+    media.toggleRequested.connect(player.toggle)
+    media.pauseRequested.connect(lambda: player.toggle() if player.playing else None)
+    media.nextRequested.connect(player.next)
+    media.previousRequested.connect(player.previous)
+
+    def publish_now_playing() -> None:
+        track = player.currentTrack or {}
+        media.publish(track.get("title", ""), track.get("artist", ""), track.get("album", ""), player.duration,
+                      player.position, player.playing, player.hasTrack)
+
+    player.playingChanged.connect(publish_now_playing)
+    player.currentChanged.connect(publish_now_playing)
+    player.durationChanged.connect(publish_now_playing)
+    media.install(app)
     engine.load(QUrl.fromLocalFile(str(QML_DIR / "Main.qml")))
     if not engine.rootObjects():
         return 1
