@@ -10,10 +10,15 @@ Item {
     signal albumClicked(int albumId)
     signal needInternet()
     signal editArtistRequested(int artistId, string artistName)
+    signal menuRequested(var ids)
     property alias artistHeaderItem: artistHeader  // para las pruebas
 
     property var albums: (Theme.dataRevision, library.albums(artistId, 0, decade))
     property var decades: (Theme.dataRevision, library.decades())
+    // En la página de un artista con varios álbumes: primero sus canciones destacadas (hasta 2 por álbum)
+    property var topTracks: (Theme.dataRevision, player.statsRevision, artistId > 0 ? library.artistTopTracks(artistId) : [])
+    property var topIds: topTracks.map(function (x) { return x.id })
+    readonly property bool showTop: artistId > 0 && topTracks.length > 0
 
     Text {
         id: title
@@ -74,6 +79,32 @@ Item {
         cellWidth: Math.floor(width / columns)
         cellHeight: cellWidth + 76
         model: page.albums
+        header: Item {
+            width: grid.width
+            height: page.showTop ? topColumn.height : 0
+            visible: page.showTop
+            Column {
+                id: topColumn
+                width: parent.width - 8
+                Text { text: "Canciones destacadas"; leftPadding: 12; height: 40; verticalAlignment: Text.AlignVCenter; color: Theme.text; font.pixelSize: 18; font.weight: Font.Bold }
+                Repeater {
+                    model: page.topTracks
+                    delegate: TrackRow {
+                        width: topColumn.width
+                        number: (index + 1).toString()
+                        title: modelData.title
+                        subtitle: modelData.album
+                        duration: Theme.fmt(modelData.duration)
+                        plays: modelData.plays
+                        trackId: modelData.id
+                        current: player.currentId === modelData.id
+                        onActivated: player.playTrackIds(page.topIds, index)
+                        onContextRequested: page.menuRequested([modelData.id])
+                    }
+                }
+                Text { text: "\u00c1lbumes"; leftPadding: 12; height: 52; verticalAlignment: Text.AlignBottom; bottomPadding: 6; color: Theme.text; font.pixelSize: 18; font.weight: Font.Bold }
+            }
+        }
         delegate: AlbumCard {
             width: grid.cellWidth
             height: grid.cellHeight

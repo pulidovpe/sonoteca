@@ -7,7 +7,7 @@ from pathlib import Path
 from PySide6.QtCore import QObject, QUrl, Signal, Slot
 
 from musicapp import __version__
-from musicapp.core import cleanup, covers, library, paths, tag_edit
+from musicapp.core import cleanup, covers, library, paths, stats, tag_edit
 from musicapp.core.db import connect, default_db_path
 from musicapp.core.models import UNKNOWN_ALBUM
 from musicapp.core.search import SearchIndex, normalize
@@ -103,6 +103,28 @@ class LibraryController(QObject):
                 "duration": r["duration"],
             })
         return out
+
+    @Slot(int, result="QVariantList")
+    def artistTopTracks(self, artist_id: int) -> list[dict]:
+        """Hasta 2 canciones por álbum del artista, ordenadas por reproducciones."""
+        return [{"id": r["id"], "title": r["title"], "duration": r["duration"],
+                 "albumId": r["album_id"], "album": album_display(r["album"]),
+                 "artist": r["artist"], "plays": r["plays"]}
+                for r in stats.artist_top_tracks(self._conn, artist_id)]
+
+    @Slot(result="QVariantMap")
+    def home(self) -> dict:
+        """Lo más escuchado, para la página Inicio."""
+        return {
+            "albums": [{**dict(r), "displayTitle": album_display(r["title"])}
+                       for r in stats.top_albums(self._conn, 12)],
+            "artists": [dict(r) for r in stats.top_artists(self._conn, 12)],
+            "tracks": [{"id": r["id"], "title": r["title"], "duration": r["duration"],
+                        "albumId": r["album_id"], "album": album_display(r["album"]),
+                        "artist": r["artist"], "plays": r["plays"]}
+                       for r in stats.top_tracks(self._conn, 10)],
+            "lists": [dict(r) for r in stats.top_playlists(self._conn, 12)],
+        }
 
     @Slot(result="QVariantMap")
     def cleanup(self) -> dict:

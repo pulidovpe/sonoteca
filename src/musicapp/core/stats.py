@@ -35,3 +35,88 @@ def play_counts(conn: sqlite3.Connection, track_ids: list[int]) -> dict[int, int
                 f"SELECT track_id, plays FROM play_stats WHERE track_id IN ({marks})", ids):
             out[row["track_id"]] = row["plays"]
     return out
+
+
+# ---------------------------------------------------------------- más escuchado
+def top_tracks(conn: sqlite3.Connection, limit: int = 10) -> list[sqlite3.Row]:
+    return conn.execute(
+        """
+        SELECT t.id, t.title, t.duration, al.id AS album_id, al.title AS album,
+               ar.name AS artist, ps.plays AS plays
+        FROM play_stats ps
+        JOIN tracks t   ON t.id  = ps.track_id
+        JOIN artists ar ON ar.id = t.artist_id
+        JOIN albums al  ON al.id = t.album_id
+        WHERE ps.plays > 0
+        ORDER BY ps.plays DESC, ps.last_played DESC, t.title COLLATE NOCASE
+        LIMIT ?
+        """, (limit,)).fetchall()
+
+
+def top_albums(conn: sqlite3.Connection, limit: int = 10) -> list[sqlite3.Row]:
+    return conn.execute(
+        """
+        SELECT al.id, al.title, ar.name AS artist, al.year, SUM(ps.plays) AS plays
+        FROM play_stats ps
+        JOIN tracks t   ON t.id  = ps.track_id
+        JOIN albums al  ON al.id = t.album_id
+        JOIN artists ar ON ar.id = al.album_artist_id
+        WHERE ps.plays > 0
+        GROUP BY al.id
+        ORDER BY plays DESC, al.title COLLATE NOCASE
+        LIMIT ?
+        """, (limit,)).fetchall()
+
+
+def top_artists(conn: sqlite3.Connection, limit: int = 10) -> list[sqlite3.Row]:
+    return conn.execute(
+        """
+        SELECT ar.id, ar.name, SUM(ps.plays) AS plays,
+               COUNT(DISTINCT t.album_id) AS albums, COUNT(DISTINCT t.id) AS tracks
+        FROM play_stats ps
+        JOIN tracks t   ON t.id  = ps.track_id
+        JOIN artists ar ON ar.id = t.artist_id
+        WHERE ps.plays > 0
+        GROUP BY ar.id
+        ORDER BY plays DESC, ar.name COLLATE NOCASE
+        LIMIT ?
+        """, (limit,)).fetchall()
+
+
+def top_playlists(conn: sqlite3.Connection, limit: int = 8) -> list[sqlite3.Row]:
+    """Listas ordenadas por lo escuchado de sus canciones (las no escuchadas, por nombre)."""
+    return conn.execute(
+        """
+        SELECT p.id, p.name, COUNT(pt.track_id) AS tracks, COALESCE(SUM(ps.plays), 0) AS plays
+        FROM playlists p
+        LEFT JOIN playlist_tracks pt ON pt.playlist_id = p.id
+        LEFT JOIN play_stats ps ON ps.track_id = pt.track_id
+        GROUP BY p.id
+        ORDER BY plays DESC, p.name COLLATE NOCASE
+        LIMIT ?
+        """, (limit,)).fetchall()
+
+
+def artist_top_tracks(conn: sqlite3.Connection, artist_id: int, per_album: int = 2,
+                      limit: int = 12) -> list[sqlite3.Row]:
+    """Hasta `per_album` canciones de cada álbum del artista (las más escuchadas de ese álbum),
+    y todas juntas ordenadas por reproducciones."""
+    return conn.execute(
+        """
+        SELECT * FROM (
+            SELECT t.id, t.title, t.duration, al.id AS album_id, al.title AS album,
+                   ar.name AS artist, COALESCE(ps.plays, 0) AS plays,
+                   COALESCE(t.disc_no, 1) AS disc, COALESCE(t.track_no, 9999) AS no,
+                   ROW_NUMBER() OVER (
+                       PARTITION BY t.album_id
+                       ORDER BY COALESCE(ps.plays, 0) DESC, COALESCE(t.disc_no, 1),
+                                COALESCE(t.track_no, 9999), t.title COLLATE NOCASE) AS rn
+            FROM tracks t
+            JOIN albums al  ON al.id = t.album_id
+            JOIN artists ar ON ar.id = t.artist_id
+            LEFT JOIN play_stats ps ON ps.track_id = t.id
+            WHERE al.album_artist_id = ? OR t.artist_id = ?
+        ) WHERE rn <= ?
+        ORDER BY plays DESC, album COLLATE NOCASE, disc, no
+        LIMIT ?
+        """, (artist_id, artist_id, per_album, limit)).fetchall()

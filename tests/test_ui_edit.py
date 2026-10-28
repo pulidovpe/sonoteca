@@ -151,14 +151,14 @@ def test_open_album_follows_renamed_album(qml_env):
     js, act, wait = env.js, env.act, env.wait
     old_album, ids = album_ids(env.controller)
     act(f"openAlbum({old_album})", 400)
-    assert js("stack.depth") == 2 and js("stack.currentItem.albumId") == old_album
+    assert js("win.canBack") is True and js("stack.currentItem.albumId") == old_album
     env.controller.applyEdit(ids, {"album": "Renombrado"}, "", False)
     for _ in range(40):
         if js("stack.currentItem.albumId") != old_album:
             break
         wait(200)
     new_album = js("stack.currentItem.albumId")
-    assert new_album != old_album and js("stack.depth") == 2
+    assert new_album != old_album and js("win.navIndex") == 1  # reemplazó la entrada, no añadió otra
     assert js("stack.currentItem.info.displayTitle") == "Renombrado"
     assert env.warnings == []
 

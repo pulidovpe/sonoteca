@@ -33,5 +33,6 @@ ConfirmDialog 1.0 ConfirmDialog.qml
 PlaylistPicker 1.0 PlaylistPicker.qml
 PlaylistsPage 1.0 PlaylistsPage.qml
 PlaylistDetail 1.0 PlaylistDetail.qml
+HomePage 1.0 HomePage.qml
 LyricsPage 1.0 LyricsPage.qml
 LyricsSettings 1.0 LyricsSettings.qml

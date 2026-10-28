@@ -65,6 +65,7 @@ Item {
             duration: modelData.duration
             plays: (player.statsRevision, player.playsOf(modelData.id))
             trackId: modelData.id
+            albumId: modelData.albumId
             count: page.items.length
             onReorderRequested: (dst) => playlists.moveTrack(page.playlistId, index, dst)
             current: player.currentId === modelData.id
