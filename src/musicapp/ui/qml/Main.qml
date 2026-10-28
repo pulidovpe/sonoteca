@@ -64,7 +64,7 @@ ApplicationWindow {
     Action { id: actPlaylists; text: "Listas de reproducci\u00f3n"; shortcut: "Ctrl+5"; onTriggered: win.showSection("playlists") }
     Action { id: actNewPlaylist; text: "Nueva lista de reproducci\u00f3n\u2026"; shortcut: "Ctrl+N"; onTriggered: win.newPlaylist() }
     Action { id: actLyrics; text: "Letra"; shortcut: "Ctrl+6"; onTriggered: win.showSection("lyrics") }
-    Action { id: actQueue; text: "Cola (lista actual)"; shortcut: "Ctrl+4"; onTriggered: win.showSection("queue") }
+    Action { id: actQueue; text: "Reproduciendo"; shortcut: "Ctrl+4"; onTriggered: win.showSection("queue") }
     Action { id: actNewList; text: "Nueva lista temporal"; onTriggered: player.newTemporaryList() }
     Action { id: actClearList; text: "Vaciar la lista actual"; enabled: player.queueLength > 0; onTriggered: player.clearQueue() }
     Action { id: actSearch; text: "Buscar"; shortcut: "Ctrl+F"; onTriggered: { searchField.forceActiveFocus(); searchField.selectAll() } }
@@ -117,7 +117,12 @@ ApplicationWindow {
     property bool videoOpen: false
     property var stats: (Theme.dataRevision, library.stats())
 
+    function cleanup() {   // quita lo que quedó sin canciones o sin archivo
+        var r = library.cleanup()
+        if (r.removed > 0 || r.pruned > 0) Theme.dataRevision++
+    }
     function showSection(sec) {
+        if (sec === "albums" || sec === "artists" || sec === "review") cleanup()
         section = sec
         searching = false
         searchField.text = ""
@@ -312,7 +317,7 @@ ApplicationWindow {
                 }
                 SideButton {
                     width: parent.width
-                    label: "Cola"
+                    label: "Reproduciendo"
                     hint: player.queueLength > 0 ? player.queueLength : ""
                     active: win.section === "queue"
                     onClicked: win.showSection("queue")
@@ -337,6 +342,16 @@ ApplicationWindow {
                 text: online.offline ? "\u25cb Sin conexi\u00f3n" : "\u25cf En l\u00ednea"
                 color: online.offline ? Theme.textDim : Theme.accent
                 font.pixelSize: 12
+                MouseArea {
+                    id: badgeMouse
+                    anchors { fill: parent; margins: -6 }
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: online.setOffline(!online.offline)
+                    ToolTip.visible: containsMouse
+                    ToolTip.delay: 400
+                    ToolTip.text: online.offline ? "Clic para volver a modo en l\u00ednea" : "Clic para pasar a modo sin conexi\u00f3n"
+                }
             }
             Text {
                 id: statsText

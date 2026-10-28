@@ -14,6 +14,9 @@ def list_artists(conn: sqlite3.Connection) -> list[sqlite3.Row]:
                (SELECT COUNT(*) FROM tracks t WHERE t.artist_id = ar.id) AS tracks
         FROM artists ar
         LEFT JOIN albums al ON al.album_artist_id = ar.id
+        WHERE EXISTS (SELECT 1 FROM tracks t WHERE t.artist_id = ar.id)
+           OR EXISTS (SELECT 1 FROM albums a2 JOIN tracks t2 ON t2.album_id = a2.id
+                      WHERE a2.album_artist_id = ar.id)
         GROUP BY ar.id
         ORDER BY ar.sort_name COLLATE NOCASE
         """
@@ -43,6 +46,7 @@ def list_albums(conn: sqlite3.Connection, *, artist_id: int | None = None,
         LEFT JOIN tracks t ON t.album_id = al.id
         {clause}
         GROUP BY al.id
+        HAVING COUNT(t.id) > 0
         ORDER BY ar.sort_name COLLATE NOCASE, al.year, al.title COLLATE NOCASE
         """,
         params,

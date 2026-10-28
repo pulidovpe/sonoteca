@@ -37,7 +37,7 @@ Item {
         wrapMode: Text.WordWrap
         color: Theme.textDim
         font.pixelSize: 14
-        text: "Todav\u00eda no tienes listas. Crea una, o guarda la lista actual desde \u00abCola\u00bb. Tambi\u00e9n puedes hacer clic derecho en una canci\u00f3n \u25b8 Agregar a una lista\u2026"
+        text: "Todav\u00eda no tienes listas. Crea una, o guarda la lista actual desde \u00abReproduciendo\u00bb. Tambi\u00e9n puedes hacer clic derecho en una canci\u00f3n \u25b8 Agregar a una lista\u2026"
     }
     ListView {
         id: list

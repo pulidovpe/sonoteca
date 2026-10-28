@@ -8,6 +8,7 @@ Item {
     property string title
     property string subtitle
     property real duration: 0
+    property int plays: -1   // < 0: no se muestra
     property bool current: false
     property bool playing: false
     signal activated()
@@ -59,7 +60,7 @@ Item {
     }
     Row {
         id: actions
-        anchors { right: dur.left; rightMargin: 12; verticalCenter: parent.verticalCenter }
+        anchors { right: playsText.visible ? playsText.left : dur.left; rightMargin: 12; verticalCenter: parent.verticalCenter }
         spacing: 2
         opacity: hover.hovered ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: Theme.fast } }
@@ -80,6 +81,14 @@ Item {
         IconButton { width: 30; height: 30; iconSize: 13; svg: Theme.iconUp; onClicked: row.moveUp() }
         IconButton { width: 30; height: 30; iconSize: 13; svg: Theme.iconDown; onClicked: row.moveDown() }
         IconButton { width: 30; height: 30; iconSize: 12; svg: Theme.iconClose; onClicked: row.removeRequested() }
+    }
+    Text {
+        id: playsText
+        visible: row.plays >= 0
+        text: "\u25b6 " + row.plays
+        anchors { right: dur.left; rightMargin: 16; verticalCenter: parent.verticalCenter }
+        color: Theme.textDim
+        font.pixelSize: 12
     }
     Text {
         id: dur
