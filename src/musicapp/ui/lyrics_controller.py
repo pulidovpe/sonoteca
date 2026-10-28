@@ -94,6 +94,17 @@ class LyricsController(QObject):
     def stored(self, track_id: int) -> dict:
         return store.lyrics_doc(self._conn, track_id, self.translateLang)
 
+    @Slot(int, result=str)
+    def rawText(self, track_id: int) -> str:
+        """Texto guardado para editarlo a mano (vacío si no hay letra)."""
+        return store.raw_text(self._conn, track_id)
+
+    @Slot(int, str, result="QVariantMap")
+    def saveManual(self, track_id: int, text: str) -> dict:
+        """Guarda la letra escrita por el usuario (vacío = borrarla) y devuelve el documento nuevo."""
+        store.save_manual(self._conn, track_id, text)
+        return store.lyrics_doc(self._conn, track_id, self.translateLang)
+
     # ---- consultas en línea ----
     def _spawn(self, work: Callable[[object], None]) -> bool:
         if self._busy:

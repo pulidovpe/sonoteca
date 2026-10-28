@@ -8,6 +8,7 @@ from PySide6.QtCore import Property, QObject, Signal, Slot
 from musicapp.core import library, paths, stats
 from musicapp.core.db import connect
 from musicapp.player.backend import PlayerBackend
+from musicapp.player.devices import classify_audio_device
 from musicapp.player.queue import PlayQueue
 
 from .controller import album_display
@@ -131,6 +132,27 @@ class PlayerController(QObject):
             if d["id"] == current:
                 return d["name"]
         return "Autom\u00e1tico"
+
+    def _active_audio_name(self) -> str:
+        """Nombre de la salida que suena ahora: la elegida o, en automático, la predeterminada."""
+        current = self._backend.audio_device()
+        devices = self._backend.audio_devices()
+        for d in devices:
+            if current and d["id"] == current:
+                return d["name"]
+        for d in devices:
+            if d["isDefault"]:
+                return d["name"] + (" (autom\u00e1tico)" if not current else "")
+        return ""
+
+    @Property(str, notify=audioChanged)
+    def audioActiveName(self) -> str:
+        return self._active_audio_name()
+
+    @Property(str, notify=audioChanged)
+    def audioDeviceKind(self) -> str:
+        """'speaker' | 'headphones' | 'display': el icono de la barra de reproducción."""
+        return classify_audio_device(self._active_audio_name())
 
     @Property(int, notify=playsChanged)
     def statsRevision(self) -> int:

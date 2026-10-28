@@ -7,7 +7,7 @@ from pathlib import Path
 from PySide6.QtCore import QObject, QUrl, Signal, Slot
 
 from musicapp import __version__
-from musicapp.core import cleanup, covers, library, paths, stats, tag_edit
+from musicapp.core import cleanup, covers, library, paths, review, stats, tag_edit
 from musicapp.core.db import connect, default_db_path
 from musicapp.core.models import UNKNOWN_ALBUM
 from musicapp.core.search import SearchIndex, normalize
@@ -28,11 +28,14 @@ class LibraryController(QObject):
     # los manejadores QML corren desde el bucle de eventos (sin tener tomado el GIL de Python).
     editProgress = Signal(int, int)
     editFinished = Signal("QVariantMap")
+    rescanProgress = Signal(int, int)
+    rescanFinished = Signal("QVariantMap")
 
     def __init__(self, db_path: Path | str | None = None, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._db_arg = db_path
         self._editing = False
+        self._rescanning = False
         self._conn = connect(db_path)
         self._db_path = str(db_path) if db_path else str(default_db_path())
         self._index: SearchIndex | None = None
@@ -236,6 +239,45 @@ class LibraryController(QObject):
                 for t in res.tracks
             ],
         }
+
+    @Slot(result=int)
+    def dismissedCount(self) -> int:
+        return review.dismissed_count(self._conn)
+
+    @Slot(result=int)
+    def dismissReview(self) -> int:
+        """Vacía «Por revisar» (no toca archivos ni tags). Devuelve cuántas pistas quitó."""
+        return review.dismiss_listed(self._conn)
+
+    @Slot(result=int)
+    def restoreDismissed(self) -> int:
+        return review.restore_dismissed(self._conn)
+
+    @Slot()
+    def rescanReview(self) -> None:
+        """Relee los tags de los archivos de «Por revisar» en un hilo aparte (sin red)."""
+        if self._rescanning:
+            return
+        self._rescanning = True
+        ids = [r["id"] for r in library.list_incomplete(self._conn)]
+        threading.Thread(target=self._rescan_worker, args=(ids,), daemon=True).start()
+
+    def _rescan_worker(self, ids: list) -> None:
+        try:
+            conn = connect(self._db_arg)
+            try:
+                result = review.rescan_tracks(
+                    conn, ids, progress=lambda done, total: self.rescanProgress.emit(done, total))
+            finally:
+                conn.close()
+            result["total"] = len(ids)
+            result["error"] = ""
+        except Exception as exc:  # noqa: BLE001  (se informa a la interfaz en vez de perderse)
+            result = {"total": len(ids), "checked": 0, "resolved": 0, "missing": 0, "errors": 0,
+                      "error": str(exc)}
+        self._index = None
+        self._rescanning = False
+        self.rescanFinished.emit(result)
 
     @Slot(result="QVariantList")
     def incomplete(self) -> list[dict]:

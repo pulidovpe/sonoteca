@@ -103,7 +103,8 @@ def list_incomplete(conn: sqlite3.Connection) -> list[sqlite3.Row]:
         JOIN artists ar ON ar.id = t.artist_id
         JOIN albums  al ON al.id = t.album_id
         JOIN files   f  ON f.id  = t.file_id
-        WHERE t.inferred = 1 OR ar.name = ? OR al.title = ?
+        WHERE (t.inferred = 1 OR ar.name = ? OR al.title = ?)
+          AND t.file_id NOT IN (SELECT file_id FROM review_dismissed)
         ORDER BY f.path
         """,
         (UNKNOWN_ARTIST, UNKNOWN_ALBUM, UNKNOWN_ARTIST, UNKNOWN_ALBUM),

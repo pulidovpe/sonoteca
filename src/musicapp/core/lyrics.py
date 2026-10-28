@@ -17,6 +17,7 @@ _STAMP = re.compile(r"\[(\d{1,3}):(\d{2})(?:[.:](\d{1,3}))?\]")
 _WORD_STAMP = re.compile(r"<\d{1,3}:\d{2}(?:[.:]\d{1,3})?>")
 
 PROVIDER_LRCLIB = "LRCLIB"
+SOURCE_MANUAL = "Manual"
 NOT_FOUND_RETRY = timedelta(days=30)  # una letra "no encontrada" se reintenta pasado este tiempo
 
 
@@ -100,6 +101,31 @@ def save_lyrics(conn: sqlite3.Connection, track_id: int, *, plain: str | None,
             (track_id, language, plain or None, synced or None, source, _now(),
              int(instrumental), lrclib_id))
         conn.execute("DELETE FROM translations WHERE track_id = ?", (track_id,))
+
+
+def raw_text(conn: sqlite3.Connection, track_id: int) -> str:
+    """Texto guardado tal cual (LRC con marcas de tiempo si es sincronizada) para editarlo a mano."""
+    row = get_stored(conn, track_id)
+    if row is None or row["instrumental"]:
+        return ""
+    return (row["synced_lrc"] or row["original_text"] or "")
+
+
+def save_manual(conn: sqlite3.Connection, track_id: int, text: str | None) -> None:
+    """Guarda la letra escrita o pegada por el usuario. Si trae marcas [mm:ss] queda sincronizada.
+    Con el texto vacío se borra la letra guardada (la manual o la de internet)."""
+    text = (text or "").replace("\r\n", "\n").strip("\n")
+    if not text.strip():
+        with conn:
+            conn.execute("DELETE FROM lyrics WHERE track_id = ?", (track_id,))
+            conn.execute("DELETE FROM translations WHERE track_id = ?", (track_id,))
+        return
+    stamped = parse_lrc(text)
+    if stamped:
+        save_lyrics(conn, track_id, plain="\n".join(line.text for line in stamped), synced=text,
+                    source=SOURCE_MANUAL)
+    else:
+        save_lyrics(conn, track_id, plain=text, synced=None, source=SOURCE_MANUAL)
 
 
 def save_not_found(conn: sqlite3.Connection, track_id: int) -> None:
