@@ -5,6 +5,14 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.9.3] - 2026-10-27
+### Añadido
+- **Tema «Neón»** basado en la paleta del logo: fondo azul casi negro, acento cian `#00d0fc` y degradado cian → violeta en el
+  botón de reproducir y en los deslizadores. Todos los colores están en `Theme.qml` como tokens (documentados en
+  `docs/TEMA.md`); se eliminaron los ~40 colores fijos repartidos por las pantallas y una prueba impide que vuelvan.
+### Cambiado
+- Los botones principales y las fichas activas usan el acento cian; las portadas sin imagen toman tonos cian–violeta.
+
 ## [0.9.2.3] - 2026-10-27
 ### Cambiado
 - `build_mac.sh` muestra los pasos `[1/7]…[7/7]`, guarda un `build.log`, indica en qué paso falla y al final imprime la

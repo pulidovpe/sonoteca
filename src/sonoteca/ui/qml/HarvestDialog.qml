@@ -23,8 +23,8 @@ Popup {
     anchors.centerIn: Overlay.overlay
     width: Math.min(560, Overlay.overlay ? Overlay.overlay.width - 48 : 560)
     padding: 24
-    background: Rectangle { color: "#1d1d1f"; radius: 12; border.color: "#2e2e32"; border.width: 1 }
-    Overlay.modal: Rectangle { color: "#99000000" }
+    background: Rectangle { color: Theme.panel; radius: 12; border.color: Theme.border; border.width: 1 }
+    Overlay.modal: Rectangle { color: Theme.scrim }
     enter: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 160 } }
     exit: Transition { NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 120 } }
 
@@ -99,13 +99,13 @@ Popup {
                 width: parent.width
                 height: timeText.implicitHeight + 20
                 radius: 8
-                color: root.plan.long ? "#3a2a12" : "#232327"
-                border.color: root.plan.long ? "#d9993d" : "#2e2e32"
+                color: root.plan.long ? Theme.warnBg : Theme.surfaceRaised
+                border.color: root.plan.long ? Theme.warnBorder : Theme.border
                 Text {
                     id: timeText
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 12 }
                     wrapMode: Text.WordWrap
-                    color: root.plan.long ? "#f0c27a" : Theme.text
+                    color: root.plan.long ? Theme.warn : Theme.text
                     font.pixelSize: 14
                     text: (root.plan.long ? "Es bastante m\u00fasica: " : "") + "tiempo estimado " + root.plan.duration
                           + ". " + (root.plan.long ? "Puedes ocultar esta ventana y seguir usando Sonoteca, o cancelar cuando quieras; lo ya descargado se conserva. " : "")
@@ -116,7 +116,7 @@ Popup {
                 visible: root.plan.offline
                 width: parent.width
                 wrapMode: Text.WordWrap
-                color: "#f0c27a"
+                color: Theme.warn
                 font.pixelSize: 13
                 text: "El modo sin conexi\u00f3n est\u00e1 activo: activa internet para poder descargar."
             }
@@ -128,7 +128,7 @@ Popup {
             spacing: 10
             visible: root.stage === "running"
             Rectangle {
-                width: parent.width; height: 8; radius: 4; color: "#2e2e32"
+                width: parent.width; height: 8; radius: 4; color: Theme.border
                 Rectangle {
                     height: parent.height; radius: 4; color: Theme.accent
                     width: root.total > 0 ? parent.width * Math.min(1, root.done / root.total) : 0
@@ -160,9 +160,9 @@ Popup {
                    text: root.summary.unsure + " con coincidencia dudosa: no se aplicaron. Elige su portada a mano con \u00abBuscar portada\u00bb en el \u00e1lbum." }
             Text { width: parent.width; wrapMode: Text.WordWrap; color: Theme.textDim; font.pixelSize: 13; visible: (root.summary.notfound || 0) > 0
                    text: root.summary.notfound + " sin resultado (se volver\u00e1 a intentar dentro de 30 d\u00edas)." }
-            Text { width: parent.width; wrapMode: Text.WordWrap; color: "#f0c27a"; font.pixelSize: 13; visible: !!root.summary.offline
+            Text { width: parent.width; wrapMode: Text.WordWrap; color: Theme.warn; font.pixelSize: 13; visible: !!root.summary.offline
                    text: "Se detuvo porque el modo sin conexi\u00f3n est\u00e1 activo." }
-            Text { width: parent.width; wrapMode: Text.WordWrap; color: "#f0c27a"; font.pixelSize: 13; visible: !!root.summary.aborted || (root.summary.errors || 0) > 0
+            Text { width: parent.width; wrapMode: Text.WordWrap; color: Theme.warn; font.pixelSize: 13; visible: !!root.summary.aborted || (root.summary.errors || 0) > 0
                    text: (root.summary.errors || 0) + " errores de red" + (root.summary.aborted ? "; se detuvo tras varios fallos seguidos. Revisa tu conexi\u00f3n y vuelve a intentarlo." : ".") }
             Text { width: parent.width; wrapMode: Text.WordWrap; color: Theme.textDim; font.pixelSize: 13; visible: !!root.summary.cancelled
                    text: "Cancelado: lo ya descargado se conserva." }

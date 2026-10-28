@@ -58,7 +58,7 @@ Item {
                 x: 24
                 anchors.verticalCenter: parent.verticalCenter
                 width: 48; height: 48
-                fallback: Qt.hsla(((modelData.id * 61) % 360) / 360, 0.45, 0.32, 1)
+                fallback: Theme.coverColor(modelData.id)
                 albumIds: (playlists.revision, Theme.dataRevision, playlists.coverAlbums(modelData.id))
             }
             Column {

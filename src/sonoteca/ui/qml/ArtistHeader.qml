@@ -63,7 +63,7 @@ Item {
         width: visible ? 120 : 0
         height: visible ? 120 : 0
         radius: 8
-        color: "#222224"
+        color: Theme.placeholder
         Image {
             anchors.fill: parent
             source: root.photoOn && root.info.imagePath ? online.fileUrl(root.info.imagePath) : ""
@@ -80,7 +80,7 @@ Item {
             width: parent.width
             visible: !!root.info.bio
             text: root.info.bio || ""
-            color: "#d0d0d4"
+            color: Theme.textSoft
             font.pixelSize: 13
             lineHeight: 1.25
             wrapMode: Text.WordWrap

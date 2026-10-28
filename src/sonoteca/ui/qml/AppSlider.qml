@@ -11,13 +11,17 @@ Slider {
         width: root.availableWidth
         height: 4
         radius: 2
-        color: "#4d4d52"
+        color: Theme.track
         Rectangle {
             width: root.visualPosition * parent.width
             height: parent.height
             radius: 2
-            color: root.hovered || root.pressed ? Theme.accent : "#ffffff"
-            Behavior on color { ColorAnimation { duration: Theme.fast } }
+            // Relleno con el degradado del logo (cian → magenta)
+            gradient: Gradient {
+                orientation: Gradient.Horizontal
+                GradientStop { position: 0.0; color: Theme.cyan }
+                GradientStop { position: 1.0; color: root.hovered || root.pressed ? Theme.magenta : Theme.violet }
+            }
         }
     }
     handle: Rectangle {
@@ -26,7 +30,7 @@ Slider {
         width: 12
         height: 12
         radius: 6
-        color: "#ffffff"
+        color: Theme.text
         opacity: root.hovered || root.pressed ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: Theme.fast } }
     }

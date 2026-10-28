@@ -236,7 +236,7 @@ Item {
                     width: parent.width
                     visible: text !== ""
                     text: page.mode === "translation" && row.translated !== "" ? row.translated : row.original
-                    color: !row.synced || row.active ? Theme.text : "#6f6f74"
+                    color: !row.synced || row.active ? Theme.text : Theme.textFaint
                     font.pixelSize: page.panel ? (row.active ? 20 : 16) : (row.active ? 24 : 20)
                     font.weight: row.active ? Font.Bold : Font.DemiBold
                     wrapMode: Text.WordWrap

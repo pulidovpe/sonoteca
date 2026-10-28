@@ -110,8 +110,8 @@ ApplicationWindow {
         anchors.centerIn: Overlay.overlay
         width: 460
         padding: 24
-        background: Rectangle { color: "#1d1d1f"; radius: 12; border.color: "#2e2e32"; border.width: 1 }
-        Overlay.modal: Rectangle { color: "#99000000" }
+        background: Rectangle { color: Theme.panel; radius: 12; border.color: Theme.border; border.width: 1 }
+        Overlay.modal: Rectangle { color: Theme.scrim }
         enter: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 160 } }
         exit: Transition { NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 120 } }
         contentItem: Column {
@@ -641,7 +641,7 @@ ApplicationWindow {
                     Keys.onEscapePressed: win.clearSearch()
                     background: Rectangle {
                         radius: 20
-                        color: searchField.activeFocus ? "#2e2e32" : Theme.surface
+                        color: searchField.activeFocus ? Theme.border : Theme.surface
                         border.width: searchField.activeFocus ? 1 : 0
                         border.color: Theme.accent
                         Behavior on color { ColorAnimation { duration: Theme.fast } }
@@ -658,7 +658,7 @@ ApplicationWindow {
                         Rectangle {
                             anchors.fill: parent
                             radius: 14
-                            color: clearMouse.containsMouse ? "#3a3a3e" : "transparent"
+                            color: clearMouse.containsMouse ? Theme.surfaceHover : "transparent"
                             Behavior on color { ColorAnimation { duration: Theme.fast } }
                         }
                         Icon {
@@ -874,7 +874,7 @@ ApplicationWindow {
         width: toastText.width + 40
         height: toastText.height + 26
         radius: 16
-        color: "#2e2e32"
+        color: Theme.border
         border.color: Theme.accent
         border.width: 1
         Behavior on opacity { NumberAnimation { duration: 220 } }

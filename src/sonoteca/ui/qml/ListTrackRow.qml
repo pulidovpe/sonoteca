@@ -70,7 +70,7 @@ Item {
         width: visible ? 40 : 0
         height: 40
         radius: 4
-        color: "#222224"
+        color: Theme.placeholder
         anchors { left: marker.right; leftMargin: 6; verticalCenter: parent.verticalCenter }
         Image {
             anchors.fill: parent

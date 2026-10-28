@@ -7,9 +7,9 @@ Menu {
     padding: 6
     background: Rectangle {
         implicitWidth: 280
-        color: "#1d1d1f"
+        color: Theme.panel
         radius: 8
-        border.color: "#2e2e32"
+        border.color: Theme.border
         border.width: 1
     }
 }

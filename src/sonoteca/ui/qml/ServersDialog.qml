@@ -19,8 +19,8 @@ Popup {
     width: Math.min(680, Overlay.overlay ? Overlay.overlay.width - 48 : 680)
     height: Math.min(640, Overlay.overlay ? Overlay.overlay.height - 48 : 640)
     padding: 24
-    background: Rectangle { color: "#1d1d1f"; radius: 12; border.color: "#2e2e32"; border.width: 1 }
-    Overlay.modal: Rectangle { color: "#99000000" }
+    background: Rectangle { color: Theme.panel; radius: 12; border.color: Theme.border; border.width: 1 }
+    Overlay.modal: Rectangle { color: Theme.scrim }
     enter: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 160 } }
     exit: Transition { NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 120 } }
 
@@ -58,8 +58,8 @@ Popup {
         property string placeholder: ""
         height: 36
         radius: 8
-        color: "#141416"
-        border.color: input.activeFocus ? Theme.accent : "#2e2e32"
+        color: Theme.field
+        border.color: input.activeFocus ? Theme.accent : Theme.border
         TextField {
             id: input
             anchors.fill: parent
@@ -86,8 +86,8 @@ Popup {
                 width: list.width
                 height: info.implicitHeight + 20
                 radius: 8
-                color: modelData.id === list.active ? "#1f2a22" : "#232327"
-                border.color: modelData.id === list.active ? Theme.accent : "#2e2e32"
+                color: modelData.id === list.active ? Theme.accentSoft : Theme.surfaceRaised
+                border.color: modelData.id === list.active ? Theme.accent : Theme.border
                 Column {
                     id: info
                     anchors { left: parent.left; right: buttons.left; verticalCenter: parent.verticalCenter; leftMargin: 12; rightMargin: 8 }
@@ -172,7 +172,7 @@ Popup {
             visible: root.message !== ""
             width: parent.width
             wrapMode: Text.WordWrap
-            color: root.messageOk ? Theme.accent : "#e5736b"
+            color: root.messageOk ? Theme.accent : Theme.danger
             font.pixelSize: 13
             text: root.message
         }

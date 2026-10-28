@@ -6,8 +6,8 @@ MenuBar {
     id: root
     implicitHeight: 32
     background: Rectangle {
-        color: "#0a0a0b"
-        Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: "#26262a" }
+        color: Theme.bar
+        Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: Theme.divider }
     }
     delegate: MenuBarItem {
         id: item

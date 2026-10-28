@@ -22,8 +22,8 @@ Popup {
     width: 640
     padding: 24
     closePolicy: step === 2 ? Popup.NoAutoClose : (Popup.CloseOnEscape | Popup.CloseOnPressOutside)
-    background: Rectangle { color: "#1d1d1f"; radius: 12; border.color: "#2e2e32"; border.width: 1 }
-    Overlay.modal: Rectangle { color: "#99000000" }
+    background: Rectangle { color: Theme.panel; radius: 12; border.color: Theme.border; border.width: 1 }
+    Overlay.modal: Rectangle { color: Theme.scrim }
     enter: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 160 } }
     exit: Transition { NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 120 } }
 
@@ -113,7 +113,7 @@ Popup {
                 width: list.width
                 height: 76
                 radius: 8
-                color: index === root.selected ? "#2e2e32" : (rowMouse.containsMouse ? Theme.surfaceHover : "#232325")
+                color: index === root.selected ? Theme.border : (rowMouse.containsMouse ? Theme.surfaceHover : Theme.surfaceRaised)
                 border.width: index === root.selected ? 1 : 0
                 border.color: Theme.accent
                 Behavior on color { ColorAnimation { duration: Theme.fast } }
@@ -122,7 +122,7 @@ Popup {
                     x: 8
                     anchors.verticalCenter: parent.verticalCenter
                     width: 60; height: 60; radius: 4
-                    color: "#161617"
+                    color: Theme.field
                     Image {
                         anchors.fill: parent
                         source: modelData.previewPath ? online.fileUrl(modelData.previewPath) : ""
@@ -167,7 +167,7 @@ Popup {
             AppCheck { id: updateTags; width: parent.width; text: "Actualizar el álbum y el año en los tags" }
             AppCheck { id: backupCheck; width: parent.width; checked: true; text: "Guardar copia de respaldo de los originales" }
         }
-        Text { width: parent.width; visible: root.error !== ""; text: root.error; color: "#ff6b6b"; font.pixelSize: 13; wrapMode: Text.WordWrap }
+        Text { width: parent.width; visible: root.error !== ""; text: root.error; color: Theme.danger; font.pixelSize: 13; wrapMode: Text.WordWrap }
         Text {
             width: parent.width
             visible: root.candidates.length > 0

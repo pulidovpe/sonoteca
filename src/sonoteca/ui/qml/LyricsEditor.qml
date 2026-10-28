@@ -17,8 +17,8 @@ Popup {
     width: Math.min(620, Overlay.overlay ? Overlay.overlay.width - 48 : 620)
     height: Math.min(560, Overlay.overlay ? Overlay.overlay.height - 48 : 560)
     padding: 24
-    background: Rectangle { color: "#1d1d1f"; radius: 12; border.color: "#2e2e32"; border.width: 1 }
-    Overlay.modal: Rectangle { color: "#99000000" }
+    background: Rectangle { color: Theme.panel; radius: 12; border.color: Theme.border; border.width: 1 }
+    Overlay.modal: Rectangle { color: Theme.scrim }
     enter: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 160 } }
     exit: Transition { NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 120 } }
 
@@ -51,8 +51,8 @@ Popup {
             width: parent.width
             height: root.height - 24 * 2 - 150
             radius: 8
-            color: "#141416"
-            border.color: area.activeFocus ? Theme.accent : "#2e2e32"
+            color: Theme.field
+            border.color: area.activeFocus ? Theme.accent : Theme.border
             ScrollView {
                 anchors.fill: parent
                 anchors.margins: 4

@@ -5,7 +5,7 @@ import QtQuick.Shapes
 Item {
     id: root
     property string svg
-    property color color: "#ffffff"
+    property color color: Theme.text
     property real size: 24
     width: size
     height: size

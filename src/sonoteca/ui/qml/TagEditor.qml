@@ -48,8 +48,8 @@ Popup {
     width: 580
     padding: 24
     closePolicy: step === 2 ? Popup.NoAutoClose : (Popup.CloseOnEscape | Popup.CloseOnPressOutside)
-    background: Rectangle { color: "#1d1d1f"; radius: 12; border.color: "#2e2e32"; border.width: 1 }
-    Overlay.modal: Rectangle { color: "#99000000" }
+    background: Rectangle { color: Theme.panel; radius: 12; border.color: Theme.border; border.width: 1 }
+    Overlay.modal: Rectangle { color: Theme.scrim }
     enter: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 160 } }
     exit: Transition { NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 120 } }
 
@@ -171,7 +171,7 @@ Popup {
                     }
                     Rectangle {
                         width: 96; height: 96; radius: 6
-                        color: "#262628"
+                        color: Theme.surfaceRaised
                         Image {
                             id: currentImage
                             anchors.fill: parent
@@ -209,7 +209,7 @@ Popup {
                     Text { text: "Nueva"; color: Theme.accent; font.pixelSize: 12; font.weight: Font.DemiBold }
                     Rectangle {
                         width: 96; height: 96; radius: 6
-                        color: "#262628"
+                        color: Theme.surfaceRaised
                         border.width: 1
                         border.color: Theme.accent
                         Image {
@@ -254,7 +254,7 @@ Popup {
                 width: parent.width
                 visible: root.error !== ""
                 text: root.error
-                color: "#ff6b6b"
+                color: Theme.danger
                 font.pixelSize: 13
                 wrapMode: Text.WrapAtWordBoundaryOrAnywhere
             }
@@ -280,7 +280,7 @@ Popup {
                 width: parent.width
                 height: reviewCol.height + 24
                 radius: 8
-                color: "#262628"
+                color: Theme.surfaceRaised
                 Column {
                     id: reviewCol
                     x: 12
@@ -311,7 +311,7 @@ Popup {
                     radius: 4
                     color: backupBox.checked ? Theme.accent : "transparent"
                     border.color: backupBox.checked ? Theme.accent : Theme.textDim
-                    Text { anchors.centerIn: parent; text: "\u2713"; visible: backupBox.checked; color: "#000000"; font.pixelSize: 12; font.weight: Font.Bold }
+                    Text { anchors.centerIn: parent; text: "\u2713"; visible: backupBox.checked; color: Theme.onAccent; font.pixelSize: 12; font.weight: Font.Bold }
                 }
                 contentItem: Text {
                     text: backupBox.text
@@ -341,7 +341,7 @@ Popup {
                 from: 0
                 to: Math.max(1, root.total)
                 value: root.done
-                background: Rectangle { implicitHeight: 6; radius: 3; color: "#3a3a3e" }
+                background: Rectangle { implicitHeight: 6; radius: 3; color: Theme.track }
                 contentItem: Item {
                     Rectangle { width: bar.visualPosition * parent.width; height: parent.height; radius: 3; color: Theme.accent }
                 }

@@ -42,7 +42,7 @@ Column {
         background: Rectangle {
             implicitHeight: 38
             radius: 6
-            color: input.activeFocus ? "#2e2e32" : "#262628"
+            color: input.activeFocus ? Theme.border : Theme.surfaceRaised
             border.width: root.touched ? 1 : 0
             border.color: Theme.accent
         }

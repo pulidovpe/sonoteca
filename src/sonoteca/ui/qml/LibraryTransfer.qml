@@ -67,8 +67,8 @@ Item {
         anchors.centerIn: Overlay.overlay
         width: Math.min(580, Overlay.overlay ? Overlay.overlay.width - 48 : 580)
         padding: 24
-        background: Rectangle { color: "#1d1d1f"; radius: 12; border.color: "#2e2e32"; border.width: 1 }
-        Overlay.modal: Rectangle { color: "#99000000" }
+        background: Rectangle { color: Theme.panel; radius: 12; border.color: Theme.border; border.width: 1 }
+        Overlay.modal: Rectangle { color: Theme.scrim }
 
         function begin(file) {
             var r = portable.inspectImport(file)
@@ -105,11 +105,11 @@ Item {
                           + (importPopup.info.manifest && importPopup.info.manifest.created ? " (exportado el " + importPopup.info.manifest.created.substring(0, 10) + ")" : "") + "."
                 }
                 Rectangle {
-                    width: parent.width; height: warn.implicitHeight + 20; radius: 8; color: "#3a2a12"; border.color: "#d9993d"
+                    width: parent.width; height: warn.implicitHeight + 20; radius: 8; color: Theme.warnBg; border.color: Theme.warnBorder
                     Text {
                         id: warn
                         anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 12 }
-                        wrapMode: Text.WordWrap; color: "#f0c27a"; font.pixelSize: 13
+                        wrapMode: Text.WordWrap; color: Theme.warn; font.pixelSize: 13
                         text: "Esto REEMPLAZA tu biblioteca actual (" + Theme.plural(importPopup.info.currentTracks || 0, "canci\u00f3n", "canciones")
                               + ", listas, letras y portadas descargadas). Antes se guarda una copia en la carpeta de datos, dentro de \u00abbackups\u00bb. No se tocan tus archivos de m\u00fasica."
                     }
@@ -120,8 +120,8 @@ Item {
                     width: parent.width
                     spacing: 8
                     Rectangle {
-                        width: parent.width - chooseButton.width - 8; height: 36; radius: 8; color: "#141416"
-                        border.color: rootField.activeFocus ? Theme.accent : "#2e2e32"
+                        width: parent.width - chooseButton.width - 8; height: 36; radius: 8; color: Theme.field
+                        border.color: rootField.activeFocus ? Theme.accent : Theme.border
                         TextField {
                             id: rootField
                             anchors.fill: parent
@@ -136,7 +136,7 @@ Item {
                     }
                     PillButton { id: chooseButton; height: 36; label: "Elegir\u2026"; onClicked: musicFolder.open() }
                 }
-                Text { visible: importPopup.error !== ""; width: parent.width; wrapMode: Text.WordWrap; color: "#e5736b"; font.pixelSize: 13; text: importPopup.error }
+                Text { visible: importPopup.error !== ""; width: parent.width; wrapMode: Text.WordWrap; color: Theme.danger; font.pixelSize: 13; text: importPopup.error }
             }
             Text {
                 visible: importPopup.stage === "restart"
@@ -167,8 +167,8 @@ Item {
         anchors.centerIn: Overlay.overlay
         width: Math.min(560, Overlay.overlay ? Overlay.overlay.width - 48 : 560)
         padding: 24
-        background: Rectangle { color: "#1d1d1f"; radius: 12; border.color: "#2e2e32"; border.width: 1 }
-        Overlay.modal: Rectangle { color: "#99000000" }
+        background: Rectangle { color: Theme.panel; radius: 12; border.color: Theme.border; border.width: 1 }
+        Overlay.modal: Rectangle { color: Theme.scrim }
 
         function begin() { stage = "confirm"; error = ""; keepBackup.checked = true; open() }
         function doReset() {
@@ -201,10 +201,10 @@ Item {
                 }
                 Text {
                     visible: !keepBackup.checked
-                    width: parent.width; wrapMode: Text.WordWrap; color: "#e5736b"; font.pixelSize: 13
+                    width: parent.width; wrapMode: Text.WordWrap; color: Theme.danger; font.pixelSize: 13
                     text: "Sin copia de seguridad no se podr\u00e1 recuperar la biblioteca (salvo que antes la hayas exportado)."
                 }
-                Text { visible: resetPopup.error !== ""; width: parent.width; wrapMode: Text.WordWrap; color: "#e5736b"; font.pixelSize: 13; text: resetPopup.error }
+                Text { visible: resetPopup.error !== ""; width: parent.width; wrapMode: Text.WordWrap; color: Theme.danger; font.pixelSize: 13; text: resetPopup.error }
             }
             Text {
                 visible: resetPopup.stage === "restart"

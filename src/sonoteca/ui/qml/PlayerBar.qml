@@ -11,12 +11,12 @@ Rectangle {
     signal albumRequested(int albumId)
     property alias artistLink: artistLink
     property alias albumLink: albumLink
-    color: "#141415"
+    color: Theme.playerBar
     clip: true
 
     function fmtMs(ms) { return Theme.fmt(ms / 1000) }
 
-    Rectangle { width: parent.width; height: 1; color: "#26262a" }
+    Rectangle { width: parent.width; height: 1; color: Theme.divider }
 
     // Izquierda: portada y datos de la pista
     Item {
@@ -26,7 +26,7 @@ Rectangle {
         Rectangle {
             id: artBg
             width: 56; height: 56; radius: 4
-            color: "#222224"
+            color: Theme.placeholder
             anchors.verticalCenter: parent.verticalCenter
             Image {
                 anchors.fill: parent
@@ -104,14 +104,18 @@ Rectangle {
             IconButton { anchors.verticalCenter: parent.verticalCenter; svg: Theme.iconPrev; onClicked: player.previous() }
             Rectangle {
                 width: 44; height: 44; radius: 22
-                color: "#ffffff"
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop { position: 0.0; color: Theme.cyan }
+                    GradientStop { position: 1.0; color: Theme.magenta }
+                }
                 scale: playMouse.containsMouse ? 1.07 : 1.0
                 Behavior on scale { NumberAnimation { duration: Theme.fast; easing.type: Easing.OutCubic } }
                 Icon {
                     anchors.centerIn: parent
                     svg: player.playing ? Theme.iconPause : Theme.iconPlay
                     size: 22
-                    color: "#000000"
+                    color: Theme.onAccent
                 }
                 MouseArea {
                     id: playMouse
@@ -184,7 +188,7 @@ Rectangle {
             toolTip: "Salida de audio: " + (player.audioActiveName || "predeterminada del sistema")
             onClicked: audioPopup.openPopup()
         }
-        Rectangle { anchors.verticalCenter: parent.verticalCenter; width: 1; height: 24; color: "#2e2e32" }
+        Rectangle { anchors.verticalCenter: parent.verticalCenter; width: 1; height: 24; color: Theme.border }
         Row {
             anchors.verticalCenter: parent.verticalCenter
             spacing: 8
