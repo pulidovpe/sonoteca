@@ -1,4 +1,4 @@
-# musicapp — CONTEXTO COMPACTO (v0.8.4)
+# musicapp — CONTEXTO COMPACTO (v0.8.5)
 
 > Pégalo al inicio de un chat nuevo junto con el zip del proyecto. Reemplaza al CONTEXT.md largo (que sigue siendo el historial detallado de las fases 1-5).
 
@@ -22,6 +22,7 @@ App de escritorio **local** (Mac M4 Pro, portable a Win/Linux) para ~2000 archiv
 - **0.8.2**: listas desplegables en la barra lateral; arrastrar canciones a una lista (DragState/TrackDragHandler) y reordenar arrastrando; botón ⋮ en las filas.
 - **0.8.3**: historial adelante/atrás (`go/back/forward`, Alt+←/→, Ctrl+[ ]); canciones destacadas por artista; miniaturas en listas; página **Inicio** (la app arranca ahí).
 - **0.8.4**: destacadas: máx. 5 (si hay más: 4 + «Mostrar más»); **una reproducción cuenta tras 3 s de sonar** (cualquier origen, aunque no termine); collage de portada de listas (2-4 álbumes); «¿Artista equivocado?» (elegir artículo de Wikipedia o escribir descripción + imagen); salida de audio (menú del altavoz, recuerda la elección, sigue la predeterminada al conectar audífonos); ventana «Buscar música» (se abre sola con biblioteca vacía; Archivo ▸ Buscar música…, Ctrl+Shift+O).
+- **0.8.5**: página de lista con cabecera como la de un álbum (portada/collage 190 px, «LISTA», nombre, descripción derivada: «Con A, B y C» + nº de canciones y duración; `describe_artists`); al activar una canción suelta del álbum (o «Reproducir ahora» con una sola canción) y haber lista en marcha, `QueueChoiceDialog` pregunta: vaciar y reproducir solo esa (`playOnly`) o conservar (`playKeepingQueue`: suena ya, la lista sigue después); «Letra» (clic/Ctrl+6) con canción sonando abre un panel lateral derecho (`lyricsPanelShown`), sin canción abre la página completa.
 
 ## Trampas técnicas (no repetir)
 - QML: `Action` NO tiene `shortcuts` (usar `shortcut` + `Shortcut{sequence}`); no llamar `data` a una propiedad de Item; la navegación se llama `showSection` (no `show`); emitir señales desde hilos de trabajo (GIL con `image://`); `Theme.dataRevision++` refresca páginas; textos con tildes/escapes `\uXXXX` coherentes.

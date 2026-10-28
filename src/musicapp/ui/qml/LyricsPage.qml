@@ -15,6 +15,9 @@ Item {
     property var times: []
     property string viewMode: "both"   // preferencia del usuario: original | translation | both
     property string status: ""
+    property bool panel: false   // true: panel lateral (más estrecho, con botón de cerrar)
+    readonly property int pad: panel ? 16 : 24
+    signal closeRequested()
     signal settingsRequested()
     signal needInternet()
     // Para las pruebas
@@ -91,9 +94,17 @@ Item {
         id: title
         text: "Letra"
         color: Theme.text
-        font.pixelSize: 30
+        font.pixelSize: page.panel ? 22 : 30
         font.weight: Font.Bold
-        anchors { left: parent.left; top: parent.top; leftMargin: 24; topMargin: 8 }
+        anchors { left: parent.left; top: parent.top; leftMargin: page.pad; topMargin: 8 }
+    }
+    IconButton {
+        id: closeButton
+        visible: page.panel
+        svg: Theme.iconClose
+        iconSize: 14
+        anchors { right: parent.right; rightMargin: 8; verticalCenter: title.verticalCenter }
+        onClicked: page.closeRequested()
     }
     Text {
         id: sub
@@ -102,13 +113,13 @@ Item {
         color: Theme.textDim
         font.pixelSize: 13
         elide: Text.ElideRight
-        anchors { left: parent.left; right: parent.right; top: title.bottom; leftMargin: 24; rightMargin: 24; topMargin: 2 }
+        anchors { left: parent.left; right: parent.right; top: title.bottom; leftMargin: page.pad; rightMargin: page.pad; topMargin: 2 }
     }
     Flow {
         id: actions
         spacing: 8
         visible: page.shownId > 0
-        anchors { left: parent.left; right: parent.right; top: sub.visible ? sub.bottom : title.bottom; leftMargin: 24; rightMargin: 24; topMargin: 12 }
+        anchors { left: parent.left; right: parent.right; top: sub.visible ? sub.bottom : title.bottom; leftMargin: page.pad; rightMargin: page.pad; topMargin: 12 }
         PillButton {
             id: searchButton
             height: 34
@@ -138,8 +149,8 @@ Item {
     Text {
         id: statusText
         visible: page.status !== ""
-        width: parent.width - 48
-        x: 24
+        width: parent.width - 2 * page.pad
+        x: page.pad
         anchors.top: actions.visible ? actions.bottom : sub.bottom
         anchors.topMargin: 8
         text: page.status
@@ -150,8 +161,8 @@ Item {
     Text {
         id: note
         visible: page.doc.found === true && page.doc.instrumental !== true
-        width: parent.width - 48
-        x: 24
+        width: parent.width - 2 * page.pad
+        x: page.pad
         anchors.top: statusText.visible ? statusText.bottom : (actions.visible ? actions.bottom : sub.bottom)
         anchors.topMargin: 8
         text: "Fuente: " + (page.doc.source || "LRCLIB") + (page.doc.synced ? " \u00b7 sincronizada" : " \u00b7 sin sincronizar")
@@ -169,7 +180,7 @@ Item {
         anchors {
             left: parent.left; right: parent.right; bottom: parent.bottom
             top: note.visible ? note.bottom : (statusText.visible ? statusText.bottom : (actions.visible ? actions.bottom : sub.bottom))
-            leftMargin: 24; rightMargin: 24; topMargin: 12
+            leftMargin: page.pad; rightMargin: page.pad; topMargin: 12
         }
         // La línea que suena se mantiene en la zona alta-media; el usuario puede desplazarse libremente
         highlightRangeMode: ListView.ApplyRange
@@ -199,7 +210,7 @@ Item {
                     visible: text !== ""
                     text: page.mode === "translation" && row.translated !== "" ? row.translated : row.original
                     color: !row.synced || row.active ? Theme.text : "#6f6f74"
-                    font.pixelSize: row.active ? 24 : 20
+                    font.pixelSize: page.panel ? (row.active ? 20 : 16) : (row.active ? 24 : 20)
                     font.weight: row.active ? Font.Bold : Font.DemiBold
                     wrapMode: Text.WordWrap
                     Behavior on font.pixelSize { NumberAnimation { duration: Theme.fast } }

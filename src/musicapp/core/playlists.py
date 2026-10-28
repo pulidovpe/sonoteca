@@ -74,6 +74,30 @@ def get_playlist(conn: sqlite3.Connection, playlist_id: int) -> sqlite3.Row | No
     return conn.execute(_SUMMARY + " WHERE p.id = ? GROUP BY p.id", (playlist_id,)).fetchone()
 
 
+def describe_artists(conn: sqlite3.Connection, playlist_id: int, limit: int = 3) -> str:
+    """Resumen de los artistas de la lista para su cabecera: «Con A, B y C» o «Con A, B, C y 2 más».
+
+    Se ordenan por cuántas canciones tienen en la lista (a igualdad, por aparición). Vacía si no hay
+    canciones."""
+    rows = conn.execute(
+        "SELECT ar.name AS name FROM playlist_tracks pt JOIN tracks t ON t.id = pt.track_id"
+        " JOIN artists ar ON ar.id = t.artist_id WHERE pt.playlist_id = ?"
+        " GROUP BY ar.id ORDER BY COUNT(*) DESC, MIN(pt.position)", (playlist_id,)).fetchall()
+    names = [r["name"] for r in rows]
+    if not names:
+        return ""
+    if len(names) <= limit:
+        shown = names
+        tail = ""
+    else:
+        shown = names[:limit]
+        tail = f"{len(names) - limit} m\u00e1s"
+    parts = shown + ([tail] if tail else [])
+    if len(parts) == 1:
+        return f"Con {parts[0]}"
+    return "Con " + ", ".join(parts[:-1]) + " y " + parts[-1]
+
+
 def track_ids(conn: sqlite3.Connection, playlist_id: int) -> list[int]:
     rows = conn.execute("SELECT track_id FROM playlist_tracks WHERE playlist_id = ?"
                         " ORDER BY position", (playlist_id,)).fetchall()

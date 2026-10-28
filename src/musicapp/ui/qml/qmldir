@@ -40,3 +40,4 @@ HomePage 1.0 HomePage.qml
 PlaylistCover 1.0 PlaylistCover.qml
 LyricsPage 1.0 LyricsPage.qml
 LyricsSettings 1.0 LyricsSettings.qml
+QueueChoiceDialog 1.0 QueueChoiceDialog.qml

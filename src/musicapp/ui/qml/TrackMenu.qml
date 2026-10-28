@@ -9,8 +9,12 @@ AppMenu {
     signal editRequested(var ids)
     signal listPickerRequested(var ids)
     signal lyricsRequested(int id)
+    signal playOneRequested(int id)   // una sola canción con lista en marcha: hay que preguntar
 
-    function playNow() { player.playTrackIds(ids, 0) }
+    function playNow() {
+        if (ids.length === 1 && player.queueLength > 0) playOneRequested(ids[0])
+        else player.playTrackIds(ids, 0)
+    }
     function playLater() { player.playNext(ids) }
     function addToList() { player.addToQueue(ids) }
     function edit() { editRequested(ids) }

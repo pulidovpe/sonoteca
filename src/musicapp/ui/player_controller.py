@@ -167,6 +167,26 @@ class PlayerController(QObject):
     def playTrackIds(self, ids: list, index: int) -> None:
         self._start([int(i) for i in ids], index)
 
+    @Slot(int)
+    def playKeepingQueue(self, track_id: int) -> None:
+        """Suena ya esta canción sin tocar la lista: se coloca justo después de la actual y, cuando
+        termina, la lista sigue por donde iba."""
+        valid = self._existing([track_id])
+        if not valid:
+            return
+        at = max(self._queue.position, -1) + 1
+        self._queue.insert_next(valid)
+        self._queue.jump_to(at)
+        self._error_streak = 0
+        self._play_current()
+
+    @Slot(int)
+    def playOnly(self, track_id: int) -> None:
+        """Vacía la lista y reproduce solo esta canción."""
+        valid = self._existing([track_id])
+        if valid:
+            self._start(valid, 0)
+
     @Slot()
     def toggle(self) -> None:
         if not self._current:
