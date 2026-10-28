@@ -53,13 +53,13 @@ Item {
                 color: mouse.containsMouse ? Theme.surfaceHover : "transparent"
                 Behavior on color { ColorAnimation { duration: Theme.fast } }
             }
-            Rectangle {
+            PlaylistCover {
                 id: icon
                 x: 24
                 anchors.verticalCenter: parent.verticalCenter
-                width: 44; height: 44; radius: 6
-                color: Qt.hsla(((modelData.id * 61) % 360) / 360, 0.45, 0.32, 1)
-                Icon { anchors.centerIn: parent; svg: Theme.iconPlay; size: 16; color: Theme.text }
+                width: 48; height: 48
+                fallback: Qt.hsla(((modelData.id * 61) % 360) / 360, 0.45, 0.32, 1)
+                albumIds: (playlists.revision, Theme.dataRevision, playlists.coverAlbums(modelData.id))
             }
             Column {
                 anchors { left: icon.right; leftMargin: 16; right: parent.right; rightMargin: 24; verticalCenter: parent.verticalCenter }

@@ -61,6 +61,15 @@ def list_playlists(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     return conn.execute(_SUMMARY + " GROUP BY p.id ORDER BY p.name COLLATE NOCASE").fetchall()
 
 
+def cover_album_ids(conn: sqlite3.Connection, playlist_id: int, limit: int = 4) -> list[int]:
+    """Álbumes distintos de la lista, en el orden en que aparecen (para el collage de su portada)."""
+    rows = conn.execute(
+        "SELECT t.album_id FROM playlist_tracks pt JOIN tracks t ON t.id = pt.track_id"
+        " WHERE pt.playlist_id = ? GROUP BY t.album_id ORDER BY MIN(pt.position) LIMIT ?",
+        (playlist_id, limit)).fetchall()
+    return [r["album_id"] for r in rows]
+
+
 def get_playlist(conn: sqlite3.Connection, playlist_id: int) -> sqlite3.Row | None:
     return conn.execute(_SUMMARY + " WHERE p.id = ? GROUP BY p.id", (playlist_id,)).fetchone()
 

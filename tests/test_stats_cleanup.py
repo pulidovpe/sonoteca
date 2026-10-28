@@ -31,10 +31,11 @@ def test_play_counter_and_threshold():
     assert stats.play_counts(conn, [t]) == {t: 0}
     assert stats.record_play(conn, t) == 1 and stats.record_play(conn, t) == 2
     assert stats.play_counts(conn, [t, 999]) == {t: 2, 999: 0}
-    # mitad de la pista, con tope de 4 minutos; sin duración conocida, 30 s
-    assert stats.threshold_ms(200_000) == 100_000
-    assert stats.threshold_ms(600_000) == 240_000
-    assert stats.threshold_ms(0) == 30_000
+    # cuenta a los 3 s de sonar (o la pista entera si dura menos), sin exigir oírla completa
+    assert stats.threshold_ms(200_000) == 3_000
+    assert stats.threshold_ms(600_000) == 3_000
+    assert stats.threshold_ms(0) == 3_000
+    assert stats.threshold_ms(1_000) == 1_000
     conn.execute("DELETE FROM tracks WHERE id=?", (t,))
     assert stats.play_counts(conn, [t]) == {t: 0}  # el contador sale con la pista (cascada)
 
@@ -115,3 +116,23 @@ def test_home_rankings():
     conn.commit()
     top = stats.top_playlists(conn)
     assert [(r["name"], r["plays"], r["tracks"]) for r in top] == [("Zeta", 4, 2), ("Alfa", 0, 0), ("Beta", 0, 0)]
+
+
+def test_playlist_cover_albums_distinct_in_order_max_four():
+    from musicapp.core import playlists as store
+
+    conn = connect(":memory:")
+    tracks = [add_track(conn, i, f"/{i}.mp3", album=f"Disco {i // 2}") for i in range(12)]  # 6 álbumes
+    conn.execute("INSERT INTO playlists(name) VALUES ('Mezcla'), ('Una sola'), ('Vacía')")
+    ids = {r["name"]: r["id"] for r in conn.execute("SELECT id, name FROM playlists")}
+    for pos, t in enumerate([tracks[3], tracks[2], tracks[8], tracks[9], tracks[0], tracks[11], tracks[5]]):
+        conn.execute("INSERT INTO playlist_tracks(playlist_id, track_id, position) VALUES (?,?,?)", (ids["Mezcla"], t, pos))
+    conn.execute("INSERT INTO playlist_tracks(playlist_id, track_id, position) VALUES (?,?,0)", (ids["Una sola"], tracks[0]))
+    conn.execute("INSERT INTO playlist_tracks(playlist_id, track_id, position) VALUES (?,?,1)", (ids["Una sola"], tracks[1]))
+    conn.commit()
+    album_of = {t: conn.execute("SELECT album_id FROM tracks WHERE id=?", (t,)).fetchone()[0] for t in tracks}
+    got = store.cover_album_ids(conn, ids["Mezcla"])
+    # Disco 1 (pistas 3 y 2), Disco 4 (8 y 9), Disco 0, Disco 5: en el orden en que aparecen, máximo 4
+    assert got == [album_of[tracks[3]], album_of[tracks[8]], album_of[tracks[0]], album_of[tracks[11]]]
+    assert store.cover_album_ids(conn, ids["Una sola"]) == [album_of[tracks[0]]]
+    assert store.cover_album_ids(conn, ids["Vacía"]) == []

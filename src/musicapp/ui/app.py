@@ -23,6 +23,7 @@ def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int
     from .online_controller import OnlineController
     from .player_controller import PlayerController
     from .playlist_controller import PlaylistController
+    from .scan_controller import ScanController
 
     app = QGuiApplication(argv if argv is not None else sys.argv)
     app.setApplicationName("musicapp")
@@ -40,6 +41,8 @@ def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int
     engine.rootContext().setContextProperty("playlists", playlists)
     lyrics = LyricsController(db_path)
     engine.rootContext().setContextProperty("lyrics", lyrics)
+    scan = ScanController(db_path)
+    engine.rootContext().setContextProperty("scanner", scan)
     engine.load(QUrl.fromLocalFile(str(QML_DIR / "Main.qml")))
     if not engine.rootObjects():
         return 1

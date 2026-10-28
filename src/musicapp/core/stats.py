@@ -4,16 +4,16 @@ from __future__ import annotations
 import sqlite3
 from datetime import datetime
 
-# Una pista cuenta como reproducida al escuchar la mitad (máximo 4 minutos), como el scrobbling habitual
-COUNT_CAP_MS = 240_000
-COUNT_UNKNOWN_DURATION_MS = 30_000
+# Una reproducción cuenta apenas la pista suena unos segundos, sin importar cómo se inició
+# (artista, álbum, lista, automático) ni si se oye completa. Los 3 s evitan contar un salto accidental.
+COUNT_AFTER_MS = 3_000
 
 
 def threshold_ms(duration_ms: int) -> int:
     """Tiempo escuchado a partir del cual la pista cuenta como una reproducción."""
     if duration_ms <= 0:
-        return COUNT_UNKNOWN_DURATION_MS
-    return max(1, min(duration_ms // 2, COUNT_CAP_MS))
+        return COUNT_AFTER_MS
+    return max(1, min(COUNT_AFTER_MS, duration_ms))
 
 
 def record_play(conn: sqlite3.Connection, track_id: int) -> int:

@@ -19,6 +19,10 @@ Item {
     property var topTracks: (Theme.dataRevision, player.statsRevision, artistId > 0 ? library.artistTopTracks(artistId) : [])
     property var topIds: topTracks.map(function (x) { return x.id })
     readonly property bool showTop: artistId > 0 && topTracks.length > 0
+    // Máximo 5 a la vista; si hay más, se muestran 4 y un botón para ver todas
+    property bool topExpanded: false
+    readonly property bool topHasMore: topTracks.length > 5
+    readonly property var shownTop: (topExpanded || !topHasMore) ? topTracks : topTracks.slice(0, 4)
 
     Text {
         id: title
@@ -88,7 +92,7 @@ Item {
                 width: parent.width - 8
                 Text { text: "Canciones destacadas"; leftPadding: 12; height: 40; verticalAlignment: Text.AlignVCenter; color: Theme.text; font.pixelSize: 18; font.weight: Font.Bold }
                 Repeater {
-                    model: page.topTracks
+                    model: page.shownTop
                     delegate: TrackRow {
                         width: topColumn.width
                         number: (index + 1).toString()
@@ -101,6 +105,13 @@ Item {
                         onActivated: player.playTrackIds(page.topIds, index)
                         onContextRequested: page.menuRequested([modelData.id])
                     }
+                }
+                PillButton {
+                    x: 12
+                    height: 32
+                    visible: page.topHasMore
+                    label: page.topExpanded ? "Mostrar menos" : "Mostrar m\u00e1s (" + (page.topTracks.length - 4) + ")"
+                    onClicked: page.topExpanded = !page.topExpanded
                 }
                 Text { text: "\u00c1lbumes"; leftPadding: 12; height: 52; verticalAlignment: Text.AlignBottom; bottomPadding: 6; color: Theme.text; font.pixelSize: 18; font.weight: Font.Bold }
             }

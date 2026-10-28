@@ -86,6 +86,7 @@ Item {
                 MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.expanded = !root.expanded }
             }
             Text {
+                visible: root.info.source !== "Manual"
                 text: "Fuente: " + (root.info.source || "Wikipedia") + (root.info.lang ? " (" + root.info.lang + ")" : "") + " \u00b7 licencia CC BY-SA"
                 color: Theme.accent
                 font.pixelSize: 12
@@ -97,11 +98,25 @@ Item {
             }
         }
         Text { width: parent.width; visible: root.status !== ""; text: root.status; color: Theme.textDim; font.pixelSize: 12; wrapMode: Text.WordWrap }
-        PillButton {
-            height: 32
-            enabled: !root.searching
-            label: root.searching ? "Buscando\u2026" : (root.info.bio ? "Actualizar información" : "Buscar información en internet")
-            onClicked: root.search()
+        Row {
+            spacing: 10
+            PillButton {
+                height: 32
+                enabled: !root.searching
+                label: root.searching ? "Buscando\u2026" : (root.info.bio ? "Actualizar información" : "Buscar información en internet")
+                onClicked: root.search()
+            }
+            PillButton {
+                id: lookupButton
+                height: 32
+                enabled: !root.searching
+                label: "¿Artista equivocado?"
+                onClicked: lookup.openFor(root.artistId, root.artistName, root.info.source === "Manual" ? root.info.bio : "")
+            }
         }
+    }
+    ArtistLookup {
+        id: lookup
+        onApplied: { Theme.dataRevision++; root.reload() }
     }
 }

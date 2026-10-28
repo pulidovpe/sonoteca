@@ -60,13 +60,21 @@ Item {
                 clip: true
                 model: page.homeData.lists
                 delegate: Rectangle {
-                    width: 200
+                    width: 236
                     height: 80
                     radius: Theme.radius
                     color: listMouse.containsMouse ? Theme.surfaceHover : Theme.surface
                     Behavior on color { ColorAnimation { duration: Theme.fast } }
+                    PlaylistCover {
+                        id: cardCover
+                        x: 8
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 64; height: 64
+                        fallback: Qt.hsla(((modelData.id * 61) % 360) / 360, 0.45, 0.32, 1)
+                        albumIds: (playlists.revision, Theme.dataRevision, playlists.coverAlbums(modelData.id))
+                    }
                     Column {
-                        anchors { fill: parent; margins: 14 }
+                        anchors { left: cardCover.right; leftMargin: 12; right: parent.right; rightMargin: 10; verticalCenter: parent.verticalCenter }
                         spacing: 4
                         Text { width: parent.width; text: modelData.name; color: Theme.text; font.pixelSize: 15; font.weight: Font.DemiBold; elide: Text.ElideRight }
                         Text {

@@ -86,6 +86,42 @@ def stored_artist_info(conn: sqlite3.Connection, artist_id: int) -> dict | None:
     return dict(row)
 
 
+def artist_candidates(client: HttpClient, conn: sqlite3.Connection, artist_id: int,
+                      query: str = "") -> list[ArtistInfo]:
+    """Posibles artículos de Wikipedia para el artista (o para `query`, si el usuario la corrige)."""
+    row = conn.execute("SELECT name FROM artists WHERE id = ?", (artist_id,)).fetchone()
+    if row is None:
+        return []
+    text = query.strip() or row["name"]
+    if text == UNKNOWN_ARTIST:
+        return []
+    return wikipedia.search_candidates(client, text)
+
+
+def apply_artist_info(conn: sqlite3.Connection, artist_id: int, info: ArtistInfo) -> None:
+    """Guarda la ficha elegida por el usuario (el id de MusicBrainz anterior ya no vale)."""
+    with conn:
+        conn.execute(
+            "UPDATE artists SET mbid = ?, bio = ?, bio_source = ?, bio_url = ?, bio_lang = ?,"
+            " image_url = ?, info_fetched_at = ? WHERE id = ?",
+            (info.mbid or None, info.summary, "Wikipedia", info.url, info.language,
+             info.image_url or None, datetime.now().isoformat(timespec="seconds"), artist_id))
+
+
+def set_manual_artist_info(conn: sqlite3.Connection, artist_id: int, text: str) -> None:
+    """Descripción escrita por el usuario (sin fuente en línea)."""
+    text = text.strip()
+    if not text:
+        raise ValueError("La descripción está vacía")
+    if conn.execute("SELECT 1 FROM artists WHERE id = ?", (artist_id,)).fetchone() is None:
+        raise ValueError("El artista ya no existe")
+    with conn:
+        conn.execute(
+            "UPDATE artists SET bio = ?, bio_source = ?, bio_url = NULL, bio_lang = NULL,"
+            " image_url = NULL, info_fetched_at = ? WHERE id = ?",
+            (text, "Manual", datetime.now().isoformat(timespec="seconds"), artist_id))
+
+
 def fetch_artist_info(client: HttpClient, conn: sqlite3.Connection, artist_id: int,
                       force: bool = False) -> dict | None:
     """Información del artista: la guardada si existe; si no (o con force), la consulta y guarda."""
