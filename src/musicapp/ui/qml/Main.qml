@@ -76,7 +76,7 @@ ApplicationWindow {
     Action { id: actLyrics; text: "Letra"; shortcut: "Ctrl+6"; onTriggered: win.toggleLyrics() }
     Action { id: actQueue; text: "Reproduciendo"; shortcut: "Ctrl+4"; onTriggered: win.showSection("queue") }
     Action { id: actNewList; text: "Nueva lista temporal"; onTriggered: player.newTemporaryList() }
-    Action { id: actClearList; text: "Vaciar la lista actual"; enabled: player.queueLength > 0; onTriggered: player.clearQueue() }
+    Action { id: actClearList; text: "Vaciar la lista actual"; enabled: player.queueLength > (player.hasTrack ? 1 : 0); onTriggered: player.clearQueue() }
     Action { id: actSearch; text: "Buscar"; shortcut: "Ctrl+F"; onTriggered: { searchField.forceActiveFocus(); searchField.selectAll() } }
     Action { id: actPlay; text: player.playing ? "Pausar" : "Reproducir"; shortcut: "Space"; enabled: player.hasTrack; onTriggered: player.toggle() }
     Action { id: actPrev; text: "Anterior"; shortcut: "Ctrl+Left"; enabled: player.hasTrack; onTriggered: player.previous() }
@@ -724,6 +724,8 @@ ApplicationWindow {
             visible: Layout.preferredHeight > 0
             videoOpen: win.videoOpen
             onVideoToggled: win.videoOpen = !win.videoOpen
+            onArtistRequested: (id, name) => win.openArtist(id, name)
+            onAlbumRequested: (id) => win.openAlbum(id)
             Behavior on Layout.preferredHeight { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
         }
     }

@@ -129,7 +129,7 @@ def get_album(conn: sqlite3.Connection, album_id: int) -> sqlite3.Row | None:
 def get_track(conn: sqlite3.Connection, track_id: int) -> sqlite3.Row | None:
     return conn.execute(
         """
-        SELECT t.id, t.title, t.duration, ar.name AS artist, al.id AS album_id,
+        SELECT t.id, t.title, t.duration, ar.name AS artist, ar.id AS artist_id, al.id AS album_id,
                al.title AS album, f.path, f.kind, f.format
         FROM tracks t
         JOIN artists ar ON ar.id = t.artist_id
