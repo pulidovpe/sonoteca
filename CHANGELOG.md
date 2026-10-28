@@ -5,6 +5,14 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.9.2.1] - 2026-10-27
+### Corregido
+- Al cerrar la ventana aparecían errores `Cannot call method 'stats' of null` / `Cannot read property 'revision' of null`:
+  los controladores se destruían antes que la interfaz QML. Ahora el cierre es ordenado (`app.py`).
+- `build_mac.sh`: fallaba con `No such file or directory: .venv-build/bin/python3.12` si existía un `.venv-build`
+  antiguo o copiado de otra máquina. Ahora se borra y recrea siempre, elige un Python 3.12/3.13/3.11 disponible y se
+  relanza con bash si se ejecutó con `sh`. Igual en `build_win.ps1`.
+
 ## [0.9.2] - 2026-10-26
 ### Añadido
 - **Icono de la aplicación**: `assets/icons/` (logo original, PNG, `.ico` para Windows y `.icns` para macOS) generado con

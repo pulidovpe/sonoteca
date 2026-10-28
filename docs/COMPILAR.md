@@ -236,6 +236,7 @@ logo original (`assets/icons/original.png`) con `packaging/make_icons.py`:
 | Linux: error del plugin de plataforma «xcb» | Instala `libxcb-cursor0` y `libxkbcommon-x11-0` (§5.3). |
 | Linux: «GLIBC_x.xx not found» | El binario se compiló en una distribución más nueva que la de destino. Compila en una más antigua. |
 | El binario es muy grande | Mira la lista «Carpetas más pesadas» que imprime el script de macOS y revisa `build/pruned.txt`. |
+| `No such file or directory: '.../.venv-build/bin/python3.12'` | Es un `.venv-build` viejo o copiado de otra máquina (con enlaces rotos). Desde 0.9.2.1 el script lo borra solo; con una versión anterior: `rm -rf .venv-build` y repite. No tiene relación con tu carpeta `venv` de desarrollo (el nombre y el punto no importan). Lanza el script con `./packaging/build_mac.sh` o `bash packaging/build_mac.sh`. |
 | Quedan restos de una compilación anterior | Borra `.venv-build`, `build` y `dist` y repite. |
 | macOS: «la app está dañada» / no abre en otro Mac | Es el bloqueo de Gatekeeper por no estar firmada: `xattr -dr com.apple.quarantine Sonoteca.app`. |
 
