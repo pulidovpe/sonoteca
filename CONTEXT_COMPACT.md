@@ -1,4 +1,4 @@
-# musicapp — CONTEXTO COMPACTO (v0.8.8 alfa)
+# musicapp — CONTEXTO COMPACTO (v0.8.9 alfa)
 
 > Pégalo al inicio de un chat nuevo junto con el zip del proyecto. Reemplaza al CONTEXT.md largo (que sigue siendo el historial detallado de las fases 1-5).
 
@@ -26,6 +26,7 @@ App de escritorio **local** (Mac M4 Pro, portable a Win/Linux) para ~2000 archiv
 - **0.8.6**: botón «Ir al artista» en el álbum; «Por revisar»: *Re-escanear tags* (relee los archivos de la lista, hilo aparte, `core/review.py`), *Vaciar lista* (tabla `review_dismissed`, v7, persiste tras escanear) y *Restaurar descartadas*; Letra en panel: búsqueda automática con internet (`autoSearch`, solo en el panel) y botón «Agregar/Editar texto» (`LyricsEditor`, `save_manual`, fuente «Manual», nunca se reemplaza sola); icono de la salida de audio activa (altavoz/audífonos/pantalla por nombre, `player/devices.py`) con tooltip; **Fase 7 iniciada**: `pyproject` con versión dinámica, `packaging/musicapp.spec` (PyInstaller), `.gitlab-ci.yml` (lint, hygiene, test, build por SO), README. Sin ejecutar: UI Qt, CI y PyInstaller.
 - **0.8.7**: «Vaciar la lista» ya no detiene la pista que suena (queda como única; `_stop_and_clear` solo al quitar la última/actual); la barra de reproducción muestra enlaces clicables al artista y al álbum de la pista actual (solo si existen: `hasArtist/hasAlbum`), desde cualquier página; la salida de audio (altavoz = caja acústica `iconSpeakerBox`, audífonos, pantalla) va aparte del volumen (icono de altavoz con ondas + deslizador, separados por una línea).
 - **0.8.8 (alfa)**: botón «Cambiar imagen…» en la ficha del artista (`setArtistImage`, solo foto; funciona aunque no haya descripción); LICENSE MIT (titular «Pablo»: completar nombre), README de alfa, `packaging/build_mac.sh` y `build_win.ps1` (PyInstaller; el binario NO se construyó en el entorno de Claude: compilar en la Mac).
+- **0.8.9**: nombre visible **Sonoteca** (título de ventana y `Sonoteca.app`; paquete/CLI/datos siguen `musicapp`: renombrar todo = decisión pendiente, orfanaría las bases existentes); LICENSE a nombre de Pablo Pulido; spec de PyInstaller con poda de Qt (causa del tamaño: PyInstaller copia todo el QML si ve QtQml) + prueba de humo `MUSICAPP_SELFTEST=1`; `build_linux_docker.sh`; `CHANGELOG.md`.
 
 ## Trampas técnicas (no repetir)
 - QML: `Action` NO tiene `shortcuts` (usar `shortcut` + `Shortcut{sequence}`); no llamar `data` a una propiedad de Item; la navegación se llama `showSection` (no `show`); emitir señales desde hilos de trabajo (GIL con `image://`); `Theme.dataRevision++` refresca páginas; textos con tildes/escapes `\uXXXX` coherentes.

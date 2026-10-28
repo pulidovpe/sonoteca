@@ -11,7 +11,7 @@ ApplicationWindow {
     minimumWidth: 900
     minimumHeight: 560
     visible: true
-    title: "musicapp"
+    title: "Sonoteca"
     color: Theme.bg
 
     menuBar: AppMenuBar {
