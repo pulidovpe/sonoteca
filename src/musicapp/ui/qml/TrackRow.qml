@@ -8,6 +8,7 @@ Item {
     property string subtitle: ""
     property string badge: ""
     property string duration: ""
+    property int plays: -1   // < 0: no se muestra
     property bool current: false
     signal activated()
     signal contextRequested()
@@ -52,6 +53,14 @@ Item {
             font.pixelSize: 12
             elide: Text.ElideRight
         }
+    }
+    Text {
+        id: playsText
+        visible: root.plays >= 0
+        text: "\u25b6 " + root.plays
+        color: Theme.textDim
+        font.pixelSize: 12
+        anchors { right: badgeBox.left; rightMargin: 14; verticalCenter: parent.verticalCenter }
     }
     Rectangle {
         id: badgeBox

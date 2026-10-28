@@ -5,7 +5,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Property, QObject, Signal, Slot
 
-from musicapp.core import library
+from musicapp.core import library, stats
 from musicapp.core.db import connect
 from musicapp.player.backend import PlayerBackend
 from musicapp.player.queue import PlayQueue
@@ -23,6 +23,7 @@ class PlayerController(QObject):
     currentChanged = Signal()
     errorMessage = Signal(str)
     queueChanged = Signal()  # cambió la lista o la posición dentro de ella
+    playsChanged = Signal()  # se contó una reproducción nueva
     queueMessage = Signal(str)  # aviso breve para mostrar al usuario
 
     def __init__(self, backend: PlayerBackend, db_path: Path | str | None = None,
@@ -36,6 +37,10 @@ class PlayerController(QObject):
         self._duration = 0
         self._volume = 0.8
         self._current: dict = {}
+        self._listened = 0  # ms realmente escuchados de la pista actual
+        self._last_pos = -1
+        self._counted = False
+        self._stats_revision = 0
         self._error_streak = 0  # fallos seguidos, para no saltar en bucle por archivos rotos
 
         backend.positionChanged.connect(self._on_position)
@@ -77,6 +82,15 @@ class PlayerController(QObject):
     @Property(int, notify=currentChanged)
     def currentId(self) -> int:
         return self._current.get("id", 0)
+
+    @Property(int, notify=playsChanged)
+    def statsRevision(self) -> int:
+        return self._stats_revision
+
+    @Slot(int, result=int)
+    def playsOf(self, track_id: int) -> int:
+        """Veces que se ha reproducido la pista (úsese junto a statsRevision para que se actualice)."""
+        return stats.play_counts(self._conn, [track_id])[track_id]
 
     @Property(bool, notify=currentChanged)
     def hasTrack(self) -> bool:
@@ -166,7 +180,7 @@ class PlayerController(QObject):
         self.queueChanged.emit()
         if was_empty:
             self.queueMessage.emit(f"Lista temporal creada con {self._songs(len(valid))}. "
-                                   "Ábrela en \u00abCola\u00bb.")
+                                   "Ábrela en \u00abReproduciendo\u00bb.")
         else:
             self.queueMessage.emit(f"{self._songs(len(valid)).capitalize()} agregada"
                                    f"{'' if len(valid) == 1 else 's'} a la lista actual")
@@ -300,6 +314,7 @@ class PlayerController(QObject):
             "duration": row["duration"],
         }
         self._position = 0
+        self._listened, self._last_pos, self._counted = 0, -1, False
         self._duration = int(row["duration"] * 1000)
         self.currentChanged.emit()
         self.positionChanged.emit()
@@ -329,6 +344,16 @@ class PlayerController(QObject):
 
     def _on_position(self, ms: int) -> None:
         self._position = ms
+        if self._current and not self._counted:
+            # solo suma el avance normal: saltar con la barra no cuenta como escuchar
+            if 0 <= self._last_pos <= ms and ms - self._last_pos <= 2500:
+                self._listened += ms - self._last_pos
+            self._last_pos = ms
+            if self._listened >= stats.threshold_ms(self._duration):
+                self._counted = True
+                stats.record_play(self._conn, self._current["id"])
+                self._stats_revision += 1
+                self.playsChanged.emit()
         self.positionChanged.emit()
 
     def _on_duration(self, ms: int) -> None:

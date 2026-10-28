@@ -26,7 +26,7 @@ Item {
 
     Text {
         id: title
-        text: "Lista actual"
+        text: "Lista de reproducci\u00f3n"
         color: Theme.text
         font.pixelSize: 30
         font.weight: Font.Bold
@@ -68,6 +68,7 @@ Item {
             title: modelData.title
             subtitle: modelData.artist + " \u00b7 " + modelData.album
             duration: modelData.duration
+            plays: (player.statsRevision, player.playsOf(modelData.id))
             current: modelData.current
             playing: player.playing
             onActivated: player.playQueueAt(modelData.position)

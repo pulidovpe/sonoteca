@@ -7,7 +7,7 @@ from pathlib import Path
 from PySide6.QtCore import QObject, QUrl, Signal, Slot
 
 from musicapp import __version__
-from musicapp.core import covers, library, paths, tag_edit
+from musicapp.core import cleanup, covers, library, paths, tag_edit
 from musicapp.core.db import connect, default_db_path
 from musicapp.core.models import UNKNOWN_ALBUM
 from musicapp.core.search import SearchIndex, normalize
@@ -103,6 +103,11 @@ class LibraryController(QObject):
                 "duration": r["duration"],
             })
         return out
+
+    @Slot(result="QVariantMap")
+    def cleanup(self) -> dict:
+        """Quita pistas de archivos que ya no existen y álbumes/artistas sin canciones."""
+        return cleanup.purge_missing(self._conn)
 
     @Slot(int, result="QVariantMap")
     def trackInfo(self, track_id: int) -> dict:

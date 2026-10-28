@@ -6,7 +6,7 @@ from pathlib import Path
 
 from . import paths
 
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 SCHEMA_V1 = """
 CREATE TABLE artists (
@@ -148,3 +148,11 @@ def migrate(conn: sqlite3.Connection) -> None:
             conn.execute("ALTER TABLE lyrics ADD COLUMN instrumental INTEGER NOT NULL DEFAULT 0")
             conn.execute("ALTER TABLE lyrics ADD COLUMN lrclib_id INTEGER")
             conn.execute("PRAGMA user_version = 5")
+    if version < 6:
+        with conn:
+            # v6: contador de reproducciones por pista
+            conn.execute(
+                "CREATE TABLE IF NOT EXISTS play_stats ("
+                " track_id INTEGER PRIMARY KEY REFERENCES tracks(id) ON DELETE CASCADE,"
+                " plays INTEGER NOT NULL DEFAULT 0, last_played TEXT)")
+            conn.execute("PRAGMA user_version = 6")

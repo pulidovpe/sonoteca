@@ -39,7 +39,7 @@ Item {
         spacing: 10
         anchors { left: parent.left; right: parent.right; top: sub.bottom; leftMargin: 24; rightMargin: 24; topMargin: 12 }
         PillButton { label: "Reproducir"; primary: true; enabled: page.items.length > 0; onClicked: page.playAll() }
-        PillButton { label: "Agregar a la cola"; enabled: page.items.length > 0; onClicked: player.addToQueue(page.ids) }
+        PillButton { label: "Agregar a la lista de reproducci\u00f3n"; enabled: page.items.length > 0; onClicked: player.addToQueue(page.ids) }
         PillButton { label: "Renombrar"; onClicked: page.renameRequested(page.playlistId, page.info.name || "") }
         PillButton { label: "Eliminar"; onClicked: page.deleteRequested(page.playlistId, page.info.name || "") }
     }
@@ -63,6 +63,7 @@ Item {
             title: modelData.title
             subtitle: modelData.artist + " \u00b7 " + modelData.album
             duration: modelData.duration
+            plays: (player.statsRevision, player.playsOf(modelData.id))
             current: player.currentId === modelData.id
             playing: player.playing
             onActivated: player.playTrackIds(page.ids, index)
