@@ -115,6 +115,9 @@ def test_menu_entries_depend_on_whether_there_is_a_list(qml_env):
     env.player.addToQueue(track_ids[:1])
     assert js("trackMenu.itemAt(2).text") == "Agregar a la lista actual"
     assert js("trackMenu.itemAt(1).enabled") is True
+    # con una lista en marcha, "Reproducir ahora" de una sola canción pregunta qué hacer
     env.act(f"trackMenu.ids = [{track_ids[1]}]; trackMenu.playNow()", 300)
-    assert js("player.currentTrack.title") == "Pista 2"  # "Reproducir ahora" reemplaza la lista
+    assert js("queueChoice.visible") is True
+    env.act("queueChoice.replaceList()", 300)
+    assert js("player.currentTrack.title") == "Pista 2" and js("player.queueLength") == 1
     assert env.warnings == []

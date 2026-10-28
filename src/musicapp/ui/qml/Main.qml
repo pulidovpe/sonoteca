@@ -73,7 +73,7 @@ ApplicationWindow {
     Action { id: actReview; text: "Por revisar"; shortcut: "Ctrl+3"; onTriggered: win.showSection("review") }
     Action { id: actPlaylists; text: "Listas de reproducci\u00f3n"; shortcut: "Ctrl+5"; onTriggered: win.showSection("playlists") }
     Action { id: actNewPlaylist; text: "Nueva lista de reproducci\u00f3n\u2026"; shortcut: "Ctrl+N"; onTriggered: win.newPlaylist() }
-    Action { id: actLyrics; text: "Letra"; shortcut: "Ctrl+6"; onTriggered: win.showSection("lyrics") }
+    Action { id: actLyrics; text: "Letra"; shortcut: "Ctrl+6"; onTriggered: win.toggleLyrics() }
     Action { id: actQueue; text: "Reproduciendo"; shortcut: "Ctrl+4"; onTriggered: win.showSection("queue") }
     Action { id: actNewList; text: "Nueva lista temporal"; onTriggered: player.newTemporaryList() }
     Action { id: actClearList; text: "Vaciar la lista actual"; enabled: player.queueLength > 0; onTriggered: player.clearQueue() }
@@ -194,6 +194,14 @@ ApplicationWindow {
         else if (loc.t === "playlist") stack.replace(null, playlistComp, { playlistId: loc.id })
         else if (loc.t === "lyrics") stack.replace(null, lyricsComp, { followPlayer: false, trackId: loc.trackId })
     }
+    // «Letra»: con una canción sonando se abre en un panel a la derecha (el centro queda libre);
+    // sin canción, página completa que explica qué hacer.
+    property bool lyricsPanelOpen: false
+    readonly property bool lyricsPanelShown: lyricsPanelOpen && player.hasTrack && section !== "lyrics"
+    function toggleLyrics() {
+        if (player.hasTrack) lyricsPanelOpen = !lyricsPanelShown
+        else showSection("lyrics")
+    }
     function showSection(sec) { go({ t: "section", sec: sec }) }
     function showLyrics(trackId) { go({ t: "lyrics", trackId: trackId, from: section }) }
     function openAlbum(id) { go({ t: "album", id: id, from: section }) }
@@ -294,7 +302,7 @@ ApplicationWindow {
 
     Component { id: homeComp; HomePage { onAlbumClicked: (id) => win.openAlbum(id); onArtistClicked: (id, name) => win.openArtist(id, name); onPlaylistClicked: (id) => win.openPlaylist(id); onMenuRequested: (ids) => win.showTrackMenu(ids) } }
     Component { id: albumsComp; AlbumsPage { onMenuRequested: (ids) => win.showTrackMenu(ids); onAlbumClicked: (id) => win.openAlbum(id); onNeedInternet: win.openInternetSettings(); onEditArtistRequested: (id, name) => win.editArtistTags(id, name) } }
-    Component { id: albumComp; AlbumDetail { onEditRequested: (ids) => win.editTags(ids); onMenuRequested: (ids) => win.showTrackMenu(ids); onListRequested: (ids) => win.showPlaylistPicker(ids); onLookupRequested: (id, ids, unknown) => win.lookupAlbum(id, ids, unknown) } }
+    Component { id: albumComp; AlbumDetail { onEditRequested: (ids) => win.editTags(ids); onMenuRequested: (ids) => win.showTrackMenu(ids); onListRequested: (ids) => win.showPlaylistPicker(ids); onLookupRequested: (id, ids, unknown) => win.lookupAlbum(id, ids, unknown); onPlayOneRequested: (id) => queueChoice.ask(id) } }
     Component { id: artistsComp; ArtistsPage { onArtistClicked: (id, name) => win.openArtist(id, name) } }
     Component {
         id: reviewComp
@@ -483,8 +491,8 @@ ApplicationWindow {
                 SideButton {
                     width: parent.width
                     label: "Letra"
-                    active: win.section === "lyrics"
-                    onClicked: win.showSection("lyrics")
+                    active: win.section === "lyrics" || win.lyricsPanelShown
+                    onClicked: win.toggleLyrics()
                 }
                 SideButton {
                     width: parent.width
@@ -646,6 +654,28 @@ ApplicationWindow {
                 replaceExit: Transition { NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 120 } }
             }
         }
+
+        Rectangle {
+            id: lyricsPanel
+            readonly property int fullWidth: Math.round(Math.min(400, Math.max(300, win.width * 0.3)))
+            Layout.preferredWidth: win.lyricsPanelShown ? fullWidth : 0
+            Layout.fillHeight: true
+            color: Theme.sidebar
+            clip: true
+            visible: Layout.preferredWidth > 0
+            Behavior on Layout.preferredWidth { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+            Loader {
+                active: win.lyricsPanelShown
+                width: lyricsPanel.fullWidth
+                height: parent.height
+                sourceComponent: LyricsPage {
+                    panel: true
+                    onCloseRequested: win.lyricsPanelOpen = false
+                    onSettingsRequested: lyricsSettings.openDialog()
+                    onNeedInternet: win.openInternetSettings()
+                }
+            }
+        }
         }
 
         PlayerBar {
@@ -665,15 +695,16 @@ ApplicationWindow {
         visible: player.isVideo && win.videoOpen
         color: "#000000"
         z: 5
-        anchors { left: parent.left; leftMargin: 230; right: parent.right; top: parent.top; topMargin: 68; bottom: parent.bottom; bottomMargin: playerBar.height }
+        anchors { left: parent.left; leftMargin: 230; right: parent.right; rightMargin: lyricsPanel.visible ? lyricsPanel.width : 0; top: parent.top; topMargin: 68; bottom: parent.bottom; bottomMargin: playerBar.height }
         VideoOutput { id: videoOut; anchors.fill: parent; fillMode: VideoOutput.PreserveAspectFit }
         Component.onCompleted: player.setVideoSink(videoOut.videoSink)
     }
 
     TagEditor { id: tagEditor }
-    TrackMenu { id: trackMenu; onLyricsRequested: (id) => win.showLyrics(id); onEditRequested: (ids) => win.editTags(ids); onListPickerRequested: (ids) => win.showPlaylistPicker(ids) }
+    TrackMenu { id: trackMenu; onPlayOneRequested: (id) => queueChoice.ask(id); onLyricsRequested: (id) => win.showLyrics(id); onEditRequested: (ids) => win.editTags(ids); onListPickerRequested: (ids) => win.showPlaylistPicker(ids) }
     NamePrompt { id: namePrompt }
     ConfirmDialog { id: confirmDialog }
+    QueueChoiceDialog { id: queueChoice }
     PlaylistPicker { id: playlistPicker; onNewRequested: (ids) => win.pickerNewList(ids) }
     Connections {
         target: playlists

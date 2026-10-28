@@ -10,6 +10,7 @@ Item {
     signal editRequested(var ids)
     signal menuRequested(var ids)
     signal listRequested(var ids)
+    signal playOneRequested(int trackId)   // con una lista ya en marcha, Main pregunta qué hacer
     function addAllToQueue() { player.addToQueue(page.tracks.map(function (x) { return x.id })) }
     signal lookupRequested(int albumId, var ids, bool unknownAlbum)
     // ¿Lo que suena ahora pertenece a este álbum?
@@ -108,7 +109,10 @@ Item {
             plays: (player.statsRevision, player.playsOf(modelData.id))
             trackId: modelData.id
             current: player.currentId === modelData.id
-            onActivated: player.playAlbum(page.albumId, index)
+            onActivated: {
+                if (player.queueLength > 0) page.playOneRequested(modelData.id)
+                else player.playAlbum(page.albumId, index)
+            }
             onContextRequested: page.menuRequested([modelData.id])
         }
         add: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 240 } }

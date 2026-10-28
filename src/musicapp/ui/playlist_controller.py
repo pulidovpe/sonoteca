@@ -53,7 +53,9 @@ class PlaylistController(QObject):
     @Slot(int, result="QVariantMap")
     def info(self, playlist_id: int) -> dict:
         row = store.get_playlist(self._conn, playlist_id)
-        return dict(row) if row else {}
+        if not row:
+            return {}
+        return {**dict(row), "description": store.describe_artists(self._conn, playlist_id)}
 
     @Slot(int, result="QVariantList")
     def tracks(self, playlist_id: int) -> list[dict]:
