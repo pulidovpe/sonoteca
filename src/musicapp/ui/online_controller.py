@@ -87,7 +87,26 @@ class OnlineController(QObject):
     @Slot(int, result="QVariantMap")
     def storedArtistInfo(self, artist_id: int) -> dict:
         info = enrich.stored_artist_info(self._conn, artist_id)
-        return self._artist_payload(artist_id, info) if info else {}
+        if info:
+            return self._artist_payload(artist_id, info)
+        if artist_photo(artist_id):   # solo foto (p. ej. elegida a mano), sin descripci\u00f3n
+            row = self._conn.execute("SELECT name FROM artists WHERE id = ?", (artist_id,)).fetchone()
+            if row:
+                return self._artist_payload(artist_id, {"name": row["name"], "bio": "", "bio_url": "",
+                                                        "bio_lang": "", "bio_source": ""})
+        return {}
+
+    @Slot(int, str, result="QVariantMap")
+    def setArtistImage(self, artist_id: int, image_path: str) -> dict:
+        """Cambia solo la foto del artista con un archivo JPG/PNG (no usa internet ni toca la descripci\u00f3n)."""
+        try:
+            data = Path(image_path).read_bytes()
+            if len(data) > MAX_PHOTO_BYTES:
+                raise ValueError("La imagen pesa m\u00e1s de 5 MB")
+            self._store_photo(artist_id, data)
+        except (ValueError, OSError) as exc:
+            return {"ok": False, "error": str(exc), "info": {}}
+        return {"ok": True, "error": "", "info": self.storedArtistInfo(artist_id)}
 
     @staticmethod
     def _artist_payload(artist_id: int, info: dict) -> dict:
