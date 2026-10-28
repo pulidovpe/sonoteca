@@ -1,8 +1,8 @@
 import pytest
 from conftest import make_m4a, make_mp3, make_mp4, needs_ffmpeg
 
-from musicapp.core.models import UNKNOWN_ALBUM, UNKNOWN_ARTIST
-from musicapp.core.tags import TagReadError, parse_pair, parse_year, read_tags
+from sonoteca.core.models import UNKNOWN_ALBUM, UNKNOWN_ARTIST
+from sonoteca.core.tags import TagReadError, parse_pair, parse_year, read_tags
 
 
 def test_parse_year():
@@ -63,7 +63,7 @@ def test_corrupt_file_raises(tmp_path):
 
 
 def test_parse_filename():
-    from musicapp.core.tags import parse_filename
+    from sonoteca.core.tags import parse_filename
 
     def tup(stem):
         i = parse_filename(stem)

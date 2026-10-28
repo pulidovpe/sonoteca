@@ -14,11 +14,11 @@ pytest.importorskip("PySide6.QtQml")
 from conftest import make_cover, make_mp3, needs_ffmpeg
 from PySide6.QtCore import QObject, Slot
 
-from musicapp.core import library
-from musicapp.core.db import connect
-from musicapp.core.scanner import scan
-from musicapp.core.tags import read_tags
-from musicapp.ui.controller import LibraryController
+from sonoteca.core import library
+from sonoteca.core.db import connect
+from sonoteca.core.scanner import scan
+from sonoteca.core.tags import read_tags
+from sonoteca.ui.controller import LibraryController
 
 pytestmark = needs_ffmpeg
 
@@ -48,7 +48,7 @@ def wait_until(qapp, cond, timeout=10.0):
 
 @pytest.fixture
 def lib(tmp_path, monkeypatch):
-    monkeypatch.setenv("MUSICAPP_DATA_DIR", str(tmp_path / "datos"))
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path / "datos"))
     root = tmp_path / "music"
     cover = make_cover(tmp_path / "c.jpg", "0xcc3333")
     for n in (1, 2):
@@ -123,7 +123,7 @@ def test_controller_rejects_concurrent_edit_and_reports_errors(qapp, lib):
 
 def test_editor_flow_from_qml(qml_env, monkeypatch, tmp_path):
     env = qml_env
-    monkeypatch.setenv("MUSICAPP_DATA_DIR", str(tmp_path / "datos"))
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path / "datos"))
     js, act, wait = env.js, env.act, env.wait
     _, ids = album_ids(env.controller)
     tid = ids[0]
@@ -186,10 +186,10 @@ def test_long_cover_name_and_long_tags_stay_inside_the_form(qml_env, tmp_path):
     track = library.get_track(conn, tid)
     from pathlib import Path as _P
 
-    from musicapp.core.tag_writer import write_tags
+    from sonoteca.core.tag_writer import write_tags
 
     write_tags(_P(track["path"]), {"title": long_title, "album": "A" * 150})
-    from musicapp.core.scanner import reindex_file
+    from sonoteca.core.scanner import reindex_file
 
     reindex_file(conn, _P(track["path"]))
     conn.close()

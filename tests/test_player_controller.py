@@ -9,10 +9,10 @@ pytest.importorskip("PySide6.QtCore")
 from conftest import make_mp3, make_mp4, needs_ffmpeg
 from fakes import FakeBackend
 
-from musicapp.core import library
-from musicapp.core.db import connect
-from musicapp.core.scanner import scan
-from musicapp.ui.player_controller import PlayerController
+from sonoteca.core import library
+from sonoteca.core.db import connect
+from sonoteca.core.scanner import scan
+from sonoteca.ui.player_controller import PlayerController
 
 pytestmark = needs_ffmpeg
 

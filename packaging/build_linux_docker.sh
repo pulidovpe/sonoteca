@@ -16,11 +16,12 @@ docker run --rm --platform "${PLATFORM:-linux/amd64}" -v "$PWD":/src python:3.12
   cd /work
   python -m venv /tmp/venv && . /tmp/venv/bin/activate
   pip install -q --upgrade pip && pip install -q -e ".[ui,build]"
-  pyinstaller packaging/musicapp.spec --noconfirm --clean
-  MUSICAPP_SELFTEST=1 QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software \
-    MUSICAPP_DATA_DIR=/tmp/d MUSICAPP_CACHE_DIR=/tmp/c dist/musicapp/musicapp && echo "Prueba de humo: OK"
-  V=$(python -c "import musicapp; print(musicapp.__version__)")
-  tar -C dist -czf "/src/dist/Sonoteca-$V-alpha-linux-$(uname -m).tar.gz" musicapp
-  du -sh dist/musicapp
+  pyinstaller packaging/sonoteca.spec --noconfirm --clean
+  SONOTECA_SELFTEST=1 QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software \
+    SONOTECA_DATA_DIR=/tmp/d SONOTECA_CACHE_DIR=/tmp/c dist/sonoteca/sonoteca && echo "Prueba de humo: OK"
+  python packaging/check_bundle.py dist/sonoteca
+  V=$(python -c "import sonoteca; print(sonoteca.__version__)")
+  tar -C dist -czf "/src/dist/Sonoteca-$V-alpha-linux-$(uname -m).tar.gz" sonoteca
+  du -sh dist/sonoteca
 '
 ls -lh dist/*.tar.gz

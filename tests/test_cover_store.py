@@ -4,17 +4,17 @@ import sys
 import pytest
 from conftest import make_cover, make_mp3, needs_ffmpeg
 
-from musicapp.cli import main
-from musicapp.core import cover_store, library, paths, tag_edit
-from musicapp.core.covers import extract_embedded_cover
-from musicapp.core.db import connect
-from musicapp.core.scanner import scan
-from musicapp.core.tags import read_tags
+from sonoteca.cli import main
+from sonoteca.core import cover_store, library, paths, tag_edit
+from sonoteca.core.covers import extract_embedded_cover
+from sonoteca.core.db import connect
+from sonoteca.core.scanner import scan
+from sonoteca.core.tags import read_tags
 
 
 @pytest.fixture
 def datadir(tmp_path, monkeypatch):
-    monkeypatch.setenv("MUSICAPP_DATA_DIR", str(tmp_path / "datos"))
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path / "datos"))
     return tmp_path / "datos"
 
 
@@ -108,22 +108,22 @@ def test_no_cover_means_nothing_is_stored(tmp_path, datadir):
 def test_data_and_cache_never_default_inside_a_virtualenv(tmp_path, monkeypatch):
     venv = tmp_path / "repo" / ".venv"
     monkeypatch.setenv("HOME", str(tmp_path / "home"))
-    monkeypatch.delenv("MUSICAPP_DATA_DIR", raising=False)
-    monkeypatch.delenv("MUSICAPP_CACHE_DIR", raising=False)
+    monkeypatch.delenv("SONOTECA_DATA_DIR", raising=False)
+    monkeypatch.delenv("SONOTECA_CACHE_DIR", raising=False)
     monkeypatch.setattr(sys, "prefix", str(venv))
     monkeypatch.setattr(sys, "base_prefix", "/usr")
-    monkeypatch.setattr(paths, "user_data_dir", lambda *a, **k: str(venv / "share" / "musicapp"))
-    monkeypatch.setattr(paths, "user_cache_dir", lambda *a, **k: str(venv / "cache" / "musicapp"))
-    assert paths.data_dir() == tmp_path / "home" / ".musicapp" / "data"
-    assert paths.cache_dir() == tmp_path / "home" / ".musicapp" / "cache"
-    assert paths.covers_dir() == tmp_path / "home" / ".musicapp" / "data" / "covers"
+    monkeypatch.setattr(paths, "user_data_dir", lambda *a, **k: str(venv / "share" / "sonoteca"))
+    monkeypatch.setattr(paths, "user_cache_dir", lambda *a, **k: str(venv / "cache" / "sonoteca"))
+    assert paths.data_dir() == tmp_path / "home" / ".sonoteca" / "data"
+    assert paths.cache_dir() == tmp_path / "home" / ".sonoteca" / "cache"
+    assert paths.covers_dir() == tmp_path / "home" / ".sonoteca" / "data" / "covers"
     # una ruta fijada a propósito con la variable de entorno se respeta
-    monkeypatch.setenv("MUSICAPP_DATA_DIR", str(venv / "mis_datos"))
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(venv / "mis_datos"))
     assert paths.data_dir() == venv / "mis_datos"
 
 
 def test_standard_dirs_are_untouched_outside_a_virtualenv(tmp_path, monkeypatch):
-    monkeypatch.delenv("MUSICAPP_DATA_DIR", raising=False)
+    monkeypatch.delenv("SONOTECA_DATA_DIR", raising=False)
     monkeypatch.setattr(sys, "prefix", "/usr")
     monkeypatch.setattr(sys, "base_prefix", "/usr")  # sin venv: nada que corregir
     monkeypatch.setattr(paths, "user_data_dir", lambda *a, **k: str(tmp_path / "std"))
@@ -131,7 +131,7 @@ def test_standard_dirs_are_untouched_outside_a_virtualenv(tmp_path, monkeypatch)
 
 
 def test_cli_paths_shows_the_covers_folder(monkeypatch, tmp_path, capsys):
-    monkeypatch.setenv("MUSICAPP_DATA_DIR", str(tmp_path / "datos"))
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path / "datos"))
     assert main(["paths"]) == 0
     out = capsys.readouterr().out
     assert "Portadas guardadas" in out and str(tmp_path / "datos" / "covers") in out

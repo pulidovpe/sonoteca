@@ -1,4 +1,4 @@
-# musicapp — CONTEXTO COMPACTO (v0.8.9 alfa)
+# Sonoteca — CONTEXTO COMPACTO (v0.9.0 alfa)
 
 > Pégalo al inicio de un chat nuevo junto con el zip del proyecto. Reemplaza al CONTEXT.md largo (que sigue siendo el historial detallado de las fases 1-5).
 
@@ -7,9 +7,9 @@
 - **Entregar un zip descargable (sub-versión) en cada respuesta** y no avanzar de fase hasta cerrar los pedidos. Nada se cambia en archivos/tags sin confirmar. Probar siempre en la Mac (el entorno de Claude no tiene red ni PySide6/mutagen/pytest: solo se ejecuta la lógica pura; la UI Qt llega SIN ejecutar).
 
 ## Qué es
-App de escritorio **local** (Mac M4 Pro, portable a Win/Linux) para ~2000 archivos (mp3, m4a, mp4 de video), por artista/álbum/año; edita tags; internet **solo** para portadas, info de artistas/álbumes, letras y traducción. Python 3.12 + PySide6/QML, `uv`/pip editable (`pip install -e ".[ui,dev]"`; un `pip install .` no editable usa copia vieja). SQLite con `PRAGMA user_version` (esquema actual **v7**). Modo sin conexión **activo por defecto**; red solo en `online/`.
+App de escritorio **local** (Mac M4 Pro, portable a Win/Linux) para ~2000 archivos (mp3, m4a, mp4 de video), por artista/álbum/año; edita tags; internet **solo** para portadas, info de artistas/álbumes, letras y traducción. Python 3.12 + PySide6/QML, `uv`/pip editable (`pip install -e ".[ui,dev]"`; un `pip install .` no editable usa copia vieja). SQLite con `PRAGMA user_version` (esquema actual **v8**). Modo sin conexión **activo por defecto**; red solo en `online/`.
 
-## Mapa del código (`src/musicapp/`)
+## Mapa del código (`src/sonoteca/`)
 - `core/`: `db.py` (migraciones v1-v6), `tags.py`, `scanner.py` (incremental), `library.py` (consultas; `list_artists/albums` ocultan vacíos), `covers.py`, `cover_store.py`, `tag_writer.py` (copia temporal + verificación), `tag_edit.py`, `search.py`, `playlists.py` (+`cover_album_ids`), `lyrics.py` (parser LRC, almacenamiento, `lyrics_doc`), `stats.py` (contador y rankings), `cleanup.py` (`purge_missing`: no borra si falta >50 % de archivos = disco desconectado), `paths.py`.
 - `online/`: `http.py` (límite de tasa, caché, `get_json(cache=False)`), `settings.py` (+`translate_lang`), `musicbrainz.py`, `coverart.py`, `wikipedia.py` (+`search_candidates`), `enrich.py` (+candidatos/manual de artista), `lrclib.py`, `lyrics.py` (flujo buscar/traducir), `translate.py` (DeepL, `KeyStore` con keyring o `MUSICAPP_DEEPL_KEY`).
 - `player/`: `queue.py`, `backend.py` (interfaz; ahora con `audio_devices/set_audio_device`), `qt_backend.py` (QtMultimedia, sigue la salida predeterminada).
@@ -27,10 +27,11 @@ App de escritorio **local** (Mac M4 Pro, portable a Win/Linux) para ~2000 archiv
 - **0.8.7**: «Vaciar la lista» ya no detiene la pista que suena (queda como única; `_stop_and_clear` solo al quitar la última/actual); la barra de reproducción muestra enlaces clicables al artista y al álbum de la pista actual (solo si existen: `hasArtist/hasAlbum`), desde cualquier página; la salida de audio (altavoz = caja acústica `iconSpeakerBox`, audífonos, pantalla) va aparte del volumen (icono de altavoz con ondas + deslizador, separados por una línea).
 - **0.8.8 (alfa)**: botón «Cambiar imagen…» en la ficha del artista (`setArtistImage`, solo foto; funciona aunque no haya descripción); LICENSE MIT (titular «Pablo»: completar nombre), README de alfa, `packaging/build_mac.sh` y `build_win.ps1` (PyInstaller; el binario NO se construyó en el entorno de Claude: compilar en la Mac).
 - **0.8.9**: nombre visible **Sonoteca** (título de ventana y `Sonoteca.app`; paquete/CLI/datos siguen `musicapp`: renombrar todo = decisión pendiente, orfanaría las bases existentes); LICENSE a nombre de Pablo Pulido; spec de PyInstaller con poda de Qt (causa del tamaño: PyInstaller copia todo el QML si ve QtQml) + prueba de humo `MUSICAPP_SELFTEST=1`; `build_linux_docker.sh`; `CHANGELOG.md`.
+- **0.9.0**: renombrado completo `musicapp`→`sonoteca` (paquete, CLI, carpetas, `SONOTECA_*` con respaldo `MUSICAPP_*`); `core/legacy.py` mueve los datos antiguos al primer arranque (reescribe `albums.cover_path`, llavero); `online/harvest.py` + `ui/harvest_controller.py` + `HarvestDialog.qml` (descarga automática tras escanear, estricta, con aviso de tiempo, cancelable; portadas en `covers/downloaded` enlazadas por `albums.cover_path` y usadas solo si no hay portada embebida ni de carpeta; v8: `cover_checked_at`/`info_checked_at`); `core/portable.py` + `ui/portable_controller.py` + `LibraryTransfer.qml` (exportar/importar `.sonoteca`; la importación se prepara en `pending_import/` y se aplica al reiniciar, con copia en `backups/`); `packaging/check_bundle.py`. Sin ejecutar: toda la UI Qt, CI y PyInstaller.
 
 ## Trampas técnicas (no repetir)
 - QML: `Action` NO tiene `shortcuts` (usar `shortcut` + `Shortcut{sequence}`); no llamar `data` a una propiedad de Item; la navegación se llama `showSection` (no `show`); emitir señales desde hilos de trabajo (GIL con `image://`); `Theme.dataRevision++` refresca páginas; textos con tildes/escapes `\uXXXX` coherentes.
-- Python: nunca `open(f,"w").write(open(f).read())` (vacía el archivo; así se perdió `__version__` en 0.8.2). Versión en `src/musicapp/__init__.py`.
+- Python: nunca `open(f,"w").write(open(f).read())` (vacía el archivo; así se perdió `__version__` en 0.8.2). Versión en `src/sonoteca/__init__.py`.
 - Navegación: toda página se renderiza con `stack.replace` desde `render(loc)`; no usar `stack.push/pop` ni `stack.depth`.
 - LRCLIB y DeepL: formato según documentación; DeepL Free 500 000 caracteres/mes (HTTP 456 al agotar; no verificado en vivo; disponibilidad en Colombia sin verificar).
 

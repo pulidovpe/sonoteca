@@ -2,8 +2,8 @@
 import httpx
 from test_online import Net, js, make_client, url_has
 
-from musicapp.core.db import connect
-from musicapp.online import enrich, wikipedia
+from sonoteca.core.db import connect
+from sonoteca.online import enrich, wikipedia
 
 
 def summary(title, desc, text="Texto largo del artículo.", thumb=True):

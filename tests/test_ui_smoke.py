@@ -13,10 +13,10 @@ pytest.importorskip("PySide6.QtQml")
 from conftest import make_cover, make_mp3, needs_ffmpeg
 from PySide6.QtCore import QSize
 
-from musicapp.core.db import connect
-from musicapp.core.scanner import scan
-from musicapp.ui.controller import LibraryController
-from musicapp.ui.cover_provider import CoverProvider, bucket_for
+from sonoteca.core.db import connect
+from sonoteca.core.scanner import scan
+from sonoteca.ui.controller import LibraryController
+from sonoteca.ui.cover_provider import CoverProvider, bucket_for
 
 pytestmark = needs_ffmpeg
 
@@ -117,7 +117,7 @@ def test_menu_clear_button_and_actions(qml_env):
 
 def test_artist_photo_is_preferred_over_album_covers(qapp, db_file, tmp_path, monkeypatch):
     """Si se descargó la foto de un artista, esa foto se usa en la sección de artistas."""
-    monkeypatch.setenv("MUSICAPP_DATA_DIR", str(tmp_path / "datos"))
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path / "datos"))
     conn = connect(db_file)
     artist = conn.execute("SELECT id FROM artists WHERE name='Artista A'").fetchone()[0]
     prov = CoverProvider(db_file, cache_dir=tmp_path / "cache")

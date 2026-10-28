@@ -17,13 +17,13 @@ from conftest import make_cover, make_mp3, needs_ffmpeg
 from PySide6.QtCore import QObject, Slot
 from test_online import Net, js, make_client, url_has
 
-from musicapp.core import lyrics as store
-from musicapp.core.db import connect
-from musicapp.core.scanner import scan
-from musicapp.online.settings import Settings
-from musicapp.online.translate import DeepLTranslator
-from musicapp.ui.controller import LibraryController
-from musicapp.ui.lyrics_controller import LyricsController
+from sonoteca.core import lyrics as store
+from sonoteca.core.db import connect
+from sonoteca.core.scanner import scan
+from sonoteca.online.settings import Settings
+from sonoteca.online.translate import DeepLTranslator
+from sonoteca.ui.controller import LibraryController
+from sonoteca.ui.lyrics_controller import LyricsController
 
 pytestmark = needs_ffmpeg
 
@@ -62,9 +62,9 @@ def wait_until(qapp, cond, timeout=10.0):
 
 @pytest.fixture
 def lib(tmp_path, monkeypatch):
-    monkeypatch.setenv("MUSICAPP_DATA_DIR", str(tmp_path / "datos"))
-    monkeypatch.setenv("MUSICAPP_OFFLINE", "0")
-    monkeypatch.delenv("MUSICAPP_DEEPL_KEY", raising=False)
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path / "datos"))
+    monkeypatch.setenv("SONOTECA_OFFLINE", "0")
+    monkeypatch.delenv("SONOTECA_DEEPL_KEY", raising=False)
     cover = make_cover(tmp_path / "c.jpg")
     make_mp3(tmp_path / "music/A/1.mp3", cover, title="Pista 1", artist="Wheatus", album="Wheatus")
     db = tmp_path / "t.db"
@@ -98,7 +98,7 @@ def make_controller(db, tmp_path, net, keyring=None):
 
 
 def _keys(keyring):
-    from musicapp.online.translate import KeyStore
+    from sonoteca.online.translate import KeyStore
     return KeyStore(keyring if keyring is not None else Fake())
 
 
@@ -134,7 +134,7 @@ def test_controller_request_translate_and_key_flow(qapp, lib, tmp_path):
 
 def test_controller_reports_offline_and_busy(qapp, lib, tmp_path, monkeypatch):
     tid = first_track(lib)
-    monkeypatch.setenv("MUSICAPP_OFFLINE", "1")
+    monkeypatch.setenv("SONOTECA_OFFLINE", "1")
     c = make_controller(lib, tmp_path, Net())
 
     def offline_client():

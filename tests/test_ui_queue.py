@@ -11,8 +11,8 @@ pytest.importorskip("PySide6.QtQml")
 
 from conftest import make_mp3, needs_ffmpeg
 
-from musicapp.core.db import connect
-from musicapp.core.scanner import scan
+from sonoteca.core.db import connect
+from sonoteca.core.scanner import scan
 
 pytestmark = needs_ffmpeg
 

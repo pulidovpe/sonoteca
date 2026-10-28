@@ -1,6 +1,6 @@
 from conftest import needs_ffmpeg
 
-from musicapp.cli import main
+from sonoteca.cli import main
 
 pytestmark = needs_ffmpeg
 

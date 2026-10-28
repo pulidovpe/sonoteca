@@ -13,8 +13,8 @@ pytest.importorskip("PySide6.QtCore")
 from PySide6.QtCore import QObject, Slot
 from test_online import ARTIST_SEARCH, JPEG, RG_SEARCH, Net, js, make_client, url_has, wiki_net
 
-from musicapp.core.db import connect
-from musicapp.ui.online_controller import OFFLINE_MESSAGE, OnlineController
+from sonoteca.core.db import connect
+from sonoteca.ui.online_controller import OFFLINE_MESSAGE, OnlineController
 
 
 class Collector(QObject):
@@ -53,10 +53,10 @@ def wait_until(qapp, cond, timeout=10.0):
 
 @pytest.fixture
 def env(qapp, tmp_path, monkeypatch):
-    monkeypatch.setenv("MUSICAPP_DATA_DIR", str(tmp_path / "datos"))
-    monkeypatch.setenv("MUSICAPP_CACHE_DIR", str(tmp_path / "cache"))
-    monkeypatch.delenv("MUSICAPP_OFFLINE", raising=False)
-    monkeypatch.delenv("MUSICAPP_CONTACT", raising=False)
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path / "datos"))
+    monkeypatch.setenv("SONOTECA_CACHE_DIR", str(tmp_path / "cache"))
+    monkeypatch.delenv("SONOTECA_OFFLINE", raising=False)
+    monkeypatch.delenv("SONOTECA_CONTACT", raising=False)
     db = tmp_path / "t.db"
     seed = connect(db)
     seed.executescript("""

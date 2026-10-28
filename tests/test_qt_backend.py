@@ -11,7 +11,7 @@ from conftest import make_mp3, make_mp4, needs_ffmpeg
 from PySide6.QtCore import QEventLoop, QTimer
 from PySide6.QtGui import QGuiApplication
 
-from musicapp.player.qt_backend import QtPlayerBackend
+from sonoteca.player.qt_backend import QtPlayerBackend
 
 pytestmark = needs_ffmpeg
 

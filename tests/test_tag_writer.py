@@ -4,14 +4,14 @@ import pytest
 from conftest import make_cover, make_m4a, make_mp3, make_mp4, needs_ffmpeg
 from mutagen.id3 import ID3
 
-from musicapp.core import tag_writer
-from musicapp.core.tag_writer import (
+from sonoteca.core import tag_writer
+from sonoteca.core.tag_writer import (
     TagWriteError,
     normalize_changes,
     restore_backups,
     write_tags,
 )
-from musicapp.core.tags import read_tags
+from sonoteca.core.tags import read_tags
 
 pytestmark = needs_ffmpeg
 
@@ -44,7 +44,7 @@ def test_mp3_write_all_fields_as_id3v23(tmp_path):
     # el total de la pista/disco se conserva al cambiar solo el número
     assert str(ID3(p)["TRCK"].text[0]) == "5/12"
     assert str(ID3(p)["TPOS"].text[0]) == "2/2"
-    assert not list(tmp_path.glob(".*musicapp-tmp*"))  # sin temporales
+    assert not list(tmp_path.glob(".*sonoteca-tmp*"))  # sin temporales
 
 
 def test_mp3_v24_and_partial_change_keeps_other_fields(tmp_path):
@@ -96,7 +96,7 @@ def test_failure_leaves_original_untouched(tmp_path, monkeypatch):
     with pytest.raises(TagWriteError, match="disco lleno"):
         write_tags(p, {"title": "Nuevo"})
     assert sha(p) == before
-    assert not list(tmp_path.glob(".*musicapp-tmp*"))
+    assert not list(tmp_path.glob(".*sonoteca-tmp*"))
 
 
 def test_verification_failure_does_not_replace_original(tmp_path, monkeypatch):

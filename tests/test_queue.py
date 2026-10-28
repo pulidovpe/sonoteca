@@ -2,7 +2,7 @@ import random
 
 import pytest
 
-from musicapp.player.queue import PlayQueue, RepeatMode
+from sonoteca.player.queue import PlayQueue, RepeatMode
 
 
 def make(n=4, **kw):
