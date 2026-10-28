@@ -12,6 +12,8 @@ ICON_PATH = Path(__file__).parent / "icon.png"   # icono de la ventana (se empaq
 def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int:
     # El estilo "Basic" permite personalizar los controles por completo
     os.environ.setdefault("QT_QUICK_CONTROLS_STYLE", "Basic")
+    # Silencia el aviso informativo de Qt Multimedia («Using Qt multimedia with FFmpeg…»); los avisos de error siguen saliendo
+    os.environ.setdefault("QT_LOGGING_RULES", "qt.multimedia.ffmpeg.info=false")
     from PySide6.QtCore import QUrl
     from PySide6.QtGui import QGuiApplication, QIcon
     from PySide6.QtQml import QQmlApplicationEngine

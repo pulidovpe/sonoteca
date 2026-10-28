@@ -71,6 +71,10 @@ rm -rf .venv-build build dist   # evita restos de compilaciones anteriores
 Si el comando `python3` de tu Mac no es el 3.12, indica cuál usar: `PYTHON=python3.12 ./packaging/build_mac.sh`.
 Si dice «permission denied», haz `chmod +x packaging/*.sh` y repite.
 
+El script avisa de cada paso (`[1/7] … [7/7]`), guarda todo lo que muestra en `build.log` y, al terminar, imprime la ruta exacta de
+`dist/Sonoteca.app`. **La carpeta `dist/` solo existe después de que el script termine con «✓ Binario listo»**: `sonoteca gui` no
+compila nada. Si falla, el mensaje dice en qué paso; envía el final de `build.log`.
+
 El script, en orden: crea un entorno virtual aislado (`.venv-build`), instala el proyecto con sus dependencias,
 ejecuta PyInstaller, hace una **prueba de humo** (abre la app sin pantalla ~5 s), comprueba que **no haya datos personales**,
 muestra el **tamaño** y crea el zip.
