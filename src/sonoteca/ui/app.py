@@ -34,15 +34,15 @@ def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int
 
         report = legacy.ensure_migrated()
         if report is not None and (report.migrated or report.errors):
-            print(f"[sonoteca] migraci\u00f3n desde musicapp: {len(report.moved)} elementos movidos, "
+            print(f"[sonoteca] migración desde musicapp: {len(report.moved)} elementos movidos, "
                   f"{report.rewritten_paths} rutas de portadas reescritas, errores: {report.errors}", file=sys.stderr)
 
         from sonoteca.core import portable
 
-        applied = portable.apply_pending_import()   # importaci\u00f3n preparada en la sesi\u00f3n anterior (antes de abrir la base)
+        applied = portable.apply_pending_import()   # importación preparada en la sesión anterior (antes de abrir la base)
         if applied:
             print(f"[sonoteca] biblioteca importada; copia de la anterior en {applied['backup']}", file=sys.stderr)
-        cleared = portable.apply_pending_reset()   # «empezar desde cero» preparado en la sesi\u00f3n anterior
+        cleared = portable.apply_pending_reset()   # «empezar desde cero» preparado en la sesión anterior
         if cleared:
             print(f"[sonoteca] biblioteca vaciada (copia en {cleared['backup'] or 'ninguna'})", file=sys.stderr)
 
@@ -76,7 +76,12 @@ def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int
     engine.load(QUrl.fromLocalFile(str(QML_DIR / "Main.qml")))
     if not engine.rootObjects():
         return 1
-    return app.exec()
+    code = app.exec()
+    # Cierre ordenado: primero se destruye la interfaz QML y después los controladores. Si Python libera los
+    # controladores antes, los enlaces QML que siguen vivos leen `library` o `playlists` ya destruidos y salen
+    # errores como «Cannot call method 'stats' of null» al cerrar la ventana.
+    del engine
+    return code
 
 
 def main() -> int:

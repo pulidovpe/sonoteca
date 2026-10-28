@@ -1,7 +1,9 @@
 # Construye dist\sonoteca\sonoteca.exe y un .zip. Uso (PowerShell, en Windows): .\packaging\build_win.ps1
 $ErrorActionPreference = "Stop"
 Set-Location (Join-Path $PSScriptRoot "..")
-python -m venv .venv-build
+# Entorno propio de este script: se borra siempre (uno viejo o copiado de otra máquina falla)
+if (Test-Path .venv-build) { Remove-Item -Recurse -Force .venv-build }
+python -m venv --clear .venv-build
 .\.venv-build\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -e ".[ui,build]"

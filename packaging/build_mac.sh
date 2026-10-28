@@ -1,12 +1,26 @@
 #!/usr/bin/env bash
 # Construye Sonoteca.app (arquitectura de tu Mac) y un .zip listo para compartir.
 # Uso: ./packaging/build_mac.sh        (desde cualquier carpeta; requiere Python 3.11+ e internet)
+#      PYTHON=python3.12 ./packaging/build_mac.sh   -> elegir el Python a usar
 #      SONOTECA_NO_PRUNE=1 ./packaging/build_mac.sh   -> sin podar módulos de Qt (si la poda diera problemas)
+# Si se lanzó con `sh packaging/build_mac.sh`, se relanza con bash (el script usa funciones de bash).
+if [ -z "${BASH_VERSION:-}" ]; then exec bash "$0" "$@"; fi
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-PY="${PYTHON:-python3}"
-"$PY" -m venv .venv-build
+# Intérprete: el indicado en PYTHON o el primer Python 3.12/3.13/3.11 que haya (mejor 3.12)
+PY="${PYTHON:-}"
+if [ -z "$PY" ]; then
+  for candidate in python3.12 python3.13 python3.11 python3; do
+    if command -v "$candidate" >/dev/null 2>&1; then PY="$candidate"; break; fi
+  done
+fi
+echo "Usando: $("$PY" --version) ($(command -v "$PY"))"
+
+# El entorno de compilación es propio de este script (.venv-build) y no tiene que ver con tu entorno de desarrollo.
+# Se borra siempre: uno viejo o copiado de otra máquina deja enlaces rotos («No such file ... .venv-build/bin/python3.12»).
+rm -rf .venv-build
+"$PY" -m venv --clear .venv-build
 # shellcheck disable=SC1091
 source .venv-build/bin/activate
 python -m pip install --upgrade pip
