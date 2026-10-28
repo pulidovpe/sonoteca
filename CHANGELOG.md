@@ -5,6 +5,14 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.9.5] - 2026-10-27
+### Corregido
+- **Teclas multimedia** (reproducir/pausa, siguiente, anterior) no se reconocían: la aplicación no tenía ningún manejador y
+  macOS no las envía como eventos de teclado. Ahora un filtro de eventos las reconoce con la ventana en primer plano
+  (todos los sistemas) y, en macOS, Sonoteca se registra en `MPRemoteCommandCenter`/`MPNowPlayingInfoCenter` para recibirlas
+  también en segundo plano. Nueva dependencia solo en macOS: `pyobjc-framework-MediaPlayer`. `SONOTECA_DEBUG_MEDIA=1`
+  muestra lo que se recibe. Pendiente: teclas globales en Windows (SMTC) y Linux (MPRIS).
+
 ## [0.9.4] - 2026-10-27
 ### Cambiado
 - **Menú izquierdo con iconos**: la barra lateral pasa de 230 a 72 px. Cada sección (Inicio, Álbumes, Artistas, Listas,
