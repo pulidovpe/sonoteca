@@ -1,4 +1,6 @@
 singleton Theme 1.0 Theme.qml
+singleton DragState 1.0 DragState.qml
+TrackDragHandler 1.0 TrackDragHandler.qml
 SideButton 1.0 SideButton.qml
 Chip 1.0 Chip.qml
 AlbumCard 1.0 AlbumCard.qml

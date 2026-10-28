@@ -92,6 +92,7 @@ Item {
                     badge: modelData.badge
                     duration: modelData.duration > 0 ? Theme.fmt(modelData.duration) : ""
                     current: player.currentId === modelData.id
+                    trackId: modelData.id
                     onActivated: player.playTrackIds(page.ids, index)
                     onContextRequested: page.menuRequested([modelData.id])
                 }

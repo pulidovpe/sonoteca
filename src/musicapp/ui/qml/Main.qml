@@ -308,12 +308,100 @@ ApplicationWindow {
                     active: win.section === "artists"
                     onClicked: win.showSection("artists")
                 }
-                SideButton {
+                Item {
+                    id: listsGroup
                     width: parent.width
-                    label: "Listas"
-                    hint: playlists.count > 0 ? playlists.count : ""
-                    active: win.section === "playlists"
-                    onClicked: win.showSection("playlists")
+                    property bool expanded: false
+                    readonly property bool open: expanded || DragState.active   // al arrastrar se despliega para poder soltar
+                    height: listsHead.height + (open ? listsBox.height : 0)
+                    SideButton {
+                        id: listsHead
+                        width: parent.width
+                        label: "Listas"
+                        hint: playlists.count > 0 ? playlists.count : ""
+                        active: win.section === "playlists"
+                        onClicked: win.showSection("playlists")
+                    }
+                    Text {
+                        id: listsChevron
+                        text: listsGroup.open ? "\u25be" : "\u25b8"
+                        color: Theme.textDim
+                        font.pixelSize: 14
+                        anchors { right: parent.right; rightMargin: 46; verticalCenter: listsHead.verticalCenter }
+                        MouseArea {
+                            anchors { fill: parent; margins: -10 }
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: listsGroup.expanded = !listsGroup.expanded
+                        }
+                    }
+                    Flickable {
+                        id: listsBox
+                        visible: listsGroup.open
+                        y: listsHead.height
+                        width: parent.width
+                        height: Math.min(contentHeight, 168)
+                        contentHeight: listsCol.height
+                        clip: true
+                        Column {
+                            id: listsCol
+                            width: listsBox.width
+                            Text {
+                                visible: playlists.count === 0
+                                x: 36
+                                height: 32
+                                verticalAlignment: Text.AlignVCenter
+                                text: "A\u00fan no hay listas"
+                                color: Theme.textDim
+                                font.pixelSize: 12
+                            }
+                            Repeater {
+                                model: (playlists.revision, playlists.lists())
+                                delegate: Item {
+                                    id: listItem
+                                    width: listsCol.width
+                                    height: 32
+                                    readonly property bool dropHover: DragState.active && over(DragState.sceneX, DragState.sceneY)
+                                    function over(x, y) {
+                                        var p = listItem.mapFromItem(null, x, y)
+                                        return p.x >= 0 && p.y >= 0 && p.x <= listItem.width && p.y <= listItem.height
+                                    }
+                                    onDropHoverChanged: {
+                                        if (dropHover) DragState.hoverListId = modelData.id
+                                        else if (DragState.hoverListId === modelData.id) DragState.hoverListId = 0
+                                    }
+                                    Rectangle {
+                                        anchors { fill: parent; leftMargin: 20; rightMargin: 8 }
+                                        radius: 6
+                                        color: listItem.dropHover ? Qt.alpha(Theme.accent, 0.3) : (listMouse.containsMouse ? Theme.surfaceHover : "transparent")
+                                        border.width: listItem.dropHover ? 1 : 0
+                                        border.color: Theme.accent
+                                    }
+                                    Text {
+                                        x: 36
+                                        width: parent.width - 36 - 52
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: modelData.name
+                                        color: listItem.dropHover ? Theme.text : Theme.textDim
+                                        font.pixelSize: 13
+                                        elide: Text.ElideRight
+                                    }
+                                    Text {
+                                        anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
+                                        text: modelData.tracks
+                                        color: Theme.textDim
+                                        font.pixelSize: 11
+                                    }
+                                    MouseArea {
+                                        id: listMouse
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: win.openPlaylist(modelData.id)
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
                 SideButton {
                     width: parent.width
@@ -538,6 +626,39 @@ ApplicationWindow {
         function onErrorMessage(message) { win.toast(message) }
     }
 
+    Connections {
+        target: DragState
+        function onDropOnList(listId, ids) {
+            var r = playlists.addTracks(listId, ids)
+            if (!r.ok) win.toast(r.error)
+            else if (r.added === 0) win.toast("Esa canci\u00f3n ya estaba en la lista")
+        }
+    }
+    Rectangle {   // etiqueta que sigue al puntero mientras se arrastra una canción
+        id: dragGhost
+        parent: Overlay.overlay
+        z: 2000
+        visible: DragState.active
+        enabled: false
+        x: DragState.sceneX + 14
+        y: DragState.sceneY + 8
+        width: Math.min(ghostText.implicitWidth + 24, 280)
+        height: 30
+        radius: 15
+        color: Theme.surface
+        border.color: Theme.accent
+        border.width: 1
+        opacity: 0.95
+        Text {
+            id: ghostText
+            anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
+            verticalAlignment: Text.AlignVCenter
+            text: "\u266a " + DragState.label
+            color: Theme.text
+            font.pixelSize: 13
+            elide: Text.ElideRight
+        }
+    }
     Rectangle {
         id: toastBox
         opacity: 0

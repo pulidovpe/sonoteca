@@ -69,6 +69,9 @@ Item {
             subtitle: modelData.artist + " \u00b7 " + modelData.album
             duration: modelData.duration
             plays: (player.statsRevision, player.playsOf(modelData.id))
+            trackId: modelData.id
+            count: page.items.length
+            onReorderRequested: (dst) => player.moveInQueue(index, dst)
             current: modelData.current
             playing: player.playing
             onActivated: player.playQueueAt(modelData.position)

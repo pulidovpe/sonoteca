@@ -9,10 +9,15 @@ Item {
     property string badge: ""
     property string duration: ""
     property int plays: -1   // < 0: no se muestra
+    property int trackId: 0  // > 0: se puede arrastrar a una lista de la barra lateral
     property bool current: false
     signal activated()
     signal contextRequested()
     height: 52
+    opacity: dragHandler.active ? 0.45 : 1
+
+    HoverHandler { id: rowHover }
+    TrackDragHandler { id: dragHandler; ids: root.trackId > 0 ? [root.trackId] : []; label: root.title }
 
     Rectangle {
         anchors.fill: parent
@@ -34,8 +39,8 @@ Item {
     Column {
         anchors.left: num.right
         anchors.leftMargin: root.number === "" ? 0 : 8
-        anchors.right: badgeBox.left
-        anchors.rightMargin: 70
+        anchors.right: moreButton.left
+        anchors.rightMargin: 8
         anchors.verticalCenter: parent.verticalCenter
         spacing: 2
         Text {
@@ -101,22 +106,19 @@ Item {
         onClicked: (m) => { if (m.button === Qt.RightButton) root.contextRequested() }
         onDoubleClicked: (m) => { if (m.button === Qt.LeftButton) root.activated() }
     }
-    // Acceso visible al editor: aparece al pasar el ratón
-    Text {
-        id: editHint
-        visible: mouse.containsMouse || hintMouse.containsMouse
-        text: "Más"
-        color: hintMouse.containsMouse ? Theme.accent : Theme.textDim
-        font.pixelSize: 12
-        anchors.right: badgeBox.visible ? badgeBox.left : dur.left
-        anchors.rightMargin: 16
+    // Botón de opciones (⋮): aparece al pasar el ratón y abre el menú con todas las acciones
+    IconButton {
+        id: moreButton
+        width: 28
+        height: 28
+        iconSize: 16
+        svg: Theme.iconMore
+        enabled: rowHover.hovered
+        opacity: rowHover.hovered ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: Theme.fast } }
+        anchors.right: playsText.visible ? playsText.left : (badgeBox.visible ? badgeBox.left : dur.left)
+        anchors.rightMargin: 10
         anchors.verticalCenter: parent.verticalCenter
-        MouseArea {
-            id: hintMouse
-            anchors { fill: parent; margins: -6 }
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: root.contextRequested()
-        }
+        onClicked: root.contextRequested()
     }
 }
