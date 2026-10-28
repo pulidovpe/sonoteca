@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Dialogs
 import "."
 
 // Ficha del artista: resumen de Wikipedia y foto (se guardan para verlos sin conexión)
@@ -11,6 +12,17 @@ Item {
     property string status: ""
     property bool searching: false
     property bool expanded: false
+    property bool photoOn: true   // se apaga un instante al cambiar la foto para que Image la recargue
+    property alias imageDialog: imageDialog
+    function changeImage(path) {
+        var result = online.setArtistImage(artistId, path)
+        if (!result.ok) { status = result.error; return }
+        photoOn = false
+        Theme.dataRevision++
+        info = result.info
+        status = "Imagen actualizada"
+        Qt.callLater(function () { root.photoOn = true })
+    }
     signal needInternet()
     implicitHeight: Math.max(photo.height, body.height) + 8
 
@@ -54,9 +66,10 @@ Item {
         color: "#222224"
         Image {
             anchors.fill: parent
-            source: root.info.imagePath ? online.fileUrl(root.info.imagePath) : ""
+            source: root.photoOn && root.info.imagePath ? online.fileUrl(root.info.imagePath) : ""
             fillMode: Image.PreserveAspectCrop
             asynchronous: true
+            cache: false
         }
     }
     Column {
@@ -113,7 +126,19 @@ Item {
                 label: "¿Artista equivocado?"
                 onClicked: lookup.openFor(root.artistId, root.artistName, root.info.source === "Manual" ? root.info.bio : "")
             }
+            PillButton {
+                id: imageButton
+                height: 32
+                label: root.info.imagePath ? "Cambiar imagen\u2026" : "Elegir imagen\u2026"
+                onClicked: imageDialog.open()
+            }
         }
+    }
+    FileDialog {
+        id: imageDialog
+        title: "Elegir imagen del artista"
+        nameFilters: ["Im\u00e1genes (*.jpg *.jpeg *.png)"]
+        onAccepted: root.changeImage(library.localPath(selectedFile.toString()))
     }
     ArtistLookup {
         id: lookup

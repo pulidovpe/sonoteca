@@ -187,3 +187,23 @@ def test_player_bar_links_to_artist_and_album_from_any_page(qml_env):
     env.act("playerBar.artistRequested(player.currentTrack.artistId, 'Artista')", 600)
     assert env.js("stack.currentItem.artistId") == env.player.currentTrack["artistId"]
     assert env.warnings == []
+
+
+def test_set_artist_image_only_changes_the_photo(tmp_path, monkeypatch):
+    pytest.importorskip("PySide6.QtCore")
+    monkeypatch.setenv("MUSICAPP_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("MUSICAPP_CACHE_DIR", str(tmp_path / "cache"))
+    from musicapp.ui.online_controller import OnlineController
+    db = tmp_path / "i.db"
+    conn = connect(db)
+    _seed(conn, ["Solo foto"])
+    aid = conn.execute("SELECT id FROM artists WHERE name = 'Solo foto'").fetchone()["id"]
+    conn.close()
+    ctrl = OnlineController(db)
+    png = tmp_path / "f.png"
+    png.write_bytes(b"\x89PNG\r\n\x1a\n" + b"0" * 32)
+    out = ctrl.setArtistImage(aid, str(png))
+    assert out["ok"] and out["info"]["imagePath"] and out["info"]["bio"] == ""   # sin descripción: solo foto
+    bad = tmp_path / "x.txt"
+    bad.write_bytes(b"no es imagen")
+    assert ctrl.setArtistImage(aid, str(bad))["ok"] is False
