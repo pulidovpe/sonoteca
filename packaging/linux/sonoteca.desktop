@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Sonoteca
+GenericName=Reproductor de música
+Comment=Reproductor y organizador de música local
+Exec=/RUTA/A/sonoteca/sonoteca
+Icon=/RUTA/A/sonoteca.png
+Terminal=false
+Categories=AudioVideo;Audio;Player;Music;
+StartupWMClass=sonoteca
