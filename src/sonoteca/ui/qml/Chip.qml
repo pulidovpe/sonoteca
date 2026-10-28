@@ -16,7 +16,7 @@ Rectangle {
         id: t
         anchors.centerIn: parent
         text: root.label
-        color: root.active ? Theme.onAccent : Theme.text
+        color: root.active ? Theme.textOnAccent : Theme.text
         font.pixelSize: 13
     }
     MouseArea {

@@ -5,6 +5,11 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.9.3.1] - 2026-10-27
+### Corregido
+- La app no arrancaba con el tema nuevo (`Theme.qml: Cannot assign a value to a signal`): el token `onAccent` se
+  interpretaba como manejador de señal. Se renombró a `textOnAccent` y una prueba impide nombres `on` + Mayúscula.
+
 ## [0.9.3] - 2026-10-27
 ### Añadido
 - **Tema «Neón»** basado en la paleta del logo: fondo azul casi negro, acento cian `#00d0fc` y degradado cian → violeta en el
