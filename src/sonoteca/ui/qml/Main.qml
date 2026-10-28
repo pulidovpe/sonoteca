@@ -86,7 +86,7 @@ ApplicationWindow {
     Action { id: actPlaylists; text: "Listas de reproducci\u00f3n"; shortcut: "Ctrl+5"; onTriggered: win.showSection("playlists") }
     Action { id: actNewPlaylist; text: "Nueva lista de reproducci\u00f3n\u2026"; shortcut: "Ctrl+N"; onTriggered: win.newPlaylist() }
     Action { id: actLyrics; text: "Letra"; shortcut: "Ctrl+6"; onTriggered: win.toggleLyrics() }
-    Action { id: actQueue; text: "Reproduciendo"; shortcut: "Ctrl+4"; onTriggered: win.showSection("queue") }
+    Action { id: actQueue; text: "Reproduciendo"; shortcut: "Ctrl+4"; onTriggered: win.toggleQueue() }
     Action { id: actNewList; text: "Nueva lista temporal"; onTriggered: player.newTemporaryList() }
     Action { id: actClearList; text: "Vaciar la lista actual"; enabled: player.queueLength > (player.hasTrack ? 1 : 0); onTriggered: player.clearQueue() }
     Action { id: actSearch; text: "Buscar"; shortcut: "Ctrl+F"; onTriggered: { searchField.forceActiveFocus(); searchField.selectAll() } }
@@ -183,15 +183,14 @@ ApplicationWindow {
     function render(loc) {
         searching = (loc.t === "search")
         if (loc.t === "section") {
+            if (loc.sec === "queue" || loc.sec === "lyrics") { showQueue(); return }   // (entradas antiguas del historial)
             if (loc.sec === "albums" || loc.sec === "artists" || loc.sec === "review") cleanup()
             section = loc.sec
             searchField.text = ""
             if (loc.sec === "home") stack.replace(null, homeComp)
             else if (loc.sec === "albums") stack.replace(null, albumsComp)
             else if (loc.sec === "artists") stack.replace(null, artistsComp)
-            else if (loc.sec === "queue") stack.replace(null, queueComp)
             else if (loc.sec === "playlists") stack.replace(null, playlistsComp)
-            else if (loc.sec === "lyrics") stack.replace(null, lyricsComp)
             else stack.replace(null, reviewComp)
             return
         }
@@ -206,15 +205,27 @@ ApplicationWindow {
         else if (loc.t === "playlist") stack.replace(null, playlistComp, { playlistId: loc.id })
         else if (loc.t === "lyrics") stack.replace(null, lyricsComp, { followPlayer: false, trackId: loc.trackId })
     }
-    // «Letra»: con una canción sonando se abre en un panel a la derecha (el centro queda libre);
-    // sin canción, página completa que explica qué hacer.
-    property bool lyricsPanelOpen: false
-    readonly property bool lyricsPanelShown: lyricsPanelOpen && player.hasTrack && section !== "lyrics"
-    function toggleLyrics() {
-        if (player.hasTrack) lyricsPanelOpen = !lyricsPanelShown
-        else showSection("lyrics")
+    // Panel derecho: SIEMPRE presente. Muestra «Reproduciendo»; «Letra» lo reemplaza y, al quitar la letra, vuelve la lista.
+    // El icono «Reproduciendo» lo vuelve a mostrar y, si ya está a la vista, lo oculta (para ganar espacio) o lo muestra.
+    property string rightMode: "queue"        // qué contenido toca: queue | lyrics
+    property bool rightCollapsed: false       // plegado a petición del usuario
+    readonly property bool lyricsPanelShown: !rightCollapsed && rightMode === "lyrics"
+    readonly property bool queuePanelShown: !rightCollapsed && rightMode === "queue"
+    readonly property var queuePage: queueLoader.item   // la lista del panel (acciones y pruebas)
+    function showQueue() { rightCollapsed = false; rightMode = "queue" }
+    function toggleQueue() {
+        if (rightMode === "lyrics") showQueue()           // desde la letra: volver a la lista
+        else rightCollapsed = !rightCollapsed
     }
-    function showSection(sec) { go({ t: "section", sec: sec }) }
+    function toggleLyrics() {
+        if (lyricsPanelShown) rightMode = "queue"         // quitar la letra: vuelve Reproduciendo
+        else { rightCollapsed = false; rightMode = "lyrics" }
+    }
+    function showSection(sec) {
+        if (sec === "queue") { showQueue(); return }      // la lista ya no es una página: vive en el panel derecho
+        if (sec === "lyrics") { toggleLyrics(); return }
+        go({ t: "section", sec: sec })
+    }
     function showLyrics(trackId) { go({ t: "lyrics", trackId: trackId, from: section }) }
     function openAlbum(id) { go({ t: "album", id: id, from: section }) }
     function openArtist(id, name) { go({ t: "artist", id: id, name: name, from: section }) }
@@ -376,6 +387,7 @@ ApplicationWindow {
     Component {
         id: queueComp
         QueuePage {
+            panel: true
             onEditRequested: (ids) => win.editTags(ids)
             onMenuRequested: (ids) => win.showTrackMenu(ids)
             onSaveRequested: win.saveQueueAsPlaylist()
@@ -577,17 +589,17 @@ ApplicationWindow {
                     }
                     SideButton {
                         width: parent.width
-                        label: "Reproduciendo"
+                        label: win.queuePanelShown ? "Reproduciendo \u00b7 ocultar el panel" : "Reproduciendo \u00b7 mostrar el panel"
                         icon: Theme.iconQueue
                         badge: player.queueLength > 0 ? player.queueLength : ""
-                        active: win.section === "queue"
-                        onClicked: win.showSection("queue")
+                        active: win.queuePanelShown
+                        onClicked: win.toggleQueue()
                     }
                     SideButton {
                         width: parent.width
-                        label: "Letra"
+                        label: win.lyricsPanelShown ? "Letra \u00b7 volver a Reproduciendo" : "Letra"
                         icon: Theme.iconLyrics
-                        active: win.section === "lyrics" || win.lyricsPanelShown
+                        active: win.lyricsPanelShown
                         onClicked: win.toggleLyrics()
                     }
                     SideButton {
@@ -773,22 +785,31 @@ ApplicationWindow {
         }
 
         Rectangle {
-            id: lyricsPanel
-            readonly property int fullWidth: Math.round(Math.min(400, Math.max(300, win.width * 0.3)))
-            Layout.preferredWidth: win.lyricsPanelShown ? fullWidth : 0
+            id: rightPanel
+            readonly property int fullWidth: Math.round(Math.min(400, Math.max(300, win.width * 0.28)))
+            Layout.preferredWidth: win.rightCollapsed ? 0 : fullWidth
             Layout.fillHeight: true
             color: Theme.sidebar
             clip: true
             visible: Layout.preferredWidth > 0
             Behavior on Layout.preferredWidth { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+            // La lista siempre está cargada (conserva su estado); la letra se carga solo cuando se muestra
             Loader {
-                active: win.lyricsPanelShown
-                width: lyricsPanel.fullWidth
+                id: queueLoader
+                width: rightPanel.fullWidth
+                height: parent.height
+                visible: win.rightMode === "queue"
+                sourceComponent: queueComp
+            }
+            Loader {
+                id: lyricsLoader
+                active: win.rightMode === "lyrics"
+                width: rightPanel.fullWidth
                 height: parent.height
                 sourceComponent: LyricsPage {
                     panel: true
                     autoSearch: true   // con internet, busca sola la letra de la canción que suena
-                    onCloseRequested: win.lyricsPanelOpen = false
+                    onCloseRequested: win.toggleLyrics()
                     onSettingsRequested: lyricsSettings.openDialog()
                     onNeedInternet: win.openInternetSettings()
                 }
@@ -815,7 +836,7 @@ ApplicationWindow {
         visible: player.isVideo && win.videoOpen
         color: "#000000"
         z: 5
-        anchors { left: parent.left; leftMargin: win.sidebarWidth; right: parent.right; rightMargin: lyricsPanel.visible ? lyricsPanel.width : 0; top: parent.top; topMargin: 68; bottom: parent.bottom; bottomMargin: playerBar.height }
+        anchors { left: parent.left; leftMargin: win.sidebarWidth; right: parent.right; rightMargin: rightPanel.visible ? rightPanel.width : 0; top: parent.top; topMargin: 68; bottom: parent.bottom; bottomMargin: playerBar.height }
         VideoOutput { id: videoOut; anchors.fill: parent; fillMode: VideoOutput.PreserveAspectFit }
         Component.onCompleted: player.setVideoSink(videoOut.videoSink)
     }
@@ -840,7 +861,7 @@ ApplicationWindow {
             win.toast(added > 0 ? added + " canciones a\u00f1adidas" : "No hay canciones nuevas")
             if (added > 0) {
                 win.showSection("home")
-                harvestDialog.offer(false)   // portadas y fotos de lo bien identificado, avisando cu\u00e1nto tardar\u00e1
+                harvestDialog.offer(false)   // portadas y fotos de lo bien identificado, avisando cuánto tardará
             }
         }
     }

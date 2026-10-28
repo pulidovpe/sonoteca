@@ -31,10 +31,10 @@ def test_history_back_forward_and_discarding_forward_branch(qml_env):
     assert js("stack.currentItem.albumId") == album and js("win.canForward") is False
     # ir atrás y navegar a otro sitio descarta lo que había "adelante"
     act("win.back()", 200)
-    act("showSection('queue')", 300)
+    act("showSection('review')", 300)
     assert js("win.canForward") is False and js("win.navHistory.length") == 3
     # abrir la misma ubicación dos veces seguidas no duplica la entrada
-    act("showSection('queue')", 200)
+    act("showSection('review')", 200)
     assert js("win.navHistory.length") == 3
     assert env.warnings == []
 
@@ -58,7 +58,7 @@ def test_back_skips_deleted_playlist(qml_env):
     pid = env.playlists.create("Efimera")["id"]
     act("showSection('playlists')", 200)
     act(f"openPlaylist({pid})", 300)
-    act("showSection('queue')", 200)
+    act("showSection('review')", 200)
     env.playlists.remove(pid)
     act("win.back()", 300)           # la lista ya no existe: salta a «Listas»
     assert js("win.section") == "playlists" and js("win.navIndex") == 1

@@ -162,11 +162,11 @@ def test_tags_can_be_edited_from_the_queue_and_the_playlist(qml_env, tmp_path):
     ids = track_ids(env)
     env.player.playTrackIds(ids, 0)
     act("showSection('queue')", 400)
-    act(f"stack.currentItem.editRequested([{ids[1]}])", 400)  # lo que emite el botón "Editar tags" de la fila
+    act(f"queuePage.editRequested([{ids[1]}])", 400)  # lo que emite el botón "Editar tags" de la fila
     assert js("tagEditor.visible") is True and js("tagEditor.info.title.value") == "Pista 2"
     act("tagEditor.close()", 300)
     # el menú de la fila ofrece "Editar tags…"
-    act(f"stack.currentItem.menuRequested([{ids[0]}]); trackMenu.edit()", 400)
+    act(f"queuePage.menuRequested([{ids[0]}]); trackMenu.edit()", 400)
     assert js("tagEditor.visible") is True and js("tagEditor.info.title.value") == "Pista 1"
     act("tagEditor.close()", 300)
     # tras editar, la cola y la barra de reproducción muestran el título nuevo

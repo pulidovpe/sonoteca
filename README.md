@@ -66,6 +66,9 @@ Las direcciones deben ser `http://` o `https://` y no pueden llevar usuario ni c
 ### Empezar desde cero
 Archivo ▸ *Empezar desde cero…* (o `sonoteca reset --yes`) vacía la biblioteca —base de datos, listas, letras, portadas y fotos descargadas— y se completa al volver a abrir la aplicación. Antes guarda una copia en `backups/` (puedes desactivarla). No borra tus archivos de música y conserva tus ajustes y claves.
 
+### Panel derecho
+A la derecha siempre hay un panel: por defecto muestra la lista **Reproduciendo** (arrastra para reordenar, clic derecho para más acciones). **Letra** (icono del menú o Ctrl+6) la reemplaza por la letra de la canción que suena; al volver a pulsarlo, vuelve Reproduciendo. El icono **Reproduciendo** (Ctrl+4) devuelve la lista si estaba la letra y, si ya está a la vista, pliega o despliega el panel para ganar espacio.
+
 ### Teclas multimedia
 Reproducir/pausa, siguiente y anterior del teclado funcionan con la ventana en primer plano en cualquier sistema. En **macOS**
 también funcionan con la app en segundo plano: Sonoteca se registra como la aplicación de «Ahora suena» (necesita

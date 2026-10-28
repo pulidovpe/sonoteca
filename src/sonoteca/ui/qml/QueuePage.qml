@@ -6,6 +6,8 @@ import "."
 Item {
     id: page
     property var items: []
+    property bool panel: false             // true: panel derecho (más estrecho y compacto)
+    readonly property int pad: panel ? 16 : 24
     signal editRequested(var ids)
     signal menuRequested(var ids)
     signal saveRequested()
@@ -24,32 +26,32 @@ Item {
 
     Text {
         id: title
-        text: "Lista de reproducci\u00f3n"
+        text: page.panel ? "Reproduciendo" : "Lista de reproducci\u00f3n"
         color: Theme.text
-        font.pixelSize: 30
+        font.pixelSize: page.panel ? 22 : 30
         font.weight: Font.Bold
-        anchors { left: parent.left; top: parent.top; leftMargin: 24; topMargin: 8 }
+        anchors { left: parent.left; top: parent.top; leftMargin: page.pad; topMargin: page.panel ? 16 : 8 }
     }
     Text {
         id: sub
         color: Theme.textDim
         font.pixelSize: 13
-        text: page.items.length === 0 ? "Vac\u00eda" : Theme.plural(page.items.length, "canci\u00f3n", "canciones") + " \u00b7 temporal: se pierde al cerrar la aplicaci\u00f3n"
-        anchors { left: parent.left; top: title.bottom; leftMargin: 24; topMargin: 2 }
+        text: page.items.length === 0 ? "Vac\u00eda" : Theme.plural(page.items.length, "canci\u00f3n", "canciones") + (page.panel ? "" : " \u00b7 temporal: se pierde al cerrar la aplicaci\u00f3n")
+        anchors { left: parent.left; top: title.bottom; leftMargin: page.pad; topMargin: 2 }
     }
     Flow {
         id: buttons
         spacing: 10
-        anchors { left: parent.left; right: parent.right; top: sub.bottom; leftMargin: 24; rightMargin: 24; topMargin: 12 }
+        anchors { left: parent.left; right: parent.right; top: sub.bottom; leftMargin: page.pad; rightMargin: page.pad; topMargin: 12 }
         PillButton { label: "Reproducir"; primary: true; visible: page.items.length > 0 && !player.hasTrack; onClicked: player.playQueueAt(0) }
-        PillButton { label: "Guardar como lista\u2026"; enabled: page.items.length > 0; onClicked: page.saveRequested() }
-        PillButton { label: "Nueva lista temporal"; onClicked: player.newTemporaryList() }
+        PillButton { label: page.panel ? "Guardar lista\u2026" : "Guardar como lista\u2026"; enabled: page.items.length > 0; onClicked: page.saveRequested() }
+        PillButton { label: page.panel ? "Nueva lista" : "Nueva lista temporal"; onClicked: player.newTemporaryList() }
         PillButton { label: "Vaciar"; enabled: page.items.length > (player.hasTrack ? 1 : 0); onClicked: player.clearQueue() }
     }
     Text {
         visible: page.items.length === 0
-        width: parent.width - 48
-        anchors { left: parent.left; top: buttons.bottom; leftMargin: 24; topMargin: 24 }
+        width: parent.width - 2 * page.pad
+        anchors { left: parent.left; top: buttons.bottom; leftMargin: page.pad; topMargin: 24 }
         wrapMode: Text.WordWrap
         color: Theme.textDim
         font.pixelSize: 14
@@ -62,6 +64,7 @@ Item {
         model: page.items
         delegate: ListTrackRow {
             width: list.width
+            compact: page.panel
             position: modelData.position
             title: modelData.title
             subtitle: modelData.artist + " \u00b7 " + modelData.album
