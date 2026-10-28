@@ -12,6 +12,7 @@ ApplicationWindow {
     minimumHeight: 560
     visible: true
     title: "Sonoteca"
+    readonly property int sidebarWidth: 72   // barra lateral de iconos
     color: Theme.bg
 
     menuBar: AppMenuBar {
@@ -401,181 +402,248 @@ ApplicationWindow {
             Layout.fillHeight: true
             spacing: 0
 
+        // Barra lateral de iconos: el texto de cada botón es su tooltip
         Rectangle {
-            Layout.preferredWidth: 230
+            id: sidebarRail
+            Layout.preferredWidth: win.sidebarWidth
             Layout.fillHeight: true
             color: Theme.sidebar
 
-            Column {
-                anchors { left: parent.left; right: parent.right; top: parent.top; topMargin: 24 }
-                spacing: 4
-                Text {
-                    text: "Sonoteca"
-                    x: 24
-                    color: Theme.accent
-                    font.pixelSize: 22
-                    font.weight: Font.Bold
-                }
-                Item { width: 1; height: 20 }
-                SideButton {
-                    width: parent.width
-                    label: "Inicio"
-                    active: win.section === "home"
-                    onClicked: win.showSection("home")
-                }
-                SideButton {
-                    width: parent.width
-                    label: "Álbumes"
-                    active: win.section === "albums"
-                    onClicked: win.showSection("albums")
-                }
-                SideButton {
-                    width: parent.width
-                    label: "Artistas"
-                    active: win.section === "artists"
-                    onClicked: win.showSection("artists")
-                }
-                Item {
-                    id: listsGroup
-                    width: parent.width
-                    property bool expanded: false
-                    readonly property bool open: expanded || DragState.active   // al arrastrar se despliega para poder soltar
-                    height: listsHead.height + (open ? listsBox.height : 0)
-                    SideButton {
-                        id: listsHead
+            Flickable {
+                id: railScroll
+                anchors { left: parent.left; right: parent.right; top: parent.top; bottom: onlineBadge.top; topMargin: 16 }
+                contentHeight: railColumn.height
+                clip: true
+                interactive: contentHeight > height
+                boundsBehavior: Flickable.StopAtBounds
+
+                Column {
+                    id: railColumn
+                    width: railScroll.width
+                    spacing: 4
+                    Item {
                         width: parent.width
-                        label: "Listas"
-                        hint: playlists.count > 0 ? playlists.count : ""
-                        active: win.section === "playlists"
-                        onClicked: win.showSection("playlists")
-                    }
-                    Text {
-                        id: listsChevron
-                        text: listsGroup.open ? "\u25be" : "\u25b8"
-                        color: Theme.textDim
-                        font.pixelSize: 14
-                        anchors { right: parent.right; rightMargin: 46; verticalCenter: listsHead.verticalCenter }
-                        MouseArea {
-                            anchors { fill: parent; margins: -10 }
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: listsGroup.expanded = !listsGroup.expanded
+                        height: 52
+                        Image {
+                            source: "../icon.png"
+                            width: 40
+                            height: 40
+                            anchors.centerIn: parent
+                            sourceSize: Qt.size(80, 80)
+                            smooth: true
+                            mipmap: true
+                        }
+                        MouseArea { id: logoMouse; anchors.fill: parent; hoverEnabled: true }
+                        AppToolTip {
+                            visible: logoMouse.containsMouse
+                            text: "Sonoteca\n" + win.stats.tracks + " pistas \u00b7 " + win.stats.artists + " artistas\n" + Theme.fmtLong(win.stats.seconds)
+                            x: parent.width + 2
+                            y: (parent.height - height) / 2
                         }
                     }
-                    Flickable {
-                        id: listsBox
-                        visible: listsGroup.open
-                        y: listsHead.height
+                    Item { width: 1; height: 8 }
+                    SideButton {
                         width: parent.width
-                        height: Math.min(contentHeight, 168)
-                        contentHeight: listsCol.height
-                        clip: true
-                        Column {
-                            id: listsCol
-                            width: listsBox.width
+                        label: "Inicio"
+                        icon: Theme.iconHome
+                        active: win.section === "home"
+                        onClicked: win.showSection("home")
+                    }
+                    SideButton {
+                        width: parent.width
+                        label: "\u00c1lbumes"
+                        icon: Theme.iconAlbum
+                        active: win.section === "albums"
+                        onClicked: win.showSection("albums")
+                    }
+                    SideButton {
+                        width: parent.width
+                        label: "Artistas"
+                        icon: Theme.iconArtist
+                        active: win.section === "artists"
+                        onClicked: win.showSection("artists")
+                    }
+                    Item {
+                        id: listsGroup
+                        width: parent.width
+                        property bool expanded: false
+                        readonly property bool open: expanded || DragState.active   // al arrastrar se despliega para poder soltar
+                        height: listsHead.height + (open ? listsBox.height : 0)
+                        SideButton {
+                            id: listsHead
+                            width: parent.width
+                            label: "Listas"
+                            icon: Theme.iconList
+                            badge: playlists.count > 0 ? playlists.count : ""
+                            active: win.section === "playlists"
+                            onClicked: win.showSection("playlists")
+                        }
+                        Rectangle {
+                            id: listsChevron
+                            width: 20
+                            height: 20
+                            radius: 10
+                            color: chevMouse.containsMouse ? Theme.surfaceHover : "transparent"
+                            anchors { right: parent.right; rightMargin: 2; bottom: listsHead.bottom; bottomMargin: 0 }
                             Text {
-                                visible: playlists.count === 0
-                                x: 36
-                                height: 32
-                                verticalAlignment: Text.AlignVCenter
-                                text: "A\u00fan no hay listas"
+                                anchors.centerIn: parent
+                                text: listsGroup.open ? "\u25be" : "\u25b8"
                                 color: Theme.textDim
                                 font.pixelSize: 12
                             }
-                            Repeater {
-                                model: (playlists.revision, playlists.lists())
-                                delegate: Item {
-                                    id: listItem
-                                    width: listsCol.width
-                                    height: 32
-                                    readonly property bool dropHover: DragState.active && over(DragState.sceneX, DragState.sceneY)
-                                    function over(x, y) {
-                                        var p = listItem.mapFromItem(null, x, y)
-                                        return p.x >= 0 && p.y >= 0 && p.x <= listItem.width && p.y <= listItem.height
-                                    }
-                                    onDropHoverChanged: {
-                                        if (dropHover) DragState.hoverListId = modelData.id
-                                        else if (DragState.hoverListId === modelData.id) DragState.hoverListId = 0
-                                    }
-                                    Rectangle {
-                                        anchors { fill: parent; leftMargin: 20; rightMargin: 8 }
-                                        radius: 6
-                                        color: listItem.dropHover ? Qt.alpha(Theme.accent, 0.3) : (listMouse.containsMouse ? Theme.surfaceHover : "transparent")
-                                        border.width: listItem.dropHover ? 1 : 0
-                                        border.color: Theme.accent
-                                    }
-                                    Text {
-                                        x: 36
-                                        width: parent.width - 36 - 52
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        text: modelData.name
-                                        color: listItem.dropHover ? Theme.text : Theme.textDim
-                                        font.pixelSize: 13
-                                        elide: Text.ElideRight
-                                    }
-                                    Text {
-                                        anchors { right: parent.right; rightMargin: 20; verticalCenter: parent.verticalCenter }
-                                        text: modelData.tracks
-                                        color: Theme.textDim
-                                        font.pixelSize: 11
-                                    }
-                                    MouseArea {
-                                        id: listMouse
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: win.openPlaylist(modelData.id)
+                            MouseArea {
+                                id: chevMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: listsGroup.expanded = !listsGroup.expanded
+                            }
+                            AppToolTip {
+                                visible: chevMouse.containsMouse
+                                text: listsGroup.open ? "Plegar las listas" : "Desplegar las listas"
+                                x: parent.width + 6
+                                y: (parent.height - height) / 2
+                            }
+                        }
+                        Flickable {
+                            id: listsBox
+                            visible: listsGroup.open
+                            y: listsHead.height
+                            width: parent.width
+                            height: Math.min(contentHeight, 220)
+                            contentHeight: listsCol.height
+                            clip: true
+                            Column {
+                                id: listsCol
+                                width: listsBox.width
+                                Text {
+                                    visible: playlists.count === 0
+                                    width: parent.width
+                                    height: 36
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                    text: "Sin listas"
+                                    color: Theme.textDim
+                                    font.pixelSize: 11
+                                }
+                                Repeater {
+                                    model: (playlists.revision, playlists.lists())
+                                    delegate: Item {
+                                        id: listItem
+                                        width: listsCol.width
+                                        height: 48
+                                        readonly property bool dropHover: DragState.active && over(DragState.sceneX, DragState.sceneY)
+                                        function over(x, y) {
+                                            var p = listItem.mapFromItem(null, x, y)
+                                            return p.x >= 0 && p.y >= 0 && p.x <= listItem.width && p.y <= listItem.height
+                                        }
+                                        onDropHoverChanged: {
+                                            if (dropHover) DragState.hoverListId = modelData.id
+                                            else if (DragState.hoverListId === modelData.id) DragState.hoverListId = 0
+                                        }
+                                        Rectangle {
+                                            width: 44
+                                            height: 44
+                                            anchors.centerIn: parent
+                                            radius: 8
+                                            color: listItem.dropHover ? Qt.alpha(Theme.accent, 0.3) : (listMouse.containsMouse ? Theme.surfaceHover : "transparent")
+                                            border.width: listItem.dropHover ? 1 : 0
+                                            border.color: Theme.accent
+                                        }
+                                        PlaylistCover {
+                                            width: 34
+                                            height: 34
+                                            anchors.centerIn: parent
+                                            fallback: Theme.coverColor(modelData.id)
+                                            albumIds: (playlists.revision, Theme.dataRevision, playlists.coverAlbums(modelData.id))
+                                        }
+                                        MouseArea {
+                                            id: listMouse
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: win.openPlaylist(modelData.id)
+                                        }
+                                        AppToolTip {
+                                            visible: listMouse.containsMouse && !DragState.active
+                                            text: modelData.name + "  \u00b7  " + Theme.plural(modelData.tracks, "canci\u00f3n", "canciones")
+                                            x: listItem.width + 2
+                                            y: (listItem.height - height) / 2
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-                }
-                SideButton {
-                    width: parent.width
-                    label: "Reproduciendo"
-                    hint: player.queueLength > 0 ? player.queueLength : ""
-                    active: win.section === "queue"
-                    onClicked: win.showSection("queue")
-                }
-                SideButton {
-                    width: parent.width
-                    label: "Letra"
-                    active: win.section === "lyrics" || win.lyricsPanelShown
-                    onClicked: win.toggleLyrics()
-                }
-                SideButton {
-                    width: parent.width
-                    label: "Por revisar"
-                    hint: win.stats.incomplete > 0 ? win.stats.incomplete : ""
-                    active: win.section === "review"
-                    onClicked: win.showSection("review")
+                    SideButton {
+                        width: parent.width
+                        label: "Reproduciendo"
+                        icon: Theme.iconQueue
+                        badge: player.queueLength > 0 ? player.queueLength : ""
+                        active: win.section === "queue"
+                        onClicked: win.showSection("queue")
+                    }
+                    SideButton {
+                        width: parent.width
+                        label: "Letra"
+                        icon: Theme.iconLyrics
+                        active: win.section === "lyrics" || win.lyricsPanelShown
+                        onClicked: win.toggleLyrics()
+                    }
+                    SideButton {
+                        width: parent.width
+                        label: "Por revisar"
+                        icon: Theme.iconReview
+                        badge: win.stats.incomplete > 0 ? win.stats.incomplete : ""
+                        active: win.section === "review"
+                        onClicked: win.showSection("review")
+                    }
                 }
             }
-            Text {
+
+            // Estado de la conexión (clic = alternar modo en línea / sin conexión)
+            Item {
                 id: onlineBadge
-                anchors { left: parent.left; bottom: statsText.top; leftMargin: 24; bottomMargin: 10 }
-                text: online.offline ? "\u25cb Sin conexi\u00f3n" : "\u25cf En l\u00ednea"
-                color: online.offline ? Theme.textDim : Theme.accent
-                font.pixelSize: 12
+                property string text: online.offline ? "Sin conexi\u00f3n" : "En l\u00ednea"
+                width: parent.width
+                height: 52
+                anchors { left: parent.left; bottom: parent.bottom; bottomMargin: 12 }
+                Rectangle {
+                    width: 48
+                    height: 44
+                    anchors.centerIn: parent
+                    radius: 12
+                    color: badgeMouse.containsMouse ? Theme.surfaceHover : "transparent"
+                }
+                Icon {
+                    anchors.centerIn: parent
+                    svg: Theme.iconGlobe
+                    size: 24
+                    color: online.offline ? Theme.textFaint : Theme.accent
+                }
+                Rectangle {   // punto de estado
+                    width: 8
+                    height: 8
+                    radius: 4
+                    x: parent.width / 2 + 8
+                    y: 12
+                    color: online.offline ? Theme.textFaint : Theme.accent
+                    border.color: Theme.sidebar
+                    border.width: 1
+                }
                 MouseArea {
                     id: badgeMouse
-                    anchors { fill: parent; margins: -6 }
+                    anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: online.setOffline(!online.offline)
-                    ToolTip.visible: containsMouse
-                    ToolTip.delay: 400
-                    ToolTip.text: online.offline ? "Clic para volver a modo en l\u00ednea" : "Clic para pasar a modo sin conexi\u00f3n"
                 }
-            }
-            Text {
-                id: statsText
-                anchors { left: parent.left; bottom: parent.bottom; leftMargin: 24; bottomMargin: 20 }
-                color: Theme.textDim
-                font.pixelSize: 12
-                lineHeight: 1.4
-                text: win.stats.tracks + " pistas · " + win.stats.artists + " artistas\n"
-                      + Theme.fmtLong(win.stats.seconds)
+                AppToolTip {
+                    visible: badgeMouse.containsMouse
+                    text: onlineBadge.text + (online.offline ? "\nClic para volver al modo en l\u00ednea" : "\nClic para pasar al modo sin conexi\u00f3n")
+                    x: parent.width + 2
+                    y: (parent.height - height) / 2
+                }
             }
         }
 
@@ -747,7 +815,7 @@ ApplicationWindow {
         visible: player.isVideo && win.videoOpen
         color: "#000000"
         z: 5
-        anchors { left: parent.left; leftMargin: 230; right: parent.right; rightMargin: lyricsPanel.visible ? lyricsPanel.width : 0; top: parent.top; topMargin: 68; bottom: parent.bottom; bottomMargin: playerBar.height }
+        anchors { left: parent.left; leftMargin: win.sidebarWidth; right: parent.right; rightMargin: lyricsPanel.visible ? lyricsPanel.width : 0; top: parent.top; topMargin: 68; bottom: parent.bottom; bottomMargin: playerBar.height }
         VideoOutput { id: videoOut; anchors.fill: parent; fillMode: VideoOutput.PreserveAspectFit }
         Component.onCompleted: player.setVideoSink(videoOut.videoSink)
     }

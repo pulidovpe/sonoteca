@@ -1,4 +1,4 @@
-# Sonoteca — CONTEXTO COMPACTO (v0.9.3.1 alfa)
+# Sonoteca — CONTEXTO COMPACTO (v0.9.4 alfa)
 
 > Pégalo al inicio de un chat nuevo junto con el zip del proyecto. Reemplaza al CONTEXT.md largo (que sigue siendo el historial detallado de las fases 1-5).
 
@@ -31,7 +31,7 @@ App de escritorio **local** (Mac M4 Pro, portable a Win/Linux) para ~2000 archiv
 - **0.9.1**: sin flechas arriba/abajo en listas y «Reproduciendo» (solo arrastrar); menú ⋮ con «Ir al artista/álbum» (`trackInfo` ahora trae `artistId/albumId/hasArtist/hasAlbum`); «Empezar desde cero» (`portable.stage_reset/apply_pending_reset`, marcador `pending_reset`, se aplica al arrancar, copia en `backups/`, conserva ajustes; CLI `reset --yes`); servidores alternativos: `online/servers.py` (+ campos en `Settings`: `lyrics_servers/lyrics_active/meta_servers/meta_active`), `lrclib/musicbrainz/coverart/wikipedia` resuelven su base con `servers.*_base()` en cada consulta, `ui/servers_controller.py` (`serverConfig`), `ServersDialog.qml`.
 - **0.9.2**: icono: `assets/icons/{original,sonoteca-1024}.png, sonoteca.ico/.icns` generados por `packaging/make_icons.py` (Pillow+numpy, solo desarrollo); `src/sonoteca/ui/icon.png` + `app.setWindowIcon`; spec: `icon=` en EXE (solo Windows) y BUNDLE, datas con icon.png; Linux: `packaging/linux/sonoteca.desktop`. Sin probar la compilación.
 - **0.9.2.1**: cierre ordenado en `app.py` (`del engine` antes de liberar controladores: evita errores «of null» al cerrar); build_mac/win borran y recrean `.venv-build`. **Pendiente (por partes, pedido del usuario)**: (2) tema de la app basado en la paleta del logo; (3) menú izquierdo con iconos y el texto como tooltip.
-- **0.9.3 (parte 2 hecha)**: tema «Neón» (`Theme.qml` con tokens; `docs/TEMA.md`; `tests/test_theme.py` impide colores fijos y tokens inexistentes; excepción: fondo de video `#000000`). **Pendiente parte 3**: menú izquierdo (`SideButton`) con iconos y el texto como tooltip.
+- **0.9.3 (parte 2 hecha)**: tema «Neón» (`Theme.qml` con tokens; `docs/TEMA.md`; `tests/test_theme.py` impide colores fijos y tokens inexistentes; excepción: fondo de video `#000000`). **Parte 3 hecha (0.9.4)**: barra lateral de iconos (72 px, `win.sidebarWidth`; `SideButton` con `icon/badge/label=tooltip`, `AppToolTip`). **Pendiente (por partes)**: (4) teclas multimedia (play/pausa, siguiente, anterior) no reconocidas; (5) layout responsivo: al cambiar el ancho de la ventana los botones se salen por arriba/abajo.
 
 ## Trampas técnicas (no repetir)
 - QML: `Action` NO tiene `shortcuts` (usar `shortcut` + `Shortcut{sequence}`); no llamar `data` a una propiedad de Item; la navegación se llama `showSection` (no `show`); emitir señales desde hilos de trabajo (GIL con `image://`); `Theme.dataRevision++` refresca páginas; textos con tildes/escapes `\uXXXX` coherentes.

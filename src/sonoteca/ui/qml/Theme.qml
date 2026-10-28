@@ -43,6 +43,15 @@ QtObject {
     // Color de una portada sin imagen: tono estable por id dentro de la gama cian → violeta del logo
     function coverColor(id) { return Qt.hsla((185 + ((id * 61) % 105)) / 360, 0.55, 0.28, 1) }
 
+    // Iconos del menú lateral
+    readonly property string iconHome: "M12 3 L2 12 H5 V20 H10 V15 H14 V20 H19 V12 H22 Z"
+    readonly property string iconAlbum: "M12 3 A9 9 0 1 0 12 21 A9 9 0 1 0 12 3 Z M12 6.5 A5.5 5.5 0 1 1 12 17.5 A5.5 5.5 0 1 1 12 6.5 Z M12 10 A2 2 0 1 0 12 14 A2 2 0 1 0 12 10 Z"
+    readonly property string iconArtist: "M12 4 A4 4 0 1 0 12 12 A4 4 0 1 0 12 4 Z M4 20 C4 15.5 8 14 12 14 C16 14 20 15.5 20 20 Z"
+    readonly property string iconList: "M9 6 H21 V8 H9 Z M9 11 H21 V13 H9 Z M9 16 H21 V18 H9 Z M3 6 H6 V8 H3 Z M3 11 H6 V13 H3 Z M3 16 H6 V18 H3 Z"
+    readonly property string iconQueue: "M4 12 H8 V20 H4 Z M10 4 H14 V20 H10 Z M16 9 H20 V20 H16 Z"
+    readonly property string iconLyrics: "M4 5 H20 V7 H4 Z M4 10 H16 V12 H4 Z M4 15 H20 V17 H4 Z M4 20 H12 V22 H4 Z"
+    readonly property string iconReview: "M12 3 A9 9 0 1 0 12 21 A9 9 0 1 0 12 3 Z M11 7 H13 V13 H11 Z M11 15 H13 V17 H11 Z"
+    readonly property string iconGlobe: "M12 3 A9 9 0 1 0 12 21 A9 9 0 1 0 12 3 Z M12 4.8 A7.2 7.2 0 1 1 12 19.2 A7.2 7.2 0 1 1 12 4.8 Z M4.8 11 H19.2 V13 H4.8 Z M12 4.8 A3.5 7.2 0 1 0 12 19.2 A3.5 7.2 0 1 0 12 4.8 Z M12 6.3 A2 5.7 0 1 1 12 17.7 A2 5.7 0 1 1 12 6.3 Z"
     readonly property string iconPlay: "M8 4 L20 12 L8 20 Z"
     readonly property string iconPause: "M6 4 H10 V20 H6 Z M14 4 H18 V20 H14 Z"
     readonly property string iconNext: "M5 4 L16 12 L5 20 Z M17 4 H20 V20 H17 Z"
