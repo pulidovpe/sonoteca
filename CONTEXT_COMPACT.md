@@ -1,4 +1,4 @@
-# Sonoteca — CONTEXTO COMPACTO (v0.9.2.2 alfa)
+# Sonoteca — CONTEXTO COMPACTO (v0.9.2.3 alfa)
 
 > Pégalo al inicio de un chat nuevo junto con el zip del proyecto. Reemplaza al CONTEXT.md largo (que sigue siendo el historial detallado de las fases 1-5).
 

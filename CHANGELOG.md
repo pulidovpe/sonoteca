@@ -5,6 +5,13 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.9.2.3] - 2026-10-27
+### Cambiado
+- `build_mac.sh` muestra los pasos `[1/7]…[7/7]`, guarda un `build.log`, indica en qué paso falla y al final imprime la
+  ruta de `dist/Sonoteca.app` y del zip. Se corrigió un fallo latente: con `pipefail`, el listado de «carpetas más pesadas»
+  podía abortar el script antes de crear el zip.
+- Se silencia el aviso informativo `qt.multimedia.ffmpeg: Using Qt multimedia with FFmpeg…` (los errores se siguen mostrando).
+
 ## [0.9.2.2] - 2026-10-27
 ### Añadido
 - `packaging/dev_setup.sh`: recrea el entorno de desarrollo e instala el proyecto en modo editable con una comprobación
