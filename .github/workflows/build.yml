@@ -1,0 +1,142 @@
+name: Build Sonoteca (alfa)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_os:
+        description: 'Plataforma a compilar'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - linux
+          - windows
+          - macos
+      use_local_runners:
+        description: 'Usar mis runners propios en lugar de los de GitHub'
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  # Decide qué plataformas se compilan y en qué runner.
+  # (Un `if:` a nivel de job no puede leer `matrix`, por eso la matriz se arma aquí.)
+  plan:
+    name: Plan de compilación
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.m.outputs.matrix }}
+    steps:
+      - id: m
+        shell: python
+        env:
+          TARGET: ${{ inputs.target_os }}
+          LOCAL: ${{ inputs.use_local_runners }}
+        run: |
+          import json, os
+
+          target = os.environ["TARGET"]
+          local = os.environ["LOCAL"] == "true"
+
+          # Runners gratuitos de GitHub (repos públicos: uso ilimitado)
+          cloud = {
+              "linux": "ubuntu-latest",
+              "windows": "windows-latest",
+              "macos": "macos-latest",  # arm64 (M1)
+          }
+          # Runners propios: se eligen por ETIQUETAS, no por nombre.
+          # self-hosted + SO + arquitectura se asignan solos al registrar el runner;
+          # "sonoteca" es una etiqueta personalizada que tú añades al registrarlo.
+          own = {
+              "linux":   ["self-hosted", "Linux",   "X64",   "sonoteca"],
+              "windows": ["self-hosted", "Windows", "X64",   "sonoteca"],
+              "macos":   ["self-hosted", "macOS",   "ARM64", "sonoteca"],
+          }
+          names = {"linux": "Linux", "windows": "Windows", "macos": "macOS"}
+
+          include = []
+          for key in ("linux", "windows", "macos"):
+              if target in ("all", key):
+                  include.append({
+                      "os_key": key,
+                      "label": f"{names[key]} ({'local' if local else 'nube'})",
+                      "runner": json.dumps(own[key] if local else cloud[key]),
+                  })
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write("matrix=" + json.dumps({"include": include}) + "\n")
+
+  build:
+    name: Build ${{ matrix.label }}
+    needs: plan
+    runs-on: ${{ fromJSON(matrix.runner) }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+
+    steps:
+      # checkout limpia el workspace (borra .venv-build, build/, dist/ de corridas previas),
+      # importante en runners propios que reutilizan la carpeta.
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Linux compila dentro de Docker (Debian 12), no necesita Python en el host.
+      # En runners propios no se usa setup-python: se espera Python 3.12 ya instalado
+      # (en macOS setup-python puede pedir sudo, que el usuario dedicado no tiene).
+      - name: Set up Python 3.12
+        if: matrix.os_key != 'linux' && !contains(matrix.runner, 'self-hosted')
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: pyproject.toml
+
+      # Los scripts de packaging/ son la única fuente de verdad del empaquetado:
+      # crean .venv-build, instalan ".[ui,build]", corren PyInstaller con
+      # packaging/sonoteca.spec, hacen la prueba de humo y check_bundle.py, y generan el zip/tar.gz.
+      - name: Build (Linux, vía Docker)
+        if: matrix.os_key == 'linux'
+        shell: bash
+        run: |
+          chmod +x packaging/*.sh
+          ./packaging/build_linux_docker.sh
+
+      - name: Build (macOS)
+        if: matrix.os_key == 'macos'
+        shell: bash
+        env:
+          PYTHON: python3.12
+        run: |
+          chmod +x packaging/*.sh
+          ./packaging/build_mac.sh
+
+      - name: Build (Windows)
+        if: matrix.os_key == 'windows'
+        shell: pwsh
+        run: powershell -ExecutionPolicy Bypass -File .\packaging\build_win.ps1
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sonoteca-${{ matrix.os_key }}
+          path: |
+            dist/Sonoteca-*.zip
+            dist/Sonoteca-*.tar.gz
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload build log (si falló)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log-${{ matrix.os_key }}
+          path: |
+            build.log
+            build/pruned.txt
+          if-no-files-found: ignore
+          retention-days: 7
