@@ -1,6 +1,9 @@
 name: Build Sonoteca (alfa)
 
 on:
+  push:
+    tags:
+      - 'v*'   # al subir un tag vX.Y.Z: compila todo en la nube y publica un release
   workflow_dispatch:
     inputs:
       target_os:
@@ -39,7 +42,7 @@ jobs:
         run: |
           import json, os
 
-          target = os.environ["TARGET"]
+          target = os.environ["TARGET"] or "all"  # con push de tag no hay inputs
           local = os.environ["LOCAL"] == "true"
 
           # Runners gratuitos de GitHub (repos públicos: uso ilimitado)
@@ -140,3 +143,31 @@ jobs:
             build/pruned.txt
           if-no-files-found: ignore
           retention-days: 7
+
+  # Solo corre al subir un tag v* y solo si las TRES plataformas compilaron bien.
+  # Con un tag siempre se usan runners de la nube (nunca tus equipos).
+  release:
+    name: Publicar release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Descargar binarios
+        uses: actions/download-artifact@v4
+        with:
+          pattern: sonoteca-*
+          path: release_files
+          merge-multiple: true
+
+      - name: Crear release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -lh release_files
+          gh release create "$GITHUB_REF_NAME" release_files/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Sonoteca $GITHUB_REF_NAME" \
+            --generate-notes \
+            --prerelease
