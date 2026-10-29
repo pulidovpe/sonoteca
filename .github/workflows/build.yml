@@ -21,6 +21,11 @@ on:
         required: true
         default: false
         type: boolean
+      release_tag:
+        description: 'Opcional: tag (ej. v0.9.2.3) para publicar en Releases lo que se compile'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -144,12 +149,18 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-  # Solo corre al subir un tag v* y solo si las TRES plataformas compilaron bien.
+  # Corre al subir un tag v* o al lanzar a mano con release_tag. Publica lo que haya
+  # compilado bien (si una plataforma falla, el release sale sin ella).
+  # Si el release ya existe, añade los archivos nuevos: así puedes lanzar macOS y
+  # Windows en ejecuciones separadas con el mismo release_tag y quedan juntos.
   # Con un tag siempre se usan runners de la nube (nunca tus equipos).
   release:
     name: Publicar release
     needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: >-
+      !cancelled() &&
+      (needs.build.result == 'success' || needs.build.result == 'failure') &&
+      (startsWith(github.ref, 'refs/tags/v') || inputs.release_tag != '')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -164,10 +175,15 @@ jobs:
       - name: Crear release
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           ls -lh release_files
-          gh release create "$GITHUB_REF_NAME" release_files/* \
-            --repo "$GITHUB_REPOSITORY" \
-            --title "Sonoteca $GITHUB_REF_NAME" \
-            --generate-notes \
-            --prerelease
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" release_files/* --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$TAG" release_files/* \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Sonoteca $TAG" \
+              --generate-notes \
+              --prerelease
+          fi
