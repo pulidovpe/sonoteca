@@ -5,6 +5,12 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.9.7] - 2026-10-28
+### Cambiado
+- El icono de volumen es un botón con tooltip: activa y desactiva el **silencio total** (el volumen elegido se conserva; el
+  deslizador muestra 0 mientras tanto y mover el volumen quita el silencio).
+- La opción del menú ⋮ «Agregar a la lista actual» ahora dice «Agregar al final de la lista».
+
 ## [0.9.6] - 2026-10-28
 ### Cambiado
 - **Panel derecho siempre presente**: muestra la lista *Reproduciendo*. *Letra* la reemplaza por la letra de la canción

@@ -244,3 +244,16 @@ def test_sidebar_is_an_icon_rail(qml_env):
     env.act("listsGroup.expanded = true", 200)
     assert env.js("listsGroup.open") is True and env.js("onlineBadge.text") in ("En línea", "Sin conexión")
     assert env.warnings == []
+
+
+# ---- 0.9.7 ----
+@needs_ffmpeg
+def test_volume_icon_toggles_total_mute_with_a_tooltip(qml_env):
+    env = qml_env
+    album, ids = _ids(env)
+    env.player.playTrackIds(ids, 0)
+    env.act("playerBar.muteButton.clicked()", 200)
+    assert env.js("player.muted") is True and "Quitar el silencio" in env.js("playerBar.muteButton.toolTip")
+    env.act("playerBar.muteButton.clicked()", 200)
+    assert env.js("player.muted") is False and "Silenciar" in env.js("playerBar.muteButton.toolTip")
+    assert env.warnings == []
