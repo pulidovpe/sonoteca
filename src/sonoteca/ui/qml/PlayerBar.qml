@@ -6,6 +6,7 @@ Rectangle {
     id: bar
     property bool videoOpen: false
     property alias audioButton: audioButton   // para las pruebas
+    property alias muteButton: muteButton
     signal videoToggled()
     signal artistRequested(int artistId, string name)   // enlaces de la canci\u00f3n que suena
     signal albumRequested(int albumId)
@@ -192,7 +193,16 @@ Rectangle {
         Row {
             anchors.verticalCenter: parent.verticalCenter
             spacing: 8
-            Icon { anchors.verticalCenter: parent.verticalCenter; svg: Theme.iconSpeaker; size: 18; color: Theme.textDim }
+            IconButton {
+                id: muteButton
+                anchors.verticalCenter: parent.verticalCenter
+                width: 30
+                height: 30
+                iconSize: 18
+                svg: player.muted ? Theme.iconMuted : Theme.iconSpeaker
+                toolTip: player.muted ? "Quitar el silencio" : "Silenciar (silencio total)"
+                onClicked: player.toggleMute()
+            }
             AppSlider {
                 id: volSlider
                 anchors.verticalCenter: parent.verticalCenter
@@ -200,7 +210,7 @@ Rectangle {
                 from: 0
                 to: 1
                 onMoved: player.setVolume(value)
-                Binding { target: volSlider; property: "value"; value: player.volume; when: !volSlider.pressed }
+                Binding { target: volSlider; property: "value"; value: player.muted ? 0 : player.volume; when: !volSlider.pressed }
             }
         }
     }

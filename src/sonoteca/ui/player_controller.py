@@ -39,6 +39,7 @@ class PlayerController(QObject):
         self._position = 0
         self._duration = 0
         self._volume = 0.8
+        self._muted = False      # silencio total: el volumen elegido se conserva para recuperarlo
         self._current: dict = {}
         self._listened = 0  # ms realmente escuchados de la pista actual
         self._last_pos = -1
@@ -240,7 +241,19 @@ class PlayerController(QObject):
     @Slot(float)
     def setVolume(self, volume: float) -> None:
         self._volume = max(0.0, min(1.0, volume))
+        self._muted = False       # mover el volumen quita el silencio
         self._backend.set_volume(self._volume)
+        self.volumeChanged.emit()
+
+    @Property(bool, notify=volumeChanged)
+    def muted(self) -> bool:
+        return self._muted
+
+    @Slot()
+    def toggleMute(self) -> None:
+        """Silencio total (y volver al volumen anterior); no cambia el volumen elegido."""
+        self._muted = not self._muted
+        self._backend.set_volume(0.0 if self._muted else self._volume)
         self.volumeChanged.emit()
 
     @Slot()
@@ -294,7 +307,7 @@ class PlayerController(QObject):
         self._queue.clear(keep_current=True)
         self.queueChanged.emit()
         self.queueMessage.emit("Lista temporal nueva. Agrega canciones con clic derecho \u25b8 "
-                               "Agregar a la lista actual.")
+                               "Agregar al final de la lista.")
 
     @Slot()
     def clearQueue(self) -> None:

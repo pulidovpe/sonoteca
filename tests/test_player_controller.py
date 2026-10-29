@@ -270,3 +270,15 @@ def test_queue_track_ids_and_refresh_current_after_a_tag_edit(env):
                            (ctrl.currentId,))
     ctrl.refreshCurrent()
     assert ctrl.currentTrack["title"] == "Título corregido" and changed == [1]
+
+
+def test_mute_toggles_without_losing_the_chosen_volume(env):
+    ctrl, be, *_ = env
+    ctrl.setVolume(0.6)
+    ctrl.toggleMute()
+    assert ctrl.muted and be.volume == 0.0 and ctrl.volume == 0.6          # silencio total; el volumen elegido se conserva
+    ctrl.toggleMute()
+    assert not ctrl.muted and be.volume == 0.6
+    ctrl.toggleMute()
+    ctrl.setVolume(0.3)                                                    # mover el volumen quita el silencio
+    assert not ctrl.muted and be.volume == 0.3

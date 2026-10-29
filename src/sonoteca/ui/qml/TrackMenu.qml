@@ -35,7 +35,7 @@ AppMenu {
         onTriggered: root.playLater()
     }
     AppMenuItem {
-        text: player.queueLength > 0 ? "Agregar a la lista actual" : "Agregar a una lista temporal nueva"
+        text: player.queueLength > 0 ? "Agregar al final de la lista" : "Agregar a una lista temporal nueva"
         onTriggered: root.addToList()
     }
     AppMenuItem { text: "Agregar a una lista\u2026"; onTriggered: root.listPickerRequested(root.ids) }

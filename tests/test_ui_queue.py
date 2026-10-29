@@ -110,7 +110,7 @@ def test_menu_entries_depend_on_whether_there_is_a_list(qml_env):
     assert js("trackMenu.itemAt(2).text") == "Agregar a una lista temporal nueva"
     assert js("trackMenu.itemAt(1).enabled") is False  # sin lista no hay "a continuación"
     env.player.addToQueue(track_ids[:1])
-    assert js("trackMenu.itemAt(2).text") == "Agregar a la lista actual"
+    assert js("trackMenu.itemAt(2).text") == "Agregar al final de la lista"
     assert js("trackMenu.itemAt(1).enabled") is True
     # con una lista en marcha, "Reproducir ahora" de una sola canción pregunta qué hacer
     env.act(f"trackMenu.ids = [{track_ids[1]}]; trackMenu.playNow()", 300)
