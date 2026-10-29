@@ -179,18 +179,17 @@ jobs:
           path: release_files
           merge-multiple: true
 
-      # Busca en CHANGELOG.md la sección "## ..." cuyo encabezado contenga la versión
-      # del tag (v0.9.2.3 -> 0.9.2.3; sirven "## [0.9.2.3] - fecha", "## v0.9.2.3", etc.).
-      # Si no la encuentra, usa el archivo completo y deja un aviso en el log.
       - name: Preparar notas desde CHANGELOG.md
         env:
           TAG: ${{ inputs.release_tag || github.ref_name }}
+          REPO: ${{ github.repository }}
         run: |
           python3 - <<'PY'
           import os, re, sys
 
           tag = os.environ["TAG"]
           ver = tag.lstrip("vV")
+          repo = os.environ["REPO"]
           try:
               text = open("CHANGELOG.md", encoding="utf-8").read()
           except FileNotFoundError:
@@ -199,16 +198,22 @@ jobs:
 
           pat = re.compile(r"(?<![\w.])v?" + re.escape(ver) + r"(?![\w]|\.\d)")
           heads = list(re.finditer(r"^##[ \t]+.*$", text, re.M))
-          notes = None
+          anchor = None
           for i, h in enumerate(heads):
               if pat.search(h.group(0)):
-                  end = heads[i + 1].start() if i + 1 < len(heads) else len(text)
-                  notes = text[h.end():end].strip()
+                  heading_text = h.group(0).lstrip("#").strip()
+                  # Generar el slug estándar de GitHub para los anchors (minúsculas, sin espacios extra, sin símbolos especiales)
+                  slug = heading_text.lower()
+                  slug = re.sub(r"[^\w\- ]+", "", slug)
+                  slug = slug.replace(" ", "-")
+                  anchor = slug
                   break
 
-          if not notes:
-              print(f"::warning::No hay sección para {ver} en CHANGELOG.md; se usa el archivo completo")
-              notes = text.strip()
+          if anchor:
+              notes = f"Consulta los cambios de esta versión en el [Changelog](https://github.com/{repo}/blob/main/CHANGELOG.md#{anchor})."
+          else:
+              print(f"::warning::No se encontró la sección para {ver} en CHANGELOG.md; se usa el enlace general")
+              notes = f"Consulta los cambios de esta versión en el [Changelog](https://github.com/{repo}/blob/main/CHANGELOG.md)."
 
           open("release_notes.md", "w", encoding="utf-8").write(notes + "\n")
           print(notes)
