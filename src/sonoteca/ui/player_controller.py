@@ -35,6 +35,7 @@ class PlayerController(QObject):
         self._backend = backend
         self._conn = connect(db_path)
         self._queue = PlayQueue()
+        self._queue.consume_played = True   # lo que ya sonó (o se saltó) sale de la lista de reproducción
         self._playing = False
         self._position = 0
         self._duration = 0
@@ -444,6 +445,7 @@ class PlayerController(QObject):
 
     def _advance(self, auto: bool) -> None:
         if self._queue.next(auto=auto) is None:
+            self.queueChanged.emit()     # al terminar la \u00faltima, sale de la lista
             self._finish()
         else:
             self._play_current()

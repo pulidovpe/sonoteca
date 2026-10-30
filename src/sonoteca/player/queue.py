@@ -20,6 +20,10 @@ class PlayQueue:
         self._pos = -1
         self.shuffle = False
         self.repeat = RepeatMode.OFF
+        # Con `consume_played`, la pista que se deja atrás (porque terminó o porque se salta a otra) sale de la lista;
+        # con repetir-todo pasa al final para que la lista siga girando. Se recuerda en `_history` para «anterior».
+        self.consume_played = False
+        self._history: list[int] = []
 
     def __len__(self) -> int:
         return len(self._items)
@@ -37,6 +41,7 @@ class PlayQueue:
     def set_items(self, ids: Iterable[int], start: int = 0) -> int | None:
         """Reemplaza la cola y deja `start` como pista actual."""
         self._items = list(ids)
+        self._history.clear()
         n = len(self._items)
         if n == 0:
             self._order, self._pos = [], -1
@@ -55,6 +60,21 @@ class PlayQueue:
         self._rng.shuffle(rest)
         return [first, *rest]
 
+    def _retire_current(self) -> None:
+        """Deja atrás la pista actual: sale de la lista (o pasa al final con repetir-todo). La posición queda señalando
+        a la pista que ocupaba el lugar siguiente."""
+        if not 0 <= self._pos < len(self._order):
+            return
+        index = self._order[self._pos]
+        if self.repeat is RepeatMode.ALL:
+            self._order.append(self._order.pop(self._pos))     # sigue en la lista, al final (no hace falta historial)
+        else:
+            self._history.append(self._items[index])
+            del self._history[:-500]
+            self.remove(self._pos)
+            if not self._order:
+                self._pos = -1
+
     def next(self, auto: bool = False) -> int | None:
         """Siguiente pista. `auto=True` es el avance al terminar una pista (respeta repetir-una).
         Devuelve None si se llegó al final sin repetición."""
@@ -63,9 +83,14 @@ class PlayQueue:
         if auto and self.repeat is RepeatMode.ONE:
             return self.current
         if self._pos + 1 < len(self._order):
-            self._pos += 1
+            if self.consume_played:
+                self._retire_current()      # la posición ya señala a la siguiente
+            else:
+                self._pos += 1
             return self.current
         if self.repeat is RepeatMode.OFF:
+            if self.consume_played and auto:
+                self._retire_current()      # terminó la última: la lista queda vacía
             return None
         # repetir todo: volver al inicio (con un nuevo orden si hay aleatorio)
         if self.shuffle and len(self._order) > 1:
@@ -82,6 +107,12 @@ class PlayQueue:
     def previous(self) -> int | None:
         if not self._order or self._pos < 0:
             return None
+        if self.consume_played and self._history and self.repeat is not RepeatMode.ALL:
+            # lo último que sonó vuelve a la lista, justo antes de la pista actual
+            track = self._history.pop()
+            self._items.append(track)
+            self._order.insert(self._pos, len(self._items) - 1)
+            return self.current
         if self._pos > 0:
             self._pos -= 1
         elif self.repeat is RepeatMode.ALL:
@@ -159,12 +190,18 @@ class PlayQueue:
     def jump_to(self, position: int) -> int | None:
         if not 0 <= position < len(self._order):
             raise IndexError(position)
+        if self.consume_played and 0 <= self._pos < len(self._order) and position != self._pos:
+            leaving = self._pos
+            self._retire_current()          # la que sonaba sale de la lista
+            if position > leaving:
+                position -= 1               # las posiciones posteriores subieron un lugar
         self._pos = position
         return self.current
 
     def clear(self, keep_current: bool = False) -> None:
         """Vacía la lista; con `keep_current` conserva solo la pista que suena."""
         current = self.current
+        self._history.clear()
         if keep_current and current is not None:
             self._items, self._order, self._pos = [current], [0], 0
         else:

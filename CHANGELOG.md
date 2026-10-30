@@ -5,6 +5,14 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.9.8] - 2026-10-28
+### Cambiado
+- **La lista de reproducción solo guarda lo que falta por sonar**: cada canción que termina, y la que sonaba cuando se
+  salta a otra (doble clic en la lista, en un álbum con «conservar la lista», siguiente…), sale de la lista. Al terminar
+  la última, la lista queda vacía y la canción sigue visible en el reproductor. «Anterior» recupera lo último que sonó.
+  Con repetir-todo las canciones pasan al final en lugar de salir (si no, no habría nada que repetir); con repetir-una no
+  sale ninguna. Con aleatorio funciona igual.
+
 ## [0.9.7] - 2026-10-28
 ### Cambiado
 - El icono de volumen es un botón con tooltip: activa y desactiva el **silencio total** (el volumen elegido se conserva; el

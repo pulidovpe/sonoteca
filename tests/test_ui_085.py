@@ -92,7 +92,7 @@ def test_single_track_with_a_running_list_asks_to_replace_or_keep(qml_env):
     env.act("stack.currentItem.playOneRequested(%d)" % ids[2], 300)
     assert env.js("queueChoice.visible") is True
     env.act("queueChoice.keepList()", 300)
-    assert env.player.queueTrackIds() == [ids[0], ids[2], ids[1], ids[2]]   # suena ya; la lista sigue después
+    assert env.player.queueTrackIds() == [ids[2], ids[1], ids[2]]   # suena ya y la que sonaba sale de la lista
     assert env.player.currentId == ids[2]
     env.act("queueChoice.ask(%d); queueChoice.replaceList()" % ids[1], 300)
     assert env.player.queueTrackIds() == [ids[1]]
