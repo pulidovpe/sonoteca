@@ -12,6 +12,11 @@ Item {
     property int trackId: 0
     property int albumId: 0   // > 0: miniatura de la portada del álbum
     property int count: 0    // filas de la lista (para reordenar arrastrando)
+    // Canciones añadidas con «Reproducir a continuación»: se distinguen con bandas de acento a ambos lados.
+    // upNextTop/upNextBottom marcan el primer y el último de un grupo seguido, para cerrar el recuadro.
+    property bool upNext: false
+    property bool upNextTop: false
+    property bool upNextBottom: false
     property bool compact: false   // true: panel estrecho (sin contador de reproducciones; acciones sobre la duración al pasar el ratón)
     signal reorderRequested(int dst)
     property bool current: false
@@ -33,6 +38,19 @@ Item {
         onReorderRequested: (dst) => row.reorderRequested(dst)
     }
     HoverHandler { id: hover }
+    Rectangle {   // fondo y bandas de las canciones «a continuación»
+        visible: row.upNext
+        anchors {
+            fill: parent
+            leftMargin: row.compact ? 6 : 12
+            rightMargin: row.compact ? 6 : 12
+            topMargin: row.upNextTop ? 3 : 0
+            bottomMargin: row.upNextBottom ? 3 : 0
+        }
+        color: Qt.alpha(Theme.accent, 0.09)
+        Rectangle { width: 4; height: parent.height; radius: 2; color: Theme.accent; anchors.left: parent.left }
+        Rectangle { width: 4; height: parent.height; radius: 2; color: Theme.accent; anchors.right: parent.right }
+    }
     Rectangle {
         anchors { fill: parent; leftMargin: row.compact ? 6 : 12; rightMargin: row.compact ? 6 : 12 }
         radius: 6

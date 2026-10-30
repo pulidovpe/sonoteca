@@ -303,3 +303,16 @@ def test_previous_after_consuming_brings_the_track_back(env):
     be.positionChanged.emit(1000)
     ctrl.previous()
     assert str(be.loaded) == paths["Pista 1"] and titles(ctrl) == ["Pista 1", "Pista 2", "Pista 3"]
+
+
+def test_play_next_rows_are_flagged_until_they_start_playing(env):
+    ctrl, be, album, _, paths = env
+    ctrl.playAlbum(album, 0)                                   # Pista 1, 2, 3
+    ctrl.playNext([_ids(ctrl, "Pista 3")])
+    ctrl.playNext([_ids(ctrl, "Pista 2")])                     # la última añadida suena antes que la anterior
+    rows = ctrl.queueItems()
+    assert [r["upNext"] for r in rows] == [False, True, True, False, False]
+    assert [r["title"] for r in rows][1:3] == ["Pista 2", "Pista 3"]
+    be.finish()                                                # empieza a sonar la primera «a continuación»
+    rows = ctrl.queueItems()
+    assert rows[0]["current"] and rows[0]["upNext"] is False and rows[1]["upNext"] is True
