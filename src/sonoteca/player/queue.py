@@ -24,6 +24,9 @@ class PlayQueue:
         # con repetir-todo pasa al final para que la lista siga girando. Se recuerda en `_history` para «anterior».
         self.consume_played = False
         self._history: list[int] = []
+        # Marcas «a continuación»: una por elemento de `_items` (True = añadido con «Reproducir a continuación» y aún no
+        # le ha tocado). Se limpia sola cuando la pista empieza a sonar.
+        self._flags: list[bool] = []
 
     def __len__(self) -> int:
         return len(self._items)
@@ -41,6 +44,7 @@ class PlayQueue:
     def set_items(self, ids: Iterable[int], start: int = 0) -> int | None:
         """Reemplaza la cola y deja `start` como pista actual."""
         self._items = list(ids)
+        self._flags = [False] * len(self._items)
         self._history.clear()
         n = len(self._items)
         if n == 0:
@@ -59,6 +63,16 @@ class PlayQueue:
         rest = [i for i in range(len(self._items)) if i != first]
         self._rng.shuffle(rest)
         return [first, *rest]
+
+    def _arrive(self) -> None:
+        """La pista actual empieza a sonar: deja de estar «a continuación»."""
+        if 0 <= self._pos < len(self._order):
+            self._flags[self._order[self._pos]] = False
+
+    def up_next_flags(self) -> list[bool]:
+        """Por posición del orden de reproducción: True si es una pista añadida con «Reproducir a continuación»
+        que aún no ha llegado a sonar (la actual y las anteriores nunca cuentan)."""
+        return [self._flags[i] and position > self._pos for position, i in enumerate(self._order)]
 
     def _retire_current(self) -> None:
         """Deja atrás la pista actual: sale de la lista (o pasa al final con repetir-todo). La posición queda señalando
@@ -87,6 +101,7 @@ class PlayQueue:
                 self._retire_current()      # la posición ya señala a la siguiente
             else:
                 self._pos += 1
+            self._arrive()
             return self.current
         if self.repeat is RepeatMode.OFF:
             if self.consume_played and auto:
@@ -102,6 +117,7 @@ class PlayQueue:
                     break
             self._order = order
         self._pos = 0
+        self._arrive()
         return self.current
 
     def previous(self) -> int | None:
@@ -111,12 +127,15 @@ class PlayQueue:
             # lo último que sonó vuelve a la lista, justo antes de la pista actual
             track = self._history.pop()
             self._items.append(track)
+            self._flags.append(False)
             self._order.insert(self._pos, len(self._items) - 1)
+            self._arrive()
             return self.current
         if self._pos > 0:
             self._pos -= 1
         elif self.repeat is RepeatMode.ALL:
             self._pos = len(self._order) - 1
+        self._arrive()
         return self.current
 
     def set_shuffle(self, on: bool) -> None:
@@ -153,6 +172,7 @@ class PlayQueue:
         new = list(ids)
         base = len(self._items)
         self._items.extend(new)
+        self._flags.extend([False] * len(new))
         self._order.extend(range(base, base + len(new)))
 
     def insert_next(self, ids: Iterable[int]) -> None:
@@ -160,7 +180,8 @@ class PlayQueue:
         new = list(ids)
         base = len(self._items)
         self._items.extend(new)
-        at = max(self._pos, -1) + 1
+        self._flags.extend([True] * len(new))      # marcadas «a continuación»
+        at = max(self._pos, -1) + 1                # justo tras la actual: lo último que se añade suena antes
         self._order[at:at] = range(base, base + len(new))
 
     def remove(self, position: int) -> None:
@@ -170,6 +191,7 @@ class PlayQueue:
             raise IndexError(position)
         index = self._order.pop(position)
         del self._items[index]
+        del self._flags[index]
         self._order = [i - 1 if i > index else i for i in self._order]
         if position < self._pos:
             self._pos -= 1
@@ -196,6 +218,7 @@ class PlayQueue:
             if position > leaving:
                 position -= 1               # las posiciones posteriores subieron un lugar
         self._pos = position
+        self._arrive()
         return self.current
 
     def clear(self, keep_current: bool = False) -> None:
@@ -204,8 +227,10 @@ class PlayQueue:
         self._history.clear()
         if keep_current and current is not None:
             self._items, self._order, self._pos = [current], [0], 0
+            self._flags = [False]
         else:
             self._items, self._order, self._pos = [], [], -1
+            self._flags = []
 
     def cycle_repeat(self) -> RepeatMode:
         order = [RepeatMode.OFF, RepeatMode.ALL, RepeatMode.ONE]

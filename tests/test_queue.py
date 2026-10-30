@@ -261,3 +261,55 @@ def test_default_queue_does_not_consume():
     q.next()
     q.jump_to(2)
     assert q.order_ids() == [1, 2, 3]
+
+
+# ---- «Reproducir a continuación»: marcas ----
+def test_play_next_marks_added_tracks_and_new_ones_go_first():
+    q = _consuming([1, 2, 3])                                 # suena 1
+    q.insert_next([8])
+    q.insert_next([9])                                        # la última añadida suena antes que la anterior
+    assert q.order_ids() == [1, 9, 8, 2, 3]
+    assert q.up_next_flags() == [False, True, True, False, False]
+
+
+def test_a_batch_added_together_keeps_its_internal_order():
+    q = _consuming([1, 2])
+    q.insert_next([7, 8])
+    q.insert_next([9])
+    assert q.order_ids() == [1, 9, 7, 8, 2] and q.up_next_flags() == [False, True, True, True, False]
+
+
+def test_mark_disappears_when_the_track_starts_playing():
+    q = _consuming([1, 2])
+    q.insert_next([8, 9])
+    assert q.next(auto=True) == 8
+    assert q.up_next_flags() == [False, True, False]          # 8 ya suena: sin marca; 9 sigue marcada
+    assert q.next(auto=True) == 9 and q.up_next_flags() == [False, False]
+
+
+def test_marks_follow_their_tracks_when_others_are_removed_or_moved():
+    q = _consuming([1, 2, 3, 4])
+    q.insert_next([9])
+    q.remove(3)                                               # quitar la 3.ª fila (la pista 3): las marcas no se corren
+    assert q.order_ids() == [1, 9, 2, 4] and q.up_next_flags() == [False, True, False, False]
+    q.move(1, 3)                                              # arrastrar la marcada al final: conserva su marca
+    assert q.order_ids() == [1, 2, 4, 9] and q.up_next_flags() == [False, False, False, True]
+
+
+def test_jumping_to_a_marked_track_clears_its_mark_and_plain_adds_are_not_marked():
+    q = _consuming([1, 2])
+    q.insert_next([9])
+    q.append([5])                                             # «agregar al final» no marca
+    assert q.up_next_flags() == [False, True, False, False]
+    q.jump_to(1)                                              # doble clic en la marcada
+    assert q.current == 9 and q.up_next_flags() == [False, False, False]
+
+
+def test_set_items_and_clear_reset_the_marks():
+    q = _consuming([1, 2])
+    q.insert_next([9])
+    q.clear(keep_current=True)
+    assert q.order_ids() == [1] and q.up_next_flags() == [False]
+    q.insert_next([4])
+    q.set_items([7, 8])
+    assert q.up_next_flags() == [False, False]

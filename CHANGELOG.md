@@ -5,6 +5,17 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.9.9] - 2026-10-28
+### Añadido
+- **«Reproducir a continuación» se distingue en la lista**: las canciones añadidas así llevan bandas de acento a ambos
+  lados y un fondo tenue, distintas del resto de la lista y de la que suena. Lo último que se añade suena antes que lo
+  añadido anteriormente, y entra en el mismo recuadro. La marca desaparece sola cuando la canción empieza a sonar
+  (también al saltar a ella con doble clic). «Agregar al final de la lista» no marca.
+
+## [0.9.8.1] - 2026-10-28
+### Documentación
+- `CONTEXT_COMPACT.md` reescrito y compactado (estado actual, trampas técnicas y pendientes ordenados).
+
 ## [0.9.8] - 2026-10-28
 ### Cambiado
 - **La lista de reproducción solo guarda lo que falta por sonar**: cada canción que termina, y la que sonaba cuando se

@@ -386,6 +386,7 @@ class PlayerController(QObject):
     def queueItems(self) -> list[dict]:
         """Lista en el orden en que sonará, para mostrarla."""
         current_pos = self._queue.position if self._queue.current is not None else -1
+        up_next = self._queue.up_next_flags()      # añadidas con «Reproducir a continuación» y aún por sonar
         rows = []
         for position, track_id in enumerate(self._queue.order_ids()):
             row = library.get_track(self._conn, track_id)
@@ -394,7 +395,7 @@ class PlayerController(QObject):
             rows.append({"position": position, "id": row["id"], "title": row["title"],
                          "artist": row["artist"], "album": album_display(row["album"]),
                          "albumId": row["album_id"], "duration": row["duration"],
-                         "current": position == current_pos})
+                         "current": position == current_pos, "upNext": up_next[position]})
         return rows
 
     @Slot(QObject)

@@ -75,6 +75,9 @@ Item {
             count: page.items.length
             onReorderRequested: (dst) => player.moveInQueue(index, dst)
             current: modelData.current
+            upNext: modelData.upNext
+            upNextTop: modelData.upNext && (index === 0 || !page.items[index - 1].upNext)
+            upNextBottom: modelData.upNext && (index === page.items.length - 1 || !page.items[index + 1].upNext)
             playing: player.playing
             onActivated: player.playQueueAt(modelData.position)
             onMenuRequested: page.menuRequested([modelData.id])
