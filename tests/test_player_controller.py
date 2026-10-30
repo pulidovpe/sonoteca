@@ -282,3 +282,24 @@ def test_mute_toggles_without_losing_the_chosen_volume(env):
     ctrl.toggleMute()
     ctrl.setVolume(0.3)                                                    # mover el volumen quita el silencio
     assert not ctrl.muted and be.volume == 0.3
+
+
+def test_finished_and_skipped_tracks_leave_the_queue(env):
+    ctrl, be, album, _, paths = env
+    ctrl.playAlbum(album, 0)                                   # Pista 1, 2, 3
+    be.finish()
+    assert titles(ctrl) == ["Pista 2", "Pista 3"] and ctrl.currentTrack["title"] == "Pista 2"
+    ctrl.playQueueAt(1)                                        # doble clic en la última: la que sonaba sale
+    assert titles(ctrl) == ["Pista 3"] and str(be.loaded) == paths["Pista 3"]
+    be.finish()                                                # termina la última: sale, pero sigue mostrándose
+    assert titles(ctrl) == [] and ctrl.queueLength == 0
+    assert ctrl.currentTrack["title"] == "Pista 3" and not ctrl.playing
+
+
+def test_previous_after_consuming_brings_the_track_back(env):
+    ctrl, be, album, _, paths = env
+    ctrl.playAlbum(album, 0)
+    be.finish()                                                # sale Pista 1; suena Pista 2
+    be.positionChanged.emit(1000)
+    ctrl.previous()
+    assert str(be.loaded) == paths["Pista 1"] and titles(ctrl) == ["Pista 1", "Pista 2", "Pista 3"]

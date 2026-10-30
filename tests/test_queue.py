@@ -185,3 +185,79 @@ def test_shuffle_toggle_and_previous_without_a_current_track():
     q.set_shuffle(False)
     assert q.order_ids() == [0, 1, 2, 3, 4]
     assert q.previous() is None
+
+
+# ---- lo que ya sonó sale de la lista (consume_played) ----
+def _consuming(ids, start=0):
+    q = PlayQueue()
+    q.consume_played = True
+    q.set_items(ids, start)
+    return q
+
+
+def test_consume_removes_each_track_after_it_finishes():
+    q = _consuming([1, 2, 3])
+    assert q.next(auto=True) == 2 and q.order_ids() == [2, 3] and q.current == 2
+    assert q.next(auto=True) == 3 and q.order_ids() == [3]
+    assert q.next(auto=True) is None and q.order_ids() == []        # terminó la última: la lista queda vacía
+    assert q.current is None
+
+
+def test_manual_next_on_the_last_track_keeps_it_but_skipping_ahead_removes_the_previous():
+    q = _consuming([1, 2])
+    assert q.next() == 2 and q.order_ids() == [2]
+    assert q.next() is None and q.order_ids() == [2]                # sin siguiente: no se pierde la que suena
+
+
+def test_jump_removes_the_track_that_was_playing():
+    q = _consuming([1, 2, 3, 4])                              # suena 1
+    assert q.jump_to(2) == 3                                  # doble clic en la 3.ª fila
+    assert q.order_ids() == [2, 3, 4] and q.current == 3 and q.position == 1
+    assert q.jump_to(0) == 2 and q.order_ids() == [2, 4] and q.position == 0      # saltar hacia atrás: sale la 3
+    assert q.jump_to(0) == 2 and q.order_ids() == [2, 4]            # la misma fila: no pasa nada
+
+
+def test_double_click_with_play_next_inserted_track():
+    q = _consuming([1, 2, 3])
+    q.insert_next([9])
+    q.jump_to(1)                                              # lo que hace «conservar la lista» al elegir una canción
+    assert q.order_ids() == [9, 2, 3] and q.current == 9
+
+
+def test_previous_brings_back_what_was_played():
+    q = _consuming([1, 2, 3])
+    q.next(auto=True)
+    q.next(auto=True)                                         # sonaron 1 y 2; suena 3
+    assert q.order_ids() == [3]
+    assert q.previous() == 2 and q.order_ids() == [2, 3] and q.position == 0
+    assert q.previous() == 1 and q.order_ids() == [1, 2, 3]
+    assert q.previous() == 1                                  # sin más historial: reinicia la actual
+
+
+def test_repeat_all_rotates_instead_of_emptying_and_repeat_one_keeps_the_track():
+    q = _consuming([1, 2, 3])
+    q.repeat = RepeatMode.ALL
+    assert q.next(auto=True) == 2 and q.order_ids() == [2, 3, 1]
+    assert q.next(auto=True) == 3 and q.next(auto=True) == 1 and len(q) == 3
+    q.repeat = RepeatMode.ONE
+    assert q.next(auto=True) == 1 and len(q) == 3             # repetir una: no sale de la lista
+
+
+def test_consume_with_shuffle_never_loses_or_repeats_tracks():
+    import random
+    q = PlayQueue(random.Random(7))
+    q.consume_played = True
+    q.shuffle = True
+    q.set_items([1, 2, 3, 4, 5], 2)
+    played = [q.current]
+    while (n := q.next(auto=True)) is not None:
+        played.append(n)
+    assert sorted(played) == [1, 2, 3, 4, 5] and q.order_ids() == []
+
+
+def test_default_queue_does_not_consume():
+    q = PlayQueue()
+    q.set_items([1, 2, 3])
+    q.next()
+    q.jump_to(2)
+    assert q.order_ids() == [1, 2, 3]
