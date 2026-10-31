@@ -265,3 +265,17 @@ def test_row_columns_follow_the_list_width(qml_env):
     env = qml_env
     assert env.js("Theme.tier(1000)") == 3 and env.js("Theme.tier(700)") == 2 and env.js("Theme.tier(400)") == 1
     assert env.warnings == []
+
+
+# ---- 0.9.11: mini reproductor ----
+@needs_ffmpeg
+def test_mini_mode_toggles_and_restores_the_window(qml_env):
+    env = qml_env
+    album, ids = _ids(env)
+    env.player.playTrackIds(ids, 0)
+    before = (env.js("win.width"), env.js("win.height"))
+    env.act("enterMini()", 500)
+    assert env.js("miniMode") is True and env.js("win.width") == 240 and env.js("fullUi.visible") is False
+    env.act("miniPlayer.restoreButton.clicked()", 500)
+    assert env.js("miniMode") is False and (env.js("win.width"), env.js("win.height")) == before
+    assert env.warnings == []

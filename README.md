@@ -69,6 +69,11 @@ Archivo ▸ *Empezar desde cero…* (o `sonoteca reset --yes`) vacía la bibliot
 ### Panel derecho
 A la derecha siempre hay un panel: por defecto muestra la lista **Reproduciendo** (arrastra para reordenar, clic derecho para más acciones). Lo que se añade con **Reproducir a continuación** se resalta con bandas de acento a ambos lados hasta que le toca sonar. **Letra** (icono del menú o Ctrl+6) la reemplaza por la letra de la canción que suena; al volver a pulsarlo, vuelve Reproduciendo. El icono **Reproduciendo** (Ctrl+4) devuelve la lista si estaba la letra y, si ya está a la vista, pliega o despliega el panel para ganar espacio.
 
+### Mini reproductor
+El icono de la esquina de la barra de reproducción (o Ver ▸ *Mini reproductor*, Ctrl+Shift+M) encoge la ventana a un modo
+compacto, siempre visible, con la portada del álbum (o del artista) y los botones de reproducción. El icono de la esquina de
+la portada devuelve la ventana completa. Solo está disponible mientras hay una canción cargada.
+
 ### Listas de canciones
 Todas las listas muestran las canciones igual: con espacio, *pista · nombre con el artista debajo · álbum · año · reproducciones*; al reducir la ventana (o abrir paneles) se ocultan primero el año y las reproducciones, y después el álbum.
 

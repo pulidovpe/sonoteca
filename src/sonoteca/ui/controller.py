@@ -72,6 +72,11 @@ class LibraryController(QObject):
             out.append(d)
         return out
 
+    @Slot(int, int, result=str)
+    def coverKind(self, album_id: int, artist_id: int) -> str:
+        """'album' | 'artist' | '': qué imagen existe para la pista (mini reproductor)."""
+        return covers.cover_kind(self._conn, album_id, artist_id)
+
     @Slot(int, result="QVariantMap")
     def album(self, album_id: int) -> dict:
         row = library.get_album(self._conn, album_id)

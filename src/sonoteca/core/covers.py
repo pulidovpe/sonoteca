@@ -75,6 +75,20 @@ def artist_photo(artist_id: int) -> Path | None:
     return None
 
 
+def cover_kind(conn: sqlite3.Connection, album_id: int, artist_id: int) -> str:
+    """Qué imagen mostrar para una pista en el mini reproductor: 'album' si el álbum tiene portada; si no, 'artist' si
+    el artista tiene foto o alguno de sus álbumes tiene portada; '' si no hay ninguna."""
+    if album_id and album_cover_source(conn, album_id) is not None:
+        return "album"
+    if artist_id:
+        if artist_photo(artist_id) is not None:
+            return "artist"
+        other = artist_cover_album(conn, artist_id)
+        if other and album_cover_source(conn, other) is not None:
+            return "artist"
+    return ""
+
+
 def artist_cover_album(conn: sqlite3.Connection, artist_id: int) -> int | None:
     """Álbum cuya portada representa al artista: prefiere uno con portada embebida y,
     entre ellos, el más antiguo."""

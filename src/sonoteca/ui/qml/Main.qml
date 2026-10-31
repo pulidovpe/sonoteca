@@ -16,6 +16,7 @@ ApplicationWindow {
     color: Theme.bg
 
     menuBar: AppMenuBar {
+        visible: !win.miniMode
         AppMenu {
             title: "Archivo"
             AppMenuItem { action: actScan }
@@ -59,6 +60,8 @@ ApplicationWindow {
             AppMenuSeparator { }
             AppMenuItem { action: actVolUp }
             AppMenuItem { action: actVolDown }
+            AppMenuSeparator { }
+            AppMenuItem { action: actMini }
         }
         AppMenu {
             title: "Ayuda"
@@ -67,6 +70,7 @@ ApplicationWindow {
     }
 
     Action { id: actEditCurrent; text: "Editar tags de la pista actual\u2026"; shortcut: "Ctrl+E"; enabled: player.hasTrack; onTriggered: win.editTags([player.currentId]) }
+    Action { id: actMini; text: "Mini reproductor"; shortcut: "Ctrl+Shift+M"; onTriggered: win.toggleMini() }
     Action { id: actServers; text: "Servidores de letras y portadas\u2026"; onTriggered: serversDialog.openDialog() }
     Action { id: actHarvest; text: "Descargar portadas e informaci\u00f3n\u2026"; onTriggered: harvestDialog.offer(true) }
     Action { id: actExport; text: "Exportar biblioteca\u2026"; onTriggered: transfer.exportLibrary() }
@@ -212,6 +216,44 @@ ApplicationWindow {
     readonly property bool lyricsPanelShown: !rightCollapsed && rightMode === "lyrics"
     readonly property bool queuePanelShown: !rightCollapsed && rightMode === "queue"
     readonly property var queuePage: queueLoader.item   // la lista del panel (acciones y pruebas)
+    // Mini reproductor: la ventana principal se encoge a una ventana pequeña, siempre visible, con la portada y los botones.
+    // Al volver se restauran el tamaño, la posición y el estado (maximizada) anteriores.
+    property bool miniMode: false
+    property var fullGeometry: null
+    readonly property int miniWidth: 240
+    readonly property int miniHeight: 304          // portada cuadrada + fila de botones
+    function enterMini() {
+        if (miniMode) return
+        fullGeometry = { x: win.x, y: win.y, w: win.width, h: win.height, visibility: win.visibility,
+                         minW: win.minimumWidth, minH: win.minimumHeight }
+        if (win.visibility !== Window.Windowed) win.visibility = Window.Windowed
+        miniMode = true
+        win.minimumWidth = miniWidth
+        win.minimumHeight = miniHeight
+        win.maximumWidth = miniWidth
+        win.maximumHeight = miniHeight
+        win.width = miniWidth
+        win.height = miniHeight
+        win.flags = Qt.Window | Qt.WindowStaysOnTopHint
+    }
+    function exitMini() {
+        if (!miniMode) return
+        var g = fullGeometry
+        miniMode = false
+        win.flags = Qt.Window
+        win.maximumWidth = 16777215
+        win.maximumHeight = 16777215
+        win.minimumWidth = g ? g.minW : 900
+        win.minimumHeight = g ? g.minH : 560
+        if (g) {
+            win.width = g.w
+            win.height = g.h
+            win.x = g.x
+            win.y = g.y
+            if (g.visibility === Window.Maximized) win.visibility = Window.Maximized
+        }
+    }
+    function toggleMini() { if (miniMode) exitMini(); else if (player.hasTrack) enterMini() }
     function showQueue() { rightCollapsed = false; rightMode = "queue" }
     function toggleQueue() {
         if (rightMode === "lyrics") showQueue()           // desde la letra: volver a la lista
@@ -406,6 +448,8 @@ ApplicationWindow {
     }
 
     ColumnLayout {
+        id: fullUi
+        visible: !win.miniMode
         anchors.fill: parent
         spacing: 0
 
@@ -824,6 +868,7 @@ ApplicationWindow {
             visible: Layout.preferredHeight > 0
             videoOpen: win.videoOpen
             onVideoToggled: win.videoOpen = !win.videoOpen
+            onMiniRequested: win.enterMini()
             onArtistRequested: (id, name) => win.openArtist(id, name)
             onAlbumRequested: (id) => win.openAlbum(id)
             Behavior on Layout.preferredHeight { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
@@ -833,12 +878,19 @@ ApplicationWindow {
     // Video: cubre el área de contenido (a la derecha de la barra lateral)
     Rectangle {
         id: videoPane
-        visible: player.isVideo && win.videoOpen
+        visible: !win.miniMode && player.isVideo && win.videoOpen
         color: "#000000"
         z: 5
         anchors { left: parent.left; leftMargin: win.sidebarWidth; right: parent.right; rightMargin: rightPanel.visible ? rightPanel.width : 0; top: parent.top; topMargin: 68; bottom: parent.bottom; bottomMargin: playerBar.height }
         VideoOutput { id: videoOut; anchors.fill: parent; fillMode: VideoOutput.PreserveAspectFit }
         Component.onCompleted: player.setVideoSink(videoOut.videoSink)
+    }
+
+    MiniPlayer {
+        id: miniPlayer
+        anchors.fill: parent
+        visible: win.miniMode
+        onRestoreRequested: win.exitMini()
     }
 
     TagEditor { id: tagEditor }

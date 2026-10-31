@@ -5,6 +5,15 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.9.11] - 2026-10-29
+### Añadido
+- **Mini reproductor**: un icono en la esquina derecha de la barra de reproducción (o Ver ▸ *Mini reproductor*,
+  Ctrl+Shift+M) encoge la ventana principal a una ventana pequeña (240 × 304), siempre visible encima de las demás, con la
+  **portada del álbum** (o la del artista si el álbum no tiene; un marcador si no hay ninguna) y los botones anterior,
+  reproducir/pausar y siguiente. El título y el artista salen como tooltip de la portada. El icono de la esquina de la
+  portada devuelve la ventana completa con su tamaño, posición y estado anteriores. Las teclas multimedia y los atajos
+  siguen funcionando.
+
 ## [0.9.10] - 2026-10-29
 ### Cambiado
 - **Columnas responsivas en todas las listas** (álbum, artista, inicio, búsqueda, listas guardadas y Reproduciendo): con la

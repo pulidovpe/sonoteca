@@ -7,9 +7,11 @@ Rectangle {
     property bool videoOpen: false
     property alias audioButton: audioButton   // para las pruebas
     property alias muteButton: muteButton
+    property alias miniButton: miniButton
     signal videoToggled()
     signal artistRequested(int artistId, string name)   // enlaces de la canci\u00f3n que suena
     signal albumRequested(int albumId)
+    signal miniRequested()   // encoger la ventana al modo mini reproductor
     property alias artistLink: artistLink
     property alias albumLink: albumLink
     color: Theme.playerBar
@@ -212,6 +214,17 @@ Rectangle {
                 onMoved: player.setVolume(value)
                 Binding { target: volSlider; property: "value"; value: player.muted ? 0 : player.volume; when: !volSlider.pressed }
             }
+        }
+        Rectangle { anchors.verticalCenter: parent.verticalCenter; width: 1; height: 24; color: Theme.border }
+        IconButton {   // esquina: ventana mini (solo portada y botones)
+            id: miniButton
+            anchors.verticalCenter: parent.verticalCenter
+            width: 30
+            height: 30
+            iconSize: 18
+            svg: Theme.iconMini
+            toolTip: "Mini reproductor (portada y botones)"
+            onClicked: bar.miniRequested()
         }
     }
     AudioOutputPopup { id: audioPopup; x: bar.width - width - 16; y: -height - 8 }
