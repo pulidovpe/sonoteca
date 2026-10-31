@@ -92,7 +92,9 @@ Item {
             width: list.width
             position: modelData.position
             title: modelData.title
-            subtitle: modelData.artist + " \u00b7 " + modelData.album
+            artist: modelData.artist
+            album: modelData.album
+            year: modelData.year
             duration: modelData.duration
             plays: (player.statsRevision, player.playsOf(modelData.id))
             trackId: modelData.id

@@ -257,3 +257,11 @@ def test_volume_icon_toggles_total_mute_with_a_tooltip(qml_env):
     env.act("playerBar.muteButton.clicked()", 200)
     assert env.js("player.muted") is False and "Silenciar" in env.js("playerBar.muteButton.toolTip")
     assert env.warnings == []
+
+
+# ---- 0.9.10: columnas responsivas ----
+@needs_ffmpeg
+def test_row_columns_follow_the_list_width(qml_env):
+    env = qml_env
+    assert env.js("Theme.tier(1000)") == 3 and env.js("Theme.tier(700)") == 2 and env.js("Theme.tier(400)") == 1
+    assert env.warnings == []

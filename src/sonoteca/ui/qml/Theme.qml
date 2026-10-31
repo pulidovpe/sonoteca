@@ -40,6 +40,15 @@ QtObject {
     readonly property color warnBg: "#2f2511"
     readonly property color danger: "#ff6b81"
     readonly property color scrim: "#b0020a12"       // velo detrás de los diálogos
+    // ===== Columnas de las filas de canciones: todas las listas se comportan igual =====
+    // Según el ancho de la lista: 3 = pista · nombre con artista debajo · álbum · año · reproducciones;
+    // 2 = pista · nombre/artista · álbum;  1 = pista · nombre/artista
+    readonly property int tierWideMin: 860
+    readonly property int tierMediumMin: 560
+    function tier(width) { return width >= tierWideMin ? 3 : (width >= tierMediumMin ? 2 : 1) }
+    function albumColumn(width) { return Math.max(120, Math.min(240, Math.round(width * 0.24))) }
+    readonly property int yearColumn: 52
+    readonly property int playsColumn: 76
     // Color de una portada sin imagen: tono estable por id dentro de la gama cian → violeta del logo
     function coverColor(id) { return Qt.hsla((185 + ((id * 61) % 105)) / 360, 0.55, 0.28, 1) }
 

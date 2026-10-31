@@ -102,6 +102,7 @@ class LibraryController(QObject):
                 "title": r["title"],
                 # en compilaciones se muestra el artista de cada pista
                 "subtitle": r["artist"] if r["artist"].lower() != album_artist else "",
+                "artist": r["artist"], "album": album_display(r["album"]), "year": str(r["year"] or ""),
                 "badge": "VIDEO" if r["kind"] == "video" else _badge(r["format"]),
                 "duration": r["duration"],
             })
@@ -112,7 +113,7 @@ class LibraryController(QObject):
         """Hasta 2 canciones por álbum del artista, ordenadas por reproducciones."""
         return [{"id": r["id"], "title": r["title"], "duration": r["duration"],
                  "albumId": r["album_id"], "album": album_display(r["album"]),
-                 "artist": r["artist"], "plays": r["plays"]}
+                 "artist": r["artist"], "plays": r["plays"], "year": str(r["year"] or "")}
                 for r in stats.artist_top_tracks(self._conn, artist_id, limit=30)]
 
     @Slot(result="QVariantMap")
@@ -124,7 +125,7 @@ class LibraryController(QObject):
             "artists": [dict(r) for r in stats.top_artists(self._conn, 12)],
             "tracks": [{"id": r["id"], "title": r["title"], "duration": r["duration"],
                         "albumId": r["album_id"], "album": album_display(r["album"]),
-                        "artist": r["artist"], "plays": r["plays"]}
+                        "artist": r["artist"], "plays": r["plays"], "year": str(r["year"] or "")}
                        for r in stats.top_tracks(self._conn, 10)],
             "lists": [dict(r) for r in stats.top_playlists(self._conn, 12)],
         }
@@ -237,6 +238,7 @@ class LibraryController(QObject):
             "tracks": [
                 {"id": t["id"], "number": "", "title": t["title"],
                  "subtitle": f"{t['artist']} · {album_display(t['album'])}",
+                 "artist": t["artist"], "album": album_display(t["album"]), "year": str(t["year"] or ""),
                  "badge": "VIDEO" if t["kind"] == "video" else "", "duration": t["duration"]}
                 for t in res.tracks
             ],

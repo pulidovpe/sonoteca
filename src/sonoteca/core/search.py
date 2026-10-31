@@ -80,7 +80,7 @@ class SearchIndex:
                       (SELECT COUNT(*) FROM tracks t WHERE t.album_id = al.id) AS tracks
                FROM albums al JOIN artists ar ON ar.id = al.album_artist_id""")]
         tracks = [dict(r) for r in conn.execute(
-            """SELECT t.id, t.title, t.track_no, t.duration, t.year, ar.id AS artist_id,
+            """SELECT t.id, t.title, t.track_no, t.duration, COALESCE(t.year, al.year) AS year, ar.id AS artist_id,
                       ar.name AS artist, ar.sort_name AS sort_name, al.id AS album_id,
                       al.title AS album, f.path, f.kind, f.format
                FROM tracks t

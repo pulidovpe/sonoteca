@@ -394,7 +394,7 @@ class PlayerController(QObject):
                 continue
             rows.append({"position": position, "id": row["id"], "title": row["title"],
                          "artist": row["artist"], "album": album_display(row["album"]),
-                         "albumId": row["album_id"], "duration": row["duration"],
+                         "albumId": row["album_id"], "duration": row["duration"], "year": str(row["year"] or ""),
                          "current": position == current_pos, "upNext": up_next[position]})
         return rows
 

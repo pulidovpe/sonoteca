@@ -5,6 +5,15 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.9.10] - 2026-10-29
+### Cambiado
+- **Columnas responsivas en todas las listas** (álbum, artista, inicio, búsqueda, listas guardadas y Reproduciendo): con la
+  lista ancha (≥ 860 px) cada canción muestra *pista · nombre con el artista debajo · álbum · año · reproducciones*; al
+  estrecharse (≥ 560 px) solo *pista · nombre/artista · álbum*; al mínimo, *pista · nombre/artista*. Se decide por el ancho
+  de la propia lista, no de la ventana (el panel derecho ya reduce el centro). La duración y el menú ⋮ se mantienen siempre.
+- El año de la canción usa el del álbum cuando la canción no lo tiene. Todas las filas comparten los umbrales y las
+  anchuras de columna definidos en `Theme.qml`.
+
 ## [0.9.9] - 2026-10-28
 ### Añadido
 - **«Reproducir a continuación» se distingue en la lista**: las canciones añadidas así llevan bandas de acento a ambos

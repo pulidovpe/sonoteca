@@ -109,7 +109,7 @@ def tracks(conn: sqlite3.Connection, playlist_id: int) -> list[sqlite3.Row]:
     return conn.execute(
         """
         SELECT pt.position, t.id, t.title, t.duration, ar.name AS artist, al.title AS album,
-               al.id AS album_id
+               al.id AS album_id, COALESCE(t.year, al.year) AS year
         FROM playlist_tracks pt
         JOIN tracks t   ON t.id  = pt.track_id
         JOIN artists ar ON ar.id = t.artist_id

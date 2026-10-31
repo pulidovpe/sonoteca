@@ -1,18 +1,28 @@
 import QtQuick
 import "."
 
+// Fila de canción. Columnas según el ancho (Theme.tier): pista · nombre con el artista debajo · álbum · año · reproducciones.
+// Ancho amplio: todas; medio: hasta el álbum; mínimo: pista y nombre. La duración y el menú ⋮ se mantienen siempre.
 Item {
     id: root
     property string number: ""
     property string title
-    property string subtitle: ""
+    property string artist: ""      // segunda línea del nombre
+    property string album: ""
+    property string year: ""
+    property string subtitle: ""    // texto libre cuando no hay artista (p. ej. «Por revisar»)
     property string badge: ""
     property string duration: ""
-    property int plays: -1   // < 0: no se muestra
-    property int trackId: 0  // > 0: se puede arrastrar a una lista de la barra lateral
+    property int plays: -1          // < 0: no se muestra
+    property int trackId: 0         // > 0: se puede arrastrar a una lista de la barra lateral
     property bool current: false
     signal activated()
     signal contextRequested()
+    readonly property int tier: Theme.tier(width)
+    readonly property bool showAlbum: tier >= 2 && album !== ""
+    readonly property bool showYear: tier >= 3 && year !== ""
+    readonly property bool showPlays: tier >= 3 && plays >= 0
+    readonly property string line2: artist !== "" ? artist : subtitle
     height: 52
     opacity: dragHandler.active ? 0.45 : 1
 
@@ -52,51 +62,66 @@ Item {
         }
         Text {
             width: parent.width
-            visible: root.subtitle !== ""
-            text: root.subtitle
+            visible: root.line2 !== ""
+            text: root.line2
             color: Theme.textDim
             font.pixelSize: 12
             elide: Text.ElideRight
         }
     }
-    Text {
-        id: playsText
-        visible: root.plays >= 0
-        text: "\u25b6 " + root.plays
-        color: Theme.textDim
-        font.pixelSize: 12
-        anchors { right: badgeBox.left; rightMargin: 14; verticalCenter: parent.verticalCenter }
-    }
-    Rectangle {
-        id: badgeBox
-        visible: root.badge !== ""
-        width: visible ? badgeText.width + 14 : 0
-        height: 20
-        radius: 4
-        color: "transparent"
-        border.color: Theme.textDim
-        border.width: 1
-        anchors.right: dur.left
-        anchors.rightMargin: visible ? 16 : 0
-        anchors.verticalCenter: parent.verticalCenter
+    // Columnas de la derecha, en este orden: álbum, año, reproducciones, etiqueta y duración
+    Row {
+        id: cells
+        anchors { right: parent.right; rightMargin: 28; verticalCenter: parent.verticalCenter }
+        spacing: 16
         Text {
-            id: badgeText
-            anchors.centerIn: parent
-            text: root.badge
+            visible: root.showAlbum
+            width: Theme.albumColumn(root.width)
+            text: root.album
             color: Theme.textDim
-            font.pixelSize: 10
-            font.weight: Font.DemiBold
+            font.pixelSize: 13
+            elide: Text.ElideRight
         }
-    }
-    Text {
-        id: dur
-        text: root.duration
-        width: root.duration === "" ? 0 : implicitWidth
-        anchors.right: parent.right
-        anchors.rightMargin: 28
-        anchors.verticalCenter: parent.verticalCenter
-        color: Theme.textDim
-        font.pixelSize: 14
+        Text {
+            visible: root.showYear
+            width: Theme.yearColumn
+            text: root.year
+            color: Theme.textDim
+            font.pixelSize: 13
+        }
+        Text {
+            visible: root.showPlays
+            width: Theme.playsColumn
+            text: "\u25b6 " + root.plays
+            color: Theme.textDim
+            font.pixelSize: 12
+        }
+        Rectangle {
+            id: badgeBox
+            visible: root.badge !== ""
+            width: visible ? badgeText.width + 14 : 0
+            height: 20
+            radius: 4
+            color: "transparent"
+            border.color: Theme.textDim
+            border.width: 1
+            anchors.verticalCenter: parent.verticalCenter
+            Text {
+                id: badgeText
+                anchors.centerIn: parent
+                text: root.badge
+                color: Theme.textDim
+                font.pixelSize: 10
+                font.weight: Font.DemiBold
+            }
+        }
+        Text {
+            id: dur
+            text: root.duration
+            width: root.duration === "" ? 0 : implicitWidth
+            color: Theme.textDim
+            font.pixelSize: 14
+        }
     }
     MouseArea {
         id: mouse
@@ -116,7 +141,7 @@ Item {
         enabled: rowHover.hovered
         opacity: rowHover.hovered ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: Theme.fast } }
-        anchors.right: playsText.visible ? playsText.left : (badgeBox.visible ? badgeBox.left : dur.left)
+        anchors.right: cells.left
         anchors.rightMargin: 10
         anchors.verticalCenter: parent.verticalCenter
         onClicked: root.contextRequested()

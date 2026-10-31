@@ -17,6 +17,15 @@ Item {
     property bool upNext: false
     property bool upNextTop: false
     property bool upNextBottom: false
+    // Columnas según el ancho (Theme.tier): pista · nombre con artista debajo · álbum · año · reproducciones
+    property string artist: ""
+    property string album: ""
+    property string year: ""
+    readonly property int tier: Theme.tier(width)
+    readonly property bool showAlbum: tier >= 2 && album !== ""
+    readonly property bool showYear: tier >= 3 && year !== ""
+    readonly property bool showPlays: tier >= 3 && plays >= 0
+    readonly property string line2: artist !== "" ? artist : subtitle
     property bool compact: false   // true: panel estrecho (sin contador de reproducciones; acciones sobre la duración al pasar el ratón)
     signal reorderRequested(int dst)
     property bool current: false
@@ -101,10 +110,10 @@ Item {
         }
     }
     Column {
-        anchors { left: thumb.right; leftMargin: row.compact ? 8 : 10; right: row.compact ? dur.left : actions.left; rightMargin: row.compact ? 8 : 12; verticalCenter: parent.verticalCenter }
+        anchors { left: thumb.right; leftMargin: row.compact ? 8 : 10; right: row.compact ? cells.left : actions.left; rightMargin: row.compact ? 8 : 12; verticalCenter: parent.verticalCenter }
         spacing: 2
         Text { width: parent.width; text: row.title; color: row.current ? Theme.accent : Theme.text; font.pixelSize: 15; elide: Text.ElideRight }
-        Text { width: parent.width; text: row.subtitle; color: Theme.textDim; font.pixelSize: 12; elide: Text.ElideRight }
+        Text { width: parent.width; text: row.line2; color: Theme.textDim; font.pixelSize: 12; elide: Text.ElideRight }
     }
     Rectangle {   // en el modo compacto las acciones tapan la duración: fondo para que se lean
         visible: row.compact && hover.hovered
@@ -114,27 +123,34 @@ Item {
     }
     Row {
         id: actions
-        anchors { right: row.compact ? parent.right : (playsText.visible ? playsText.left : dur.left); rightMargin: row.compact ? 10 : 12; verticalCenter: parent.verticalCenter }
+        anchors { right: row.compact ? parent.right : cells.left; rightMargin: row.compact ? 10 : 12; verticalCenter: parent.verticalCenter }
         spacing: 2
         opacity: hover.hovered ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: Theme.fast } }
         IconButton { width: 30; height: 30; iconSize: 16; svg: Theme.iconMore; onClicked: row.menuRequested() }
         IconButton { width: 30; height: 30; iconSize: 12; svg: Theme.iconClose; onClicked: row.removeRequested() }
     }
-    Text {
-        id: playsText
-        visible: !row.compact && row.plays >= 0
-        text: "\u25b6 " + row.plays
-        anchors { right: dur.left; rightMargin: 16; verticalCenter: parent.verticalCenter }
-        color: Theme.textDim
-        font.pixelSize: 12
-    }
-    Text {
-        id: dur
-        text: Theme.fmt(row.duration)
+    // Columnas de la derecha, en este orden: álbum, año, reproducciones y duración
+    Row {
+        id: cells
         anchors { right: parent.right; rightMargin: row.compact ? 14 : 28; verticalCenter: parent.verticalCenter }
-        color: Theme.textDim
-        font.pixelSize: row.compact ? 12 : 14
-        opacity: row.compact && hover.hovered ? 0 : 1
+        spacing: 16
+        Text {
+            visible: row.showAlbum
+            width: Theme.albumColumn(row.width)
+            text: row.album
+            color: Theme.textDim
+            font.pixelSize: 13
+            elide: Text.ElideRight
+        }
+        Text { visible: row.showYear; width: Theme.yearColumn; text: row.year; color: Theme.textDim; font.pixelSize: 13 }
+        Text { visible: row.showPlays; width: Theme.playsColumn; text: "▶ " + row.plays; color: Theme.textDim; font.pixelSize: 12 }
+        Text {
+            id: dur
+            text: Theme.fmt(row.duration)
+            color: Theme.textDim
+            font.pixelSize: row.compact ? 12 : 14
+            opacity: row.compact && hover.hovered ? 0 : 1
+        }
     }
 }

@@ -61,7 +61,7 @@ class PlaylistController(QObject):
     def tracks(self, playlist_id: int) -> list[dict]:
         return [{"position": r["position"], "id": r["id"], "title": r["title"], "artist": r["artist"],
                  "album": album_display(r["album"]), "albumId": r["album_id"],
-                 "duration": r["duration"]}
+                 "duration": r["duration"], "year": str(r["year"] or "")}
                 for r in store.tracks(self._conn, playlist_id)]
 
     @Slot(int, result="QVariantList")

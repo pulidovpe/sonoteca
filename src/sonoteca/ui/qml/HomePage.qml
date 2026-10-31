@@ -141,7 +141,9 @@ Item {
                     width: col.width
                     number: (index + 1).toString()
                     title: modelData.title
-                    subtitle: modelData.artist + " \u00b7 " + modelData.album
+                    artist: modelData.artist
+                    album: modelData.album
+                    year: modelData.year
                     duration: Theme.fmt(modelData.duration)
                     plays: modelData.plays
                     trackId: modelData.id

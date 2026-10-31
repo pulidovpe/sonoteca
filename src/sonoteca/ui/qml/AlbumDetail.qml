@@ -106,7 +106,9 @@ Item {
             width: list.width
             number: modelData.number
             title: modelData.title
-            subtitle: modelData.subtitle
+            artist: modelData.artist
+            album: modelData.album
+            year: modelData.year
             badge: modelData.badge
             duration: Theme.fmt(modelData.duration)
             plays: (player.statsRevision, player.playsOf(modelData.id))

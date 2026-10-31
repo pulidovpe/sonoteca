@@ -42,7 +42,7 @@ def top_tracks(conn: sqlite3.Connection, limit: int = 10) -> list[sqlite3.Row]:
     return conn.execute(
         """
         SELECT t.id, t.title, t.duration, al.id AS album_id, al.title AS album,
-               ar.name AS artist, ps.plays AS plays
+               ar.name AS artist, ps.plays AS plays, COALESCE(t.year, al.year) AS year
         FROM play_stats ps
         JOIN tracks t   ON t.id  = ps.track_id
         JOIN artists ar ON ar.id = t.artist_id
@@ -105,7 +105,7 @@ def artist_top_tracks(conn: sqlite3.Connection, artist_id: int, per_album: int =
         """
         SELECT * FROM (
             SELECT t.id, t.title, t.duration, al.id AS album_id, al.title AS album,
-                   ar.name AS artist, COALESCE(ps.plays, 0) AS plays,
+                   ar.name AS artist, COALESCE(ps.plays, 0) AS plays, COALESCE(t.year, al.year) AS year,
                    COALESCE(t.disc_no, 1) AS disc, COALESCE(t.track_no, 9999) AS no,
                    ROW_NUMBER() OVER (
                        PARTITION BY t.album_id

@@ -65,7 +65,7 @@ def list_tracks(conn: sqlite3.Connection, *, album_id: int | None = None,
     clause = ("WHERE " + " AND ".join(where)) if where else ""
     return conn.execute(
         f"""
-        SELECT t.id, t.title, t.track_no, t.disc_no, t.year, t.duration, t.genre,
+        SELECT t.id, t.title, t.track_no, t.disc_no, COALESCE(t.year, al.year) AS year, t.duration, t.genre,
                ar.name AS artist, al.title AS album, f.path, f.format, f.kind
         FROM tracks t
         JOIN artists ar ON ar.id = t.artist_id
@@ -130,7 +130,7 @@ def get_track(conn: sqlite3.Connection, track_id: int) -> sqlite3.Row | None:
     return conn.execute(
         """
         SELECT t.id, t.title, t.duration, ar.name AS artist, ar.id AS artist_id, al.id AS album_id,
-               al.title AS album, f.path, f.kind, f.format
+               al.title AS album, COALESCE(t.year, al.year) AS year, f.path, f.kind, f.format
         FROM tracks t
         JOIN artists ar ON ar.id = t.artist_id
         JOIN albums  al ON al.id = t.album_id

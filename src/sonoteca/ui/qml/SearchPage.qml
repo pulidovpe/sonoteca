@@ -88,7 +88,9 @@ Item {
                 delegate: TrackRow {
                     width: col.width
                     title: modelData.title
-                    subtitle: modelData.subtitle
+                    artist: modelData.artist
+                    album: modelData.album
+                    year: modelData.year
                     badge: modelData.badge
                     duration: modelData.duration > 0 ? Theme.fmt(modelData.duration) : ""
                     current: player.currentId === modelData.id

@@ -69,6 +69,9 @@ Archivo ▸ *Empezar desde cero…* (o `sonoteca reset --yes`) vacía la bibliot
 ### Panel derecho
 A la derecha siempre hay un panel: por defecto muestra la lista **Reproduciendo** (arrastra para reordenar, clic derecho para más acciones). Lo que se añade con **Reproducir a continuación** se resalta con bandas de acento a ambos lados hasta que le toca sonar. **Letra** (icono del menú o Ctrl+6) la reemplaza por la letra de la canción que suena; al volver a pulsarlo, vuelve Reproduciendo. El icono **Reproduciendo** (Ctrl+4) devuelve la lista si estaba la letra y, si ya está a la vista, pliega o despliega el panel para ganar espacio.
 
+### Listas de canciones
+Todas las listas muestran las canciones igual: con espacio, *pista · nombre con el artista debajo · álbum · año · reproducciones*; al reducir la ventana (o abrir paneles) se ocultan primero el año y las reproducciones, y después el álbum.
+
 ### Teclas multimedia
 Reproducir/pausa, siguiente y anterior del teclado funcionan con la ventana en primer plano en cualquier sistema. En **macOS**
 también funcionan con la app en segundo plano: Sonoteca se registra como la aplicación de «Ahora suena» (necesita
