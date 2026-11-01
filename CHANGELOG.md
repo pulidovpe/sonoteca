@@ -5,6 +5,15 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.10.0] - 2026-10-29
+Versión que cierra la tanda de ajustes pedida tras la 0.9.6; reúne los cambios de la 0.9.7 a la 0.9.12:
+- Silencio total desde el icono de volumen, con tooltip (0.9.7) y «Agregar al final de la lista» (0.9.7).
+- La lista de reproducción solo guarda lo que falta por sonar: lo que termina o se salta sale de ella (0.9.8).
+- «Reproducir a continuación» se distingue con bandas de acento a ambos lados (0.9.9).
+- Columnas responsivas en todas las listas: pista · nombre/artista · álbum · año · reproducciones (0.9.10).
+- Mini reproductor: ventana compacta, siempre visible, con portada y botones (0.9.11).
+- Formato estándar de servidores alternativos (descriptor v1) con importación (0.9.12).
+
 ## [0.9.12] - 2026-10-29
 ### Añadido
 - **Formato estándar para servidores alternativos** (descriptor v1, `*.sonoteca-server.json`): un JSON versionado que
