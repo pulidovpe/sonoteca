@@ -7,6 +7,17 @@ Item {
     property int artistId: 0
     property string heading: "Álbumes"
     property int decade: 0
+    // Historial de navegación: al salir de la página se guarda su estado y al volver se restaura (década, desplegado, posición)
+    property var restore: null
+    function saveState() { return { decade: page.decade, topExpanded: page.topExpanded, y: grid.contentY } }
+    Component.onCompleted: {
+        if (restore) { decade = restore.decade || 0; topExpanded = !!restore.topExpanded }
+    }
+    Timer {
+        interval: 80
+        running: page.restore !== null
+        onTriggered: grid.contentY = page.restore.y || 0
+    }
     signal albumClicked(int albumId)
     signal needInternet()
     signal editArtistRequested(int artistId, string artistName)

@@ -276,7 +276,7 @@ def test_mini_mode_toggles_and_restores_the_window(qml_env):
     env.player.playTrackIds(ids, 0)
     before = (env.js("win.width"), env.js("win.height"))
     env.act("enterMini()", 500)
-    assert env.js("miniMode") is True and env.js("win.width") == 240 and env.js("fullUi.visible") is False
+    assert env.js("miniMode") is True and env.js("win.width") == 264 and env.js("fullUi.visible") is False
     env.act("miniPlayer.restoreButton.clicked()", 500)
     assert env.js("miniMode") is False and (env.js("win.width"), env.js("win.height")) == before
     assert env.warnings == []
@@ -292,4 +292,29 @@ def test_servers_dialog_imports_a_descriptor_file(qml_env, tmp_path, monkeypatch
     assert env.js("serversDialog.importButton.visible") is True
     r = env.js("serverConfig.importDescriptor(%r).ok" % str(descriptor))
     assert r is True and len(env.js("serverConfig.state().lyrics")) == 2 and len(env.js("serverConfig.state().meta")) == 2
+    assert env.warnings == []
+
+
+# ---- 0.10.0.1: historial con estado y botones del mini reproductor ----
+@needs_ffmpeg
+def test_albums_page_remembers_its_decade_when_coming_back(qml_env):
+    env = qml_env
+    album, ids = _ids(env)
+    env.act("showSection('albums')", 400)
+    env.act("stack.currentItem.decade = 2000", 300)
+    env.act("openAlbum(%d)" % album, 500)
+    env.act("back()", 600)
+    assert env.js("stack.currentItem.decade") == 2000                      # vuelve al año que se estaba revisando
+    assert env.warnings == []
+
+
+@needs_ffmpeg
+def test_mini_player_shuffle_and_mute_buttons_work(qml_env):
+    env = qml_env
+    album, ids = _ids(env)
+    env.player.playTrackIds(ids, 0)
+    env.act("miniPlayer.shuffleButton.clicked()", 200)
+    assert env.js("player.shuffle") is True
+    env.act("miniPlayer.muteButton.clicked()", 200)
+    assert env.js("player.muted") is True
     assert env.warnings == []

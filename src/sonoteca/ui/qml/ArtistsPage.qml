@@ -5,6 +5,14 @@ import "."
 Item {
     id: page
     property var artists: (Theme.dataRevision, library.artists())
+    // Historial de navegación: se recuerda la posición de la lista al salir y se restaura al volver
+    property var restore: null
+    function saveState() { return { y: grid.contentY } }
+    Timer {
+        interval: 80
+        running: page.restore !== null
+        onTriggered: grid.contentY = page.restore.y || 0
+    }
     signal artistClicked(int artistId, string name)
 
     Text {

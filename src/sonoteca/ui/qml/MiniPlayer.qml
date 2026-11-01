@@ -3,7 +3,7 @@ import QtQuick.Controls
 import "."
 
 // Modo compacto de la ventana principal: solo la portada (del álbum o, si no tiene, la del artista) y los botones de
-// reproducción. El icono de la esquina devuelve la ventana completa. El título y el artista salen como tooltip.
+// reproducción (aleatorio, anterior, reproducir/pausar, siguiente y silencio). El icono de la esquina devuelve la ventana completa. El título y el artista salen como tooltip.
 Rectangle {
     id: root
     color: Theme.bg
@@ -13,6 +13,8 @@ Rectangle {
         : (kind === "artist" ? "image://cover/artist/" + player.currentTrack.artistId : "image://cover/" + player.currentTrack.albumId)
           + "?v=" + Theme.dataRevision
     property alias restoreButton: restoreButton
+    property alias shuffleButton: shuffleButton
+    property alias muteButton: muteButton
     property alias coverImage: cover
 
     Rectangle {
@@ -60,7 +62,16 @@ Rectangle {
     }
     Row {
         anchors { horizontalCenter: parent.horizontalCenter; top: coverBox.bottom; bottom: parent.bottom }
-        spacing: 14
+        spacing: 10
+        IconButton {
+            id: shuffleButton
+            anchors.verticalCenter: parent.verticalCenter
+            width: 30; height: 30; iconSize: 18
+            svg: Theme.iconShuffle
+            active: player.shuffle
+            toolTip: player.shuffle ? "Aleatorio: activado" : "Aleatorio"
+            onClicked: player.toggleShuffle()
+        }
         IconButton { anchors.verticalCenter: parent.verticalCenter; svg: Theme.iconPrev; toolTip: "Anterior"; onClicked: player.previous() }
         Rectangle {
             anchors.verticalCenter: parent.verticalCenter
@@ -77,5 +88,14 @@ Rectangle {
             AppToolTip { visible: playMouse.containsMouse; text: player.playing ? "Pausar" : "Reproducir" }
         }
         IconButton { anchors.verticalCenter: parent.verticalCenter; svg: Theme.iconNext; toolTip: "Siguiente"; onClicked: player.next() }
+        IconButton {
+            id: muteButton
+            anchors.verticalCenter: parent.verticalCenter
+            width: 30; height: 30; iconSize: 18
+            svg: player.muted ? Theme.iconMuted : Theme.iconSpeaker
+            active: player.muted
+            toolTip: player.muted ? "Quitar el silencio" : "Silenciar (silencio total)"
+            onClicked: player.toggleMute()
+        }
     }
 }

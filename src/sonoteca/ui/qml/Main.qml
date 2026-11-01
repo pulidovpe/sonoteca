@@ -155,8 +155,21 @@ ApplicationWindow {
     readonly property bool canBack: navIndex > 0
     readonly property bool canForward: navIndex < navHistory.length - 1
 
+    // El estado de la página que se abandona (década, posición…) se guarda en su entrada del historial
+    function saveState() {
+        var item = stack.currentItem
+        if (item && item.saveState && navIndex >= 0 && navIndex < navHistory.length) navHistory[navIndex].state = item.saveState()
+    }
+    function sameLoc(a, b) {
+        if (!a || !b) return false
+        var x = {}, y = {}, k
+        for (k in a) if (k !== "state") x[k] = a[k]
+        for (k in b) if (k !== "state") y[k] = b[k]
+        return JSON.stringify(x) === JSON.stringify(y)
+    }
     function go(loc) {
-        if (JSON.stringify(navHistory[navIndex]) === JSON.stringify(loc)) { render(loc); return }
+        saveState()
+        if (sameLoc(navHistory[navIndex], loc)) { render(loc); return }
         var h = navHistory.slice(0, navIndex + 1)   // lo que había "adelante" se descarta
         h.push(loc)
         if (h.length > 60) h = h.slice(h.length - 60)
@@ -179,6 +192,7 @@ ApplicationWindow {
         var i = navIndex + dir
         while (i >= 0 && i < navHistory.length && !valid(navHistory[i])) i += dir
         if (i < 0 || i >= navHistory.length) return
+        saveState()
         navIndex = i
         render(navHistory[i])
     }
@@ -192,8 +206,8 @@ ApplicationWindow {
             section = loc.sec
             searchField.text = ""
             if (loc.sec === "home") stack.replace(null, homeComp)
-            else if (loc.sec === "albums") stack.replace(null, albumsComp)
-            else if (loc.sec === "artists") stack.replace(null, artistsComp)
+            else if (loc.sec === "albums") stack.replace(null, albumsComp, { restore: loc.state || null })
+            else if (loc.sec === "artists") stack.replace(null, artistsComp, { restore: loc.state || null })
             else if (loc.sec === "playlists") stack.replace(null, playlistsComp)
             else stack.replace(null, reviewComp)
             return
@@ -205,7 +219,7 @@ ApplicationWindow {
         }
         if (loc.from) section = loc.from
         if (loc.t === "album") stack.replace(null, albumComp, { albumId: loc.id })
-        else if (loc.t === "artist") stack.replace(null, albumsComp, { artistId: loc.id, heading: loc.name })
+        else if (loc.t === "artist") stack.replace(null, albumsComp, { artistId: loc.id, heading: loc.name, restore: loc.state || null })
         else if (loc.t === "playlist") stack.replace(null, playlistComp, { playlistId: loc.id })
         else if (loc.t === "lyrics") stack.replace(null, lyricsComp, { followPlayer: false, trackId: loc.trackId })
     }
@@ -220,8 +234,8 @@ ApplicationWindow {
     // Al volver se restauran el tamaño, la posición y el estado (maximizada) anteriores.
     property bool miniMode: false
     property var fullGeometry: null
-    readonly property int miniWidth: 240
-    readonly property int miniHeight: 304          // portada cuadrada + fila de botones
+    readonly property int miniWidth: 264
+    readonly property int miniHeight: 328          // portada cuadrada + fila de botones
     function enterMini() {
         if (miniMode) return
         fullGeometry = { x: win.x, y: win.y, w: win.width, h: win.height, visibility: win.visibility,

@@ -5,6 +5,14 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.10.0.1] - 2026-10-30
+### Añadido
+- **Mini reproductor**: botón *Aleatorio* (resaltado cuando está activo) y botón de **silencio**; la ventana mini pasa a 264 × 328.
+### Corregido
+- **Historial de navegación con estado**: al volver atrás/adelante, *Álbumes* recuerda la década que se estaba revisando
+  (y la posición), *Artistas* la posición de la lista y las páginas de los artistas visitados su estado (canciones
+  destacadas desplegadas y posición).
+
 ## [0.10.0] - 2026-10-29
 Versión que cierra la tanda de ajustes pedida tras la 0.9.6; reúne los cambios de la 0.9.7 a la 0.9.12:
 - Silencio total desde el icono de volumen, con tooltip (0.9.7) y «Agregar al final de la lista» (0.9.7).

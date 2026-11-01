@@ -8,6 +8,7 @@ Item {
     property real iconSize: 20
     property color color: Theme.text
     property string toolTip: ""
+    property bool active: false          // activado (p. ej. Aleatorio): resaltado con el acento
     signal clicked()
     width: 36
     height: 36
@@ -15,14 +16,14 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: width / 2
-        color: mouse.containsMouse ? Theme.surfaceHover : "transparent"
+        color: root.active ? Theme.accentSoft : (mouse.containsMouse ? Theme.surfaceHover : "transparent")
         Behavior on color { ColorAnimation { duration: Theme.fast } }
     }
     Icon {
         anchors.centerIn: parent
         svg: root.svg
         size: root.iconSize
-        color: mouse.containsMouse ? Theme.text : Theme.textDim
+        color: root.active ? Theme.accent : (mouse.containsMouse ? Theme.text : Theme.textDim)
         Behavior on color { ColorAnimation { duration: Theme.fast } }
     }
     MouseArea {
