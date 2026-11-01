@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Dialogs
 import "."
 
 // Servidores alternativos para letras y para portadas/informaci\u00f3n, que se usan EN LUGAR del predeterminado.
@@ -11,6 +12,7 @@ Popup {
     property bool messageOk: true
     property bool testing: false
     property alias nameField: lyricsName   // para las pruebas
+    property alias importButton: importButton
     signal toastRequested(string text)
 
     modal: true
@@ -47,6 +49,15 @@ Popup {
     }
     function removeServer(kind, id) { apply(serverConfig.remove(kind, id), "Servidor eliminado.") }
 
+    FileDialog {
+        id: descriptorFile
+        title: "Importar descriptor de servidor"
+        nameFilters: ["Descriptor de servidor (*.json)"]
+        onAccepted: {
+            var r = serverConfig.importDescriptor(library.localPath(selectedFile.toString()))
+            root.apply(r, r.message)
+        }
+    }
     Connections {
         target: serverConfig
         function onTestFinished(r) { root.testing = false; root.show(r.ok, r.message) }
@@ -114,6 +125,7 @@ Popup {
             spacing: 8
             Chip { height: 30; label: "Letras"; active: root.tab === "lyrics"; onClicked: { root.tab = "lyrics"; root.message = "" } }
             Chip { height: 30; label: "Portadas e informaci\u00f3n"; active: root.tab === "meta"; onClicked: { root.tab = "meta"; root.message = "" } }
+            PillButton { id: importButton; height: 30; label: "Importar descriptor\u2026"; onClicked: descriptorFile.open() }
         }
         ScrollView {
             id: scroll

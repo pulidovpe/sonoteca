@@ -1,5 +1,6 @@
 """0.8.5: cabecera de lista, pregunta al reproducir una canción suelta y letra en panel lateral."""
 import os
+from pathlib import Path
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 os.environ.setdefault("QT_QUICK_BACKEND", "software")
@@ -278,4 +279,17 @@ def test_mini_mode_toggles_and_restores_the_window(qml_env):
     assert env.js("miniMode") is True and env.js("win.width") == 240 and env.js("fullUi.visible") is False
     env.act("miniPlayer.restoreButton.clicked()", 500)
     assert env.js("miniMode") is False and (env.js("win.width"), env.js("win.height")) == before
+    assert env.warnings == []
+
+
+# ---- 0.9.12: descriptor de servidores ----
+@needs_ffmpeg
+def test_servers_dialog_imports_a_descriptor_file(qml_env, tmp_path, monkeypatch):
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path / "datos"))
+    descriptor = Path(__file__).resolve().parent.parent / "docs" / "ejemplos" / "mi-servidor.sonoteca-server.json"
+    env = qml_env
+    env.act("serversDialog.openDialog()", 300)
+    assert env.js("serversDialog.importButton.visible") is True
+    r = env.js("serverConfig.importDescriptor(%r).ok" % str(descriptor))
+    assert r is True and len(env.js("serverConfig.state().lyrics")) == 2 and len(env.js("serverConfig.state().meta")) == 2
     assert env.warnings == []

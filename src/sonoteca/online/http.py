@@ -27,6 +27,8 @@ MIN_INTERVAL = {
     "wikidata.org": 0.25,
     "wikimedia.org": 0.25,
 }
+# Intervalos declarados por servidores alternativos (descriptor `rate_limit`); los registra online/servers.py
+CUSTOM_INTERVAL: dict[str, float] = {}
 SERVICE_NAMES = {
     "lrclib.net": "LRCLIB",
     "musicbrainz.org": "MusicBrainz",
@@ -61,7 +63,7 @@ class RateLimiter:
         self._lock = threading.Lock()
 
     def wait(self, host: str) -> None:
-        interval = _match(host, MIN_INTERVAL) or 0.5
+        interval = CUSTOM_INTERVAL.get(host) or _match(host, MIN_INTERVAL) or 0.5
         with self._lock:
             now = self._clock()
             ready = self._next.get(host, 0.0)

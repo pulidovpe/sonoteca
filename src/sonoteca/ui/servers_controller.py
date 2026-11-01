@@ -5,7 +5,7 @@ import threading
 
 from PySide6.QtCore import QObject, Signal, Slot
 
-from sonoteca.online import servers
+from sonoteca.online import server_descriptor, servers
 from sonoteca.online import settings as online_settings
 from sonoteca.online.http import HttpClient, OfflineError
 
@@ -62,6 +62,21 @@ class ServersController(QObject):
             return self._result(None, str(exc))
         online_settings.save(s)
         return self._result(s)
+
+    @Slot(str, result="QVariantMap")
+    def importDescriptor(self, path: str) -> dict:
+        """Importa un descriptor `*.sonoteca-server.json` (ver docs/SERVIDORES.md). No lo activa."""
+        try:
+            desc = server_descriptor.load_file(path)
+        except server_descriptor.DescriptorError as exc:
+            return self._result(None, str(exc))
+        s = self._stored()
+        added = server_descriptor.import_into(s, desc)
+        online_settings.save(s)
+        message = f"«{desc.name}» agregado ({' y '.join(added)}). Elige «Usar» para activarlo."
+        if desc.warnings:
+            message += " Avisos: " + " ".join(desc.warnings)
+        return {**self._result(s), "message": message}
 
     @Slot(str, str)
     def testLyrics(self, url: str, _unused: str = "") -> None:

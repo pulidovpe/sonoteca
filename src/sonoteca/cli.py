@@ -59,6 +59,8 @@ def build_parser() -> argparse.ArgumentParser:
     rs = sub.add_parser("reset", help="vaciar la biblioteca y empezar desde cero (guarda una copia salvo --sin-copia)")
     rs.add_argument("--yes", action="store_true", help="confirmar (sin esto no se hace nada)")
     rs.add_argument("--sin-copia", action="store_true", help="no guardar copia de seguridad (irreversible)")
+    si = sub.add_parser("server-import", help="importar un descriptor de servidor alternativo (*.sonoteca-server.json)")
+    si.add_argument("archivo")
     sub.add_parser("harvest", help="descargar portadas y fotos que falten (solo música bien identificada)")
     sub.add_parser("gui", help="abrir la interfaz gráfica")
     sub.add_parser("paths", help="mostrar dónde se guardan la base de datos y la caché")
@@ -216,6 +218,22 @@ def _run(argv: list[str] | None = None) -> int:
         report = portable.apply_pending_reset()
         print("Biblioteca vaciada." + (f" Copia en {report['backup']}" if report["backup"] else " Sin copia de seguridad."),
               file=out)
+        return 0
+    if args.cmd == "server-import":
+        from .online import server_descriptor
+        from .online import settings as online_settings
+
+        try:
+            desc = server_descriptor.load_file(args.archivo)
+        except server_descriptor.DescriptorError as exc:
+            print(f"No se importó: {exc}", file=sys.stderr)
+            return 1
+        stored = online_settings.load(apply_env=False)
+        added = server_descriptor.import_into(stored, desc)
+        online_settings.save(stored)
+        print(f"Agregado «{desc.name}» ({' y '.join(added)}). Actívalo en Archivo ▸ Servidores de letras y portadas.", file=out)
+        for warning in desc.warnings:
+            print(f"  aviso: {warning}", file=out)
         return 0
     if args.cmd == "harvest":
         from .online import harvest

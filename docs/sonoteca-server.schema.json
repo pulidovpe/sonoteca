@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/sonoteca-server.schema.json",
+  "title": "Descriptor de servidor alternativo de Sonoteca (versión 1)",
+  "type": "object",
+  "required": ["sonoteca_server", "id", "name", "services"],
+  "properties": {
+    "sonoteca_server": { "const": 1, "description": "Versión del formato." },
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,39}$", "description": "Identificador estable: importar de nuevo el mismo id actualiza el servidor." },
+    "name": { "type": "string", "minLength": 1, "maxLength": 40 },
+    "description": { "type": "string", "maxLength": 200 },
+    "homepage": { "type": "string", "format": "uri", "pattern": "^https?://" },
+    "services": {
+      "type": "object",
+      "minProperties": 1,
+      "properties": {
+        "lyrics": {
+          "type": "object",
+          "required": ["protocol", "base_url"],
+          "properties": {
+            "protocol": { "enum": ["lrclib"] },
+            "base_url": { "$ref": "#/$defs/baseUrl" }
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "minProperties": 1,
+          "properties": {
+            "musicbrainz": { "$ref": "#/$defs/metadataService" },
+            "coverart": { "$ref": "#/$defs/metadataService" },
+            "wikipedia": { "$ref": "#/$defs/metadataService" }
+          }
+        }
+      }
+    },
+    "rate_limit": {
+      "type": "object",
+      "required": ["min_interval_ms"],
+      "properties": { "min_interval_ms": { "type": "integer", "minimum": 100, "maximum": 60000 } }
+    }
+  },
+  "$defs": {
+    "baseUrl": {
+      "type": "string",
+      "pattern": "^https?://[^/@?#\\s]+(/[^?#\\s]*)?$",
+      "description": "Raíz de la API, sin usuario ni contraseña, sin «?» ni «#» y sin barra final. Wikipedia admite {lang}."
+    },
+    "metadataService": {
+      "type": "object",
+      "required": ["base_url"],
+      "properties": {
+        "protocol": { "enum": ["musicbrainz-ws2", "coverartarchive", "mediawiki-rest"] },
+        "base_url": { "$ref": "#/$defs/baseUrl" }
+      }
+    }
+  }
+}

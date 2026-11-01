@@ -61,6 +61,8 @@ Por defecto se usan servicios públicos y gratuitos: **LRCLIB** para las letras 
 - *Letras*: un servidor compatible con la API de LRCLIB (p. ej. una instancia propia): la dirección es la raíz de la API, como `https://mi-servidor/api`.
 - *Portadas e información*: direcciones compatibles con MusicBrainz (`…/ws/2`), Cover Art Archive y/o Wikipedia (`https://{lang}.mi-wiki.org`; `{lang}` es el idioma de la ficha). Los que dejes vacíos siguen usando el servicio por defecto.
 
+**Formato estándar:** un servidor se puede describir en un archivo `*.sonoteca-server.json` e importarlo con *Importar descriptor…* (o `sonoteca server-import`); ver [`docs/SERVIDORES.md`](docs/SERVIDORES.md).
+
 Las direcciones deben ser `http://` o `https://` y no pueden llevar usuario ni contraseña; *Probar* comprueba que el servidor responde con el formato esperado. Se guardan en `settings.json`.
 
 ### Empezar desde cero

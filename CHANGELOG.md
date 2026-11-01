@@ -5,6 +5,16 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.9.12] - 2026-10-29
+### Añadido
+- **Formato estándar para servidores alternativos** (descriptor v1, `*.sonoteca-server.json`): un JSON versionado que
+  declara un servidor de letras (protocolo `lrclib`) y/o de portadas e información (`musicbrainz-ws2`, `coverartarchive`,
+  `mediawiki-rest`) y, opcionalmente, su `rate_limit`. Se importa con *Servidores de letras y portadas… ▸ Importar
+  descriptor…* o `sonoteca server-import archivo.json`; valida con mensajes claros, agrega (o actualiza por `id`) y **nunca
+  activa solo**. Documentación y esquema: `docs/SERVIDORES.md`, `docs/sonoteca-server.schema.json`, ejemplo en
+  `docs/ejemplos/`.
+- El limitador de tasa respeta el `min_interval_ms` declarado para los servidores alternativos activos.
+
 ## [0.9.11] - 2026-10-29
 ### Añadido
 - **Mini reproductor**: un icono en la esquina derecha de la barra de reproducción (o Ver ▸ *Mini reproductor*,

@@ -1,0 +1,19 @@
+{
+  "sonoteca_server": 1,
+  "id": "mi-servidor",
+  "name": "Mi servidor",
+  "description": "Instancia propia de letras y espejo de metadatos",
+  "homepage": "https://mi-servidor.example",
+  "services": {
+    "lyrics": {
+      "protocol": "lrclib",
+      "base_url": "https://mi-servidor.example/api"
+    },
+    "metadata": {
+      "musicbrainz": { "base_url": "https://mb.mi-servidor.example/ws/2" },
+      "coverart": { "base_url": "https://caa.mi-servidor.example" },
+      "wikipedia": { "base_url": "https://{lang}.wiki.mi-servidor.example" }
+    }
+  },
+  "rate_limit": { "min_interval_ms": 500 }
+}

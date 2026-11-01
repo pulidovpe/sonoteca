@@ -18,6 +18,7 @@ import uuid
 from urllib.parse import urlsplit
 
 from . import settings as online_settings
+from . import http
 from .http import HttpClient, OnlineError
 
 DEFAULT_LYRICS = "https://lrclib.net/api"
@@ -58,9 +59,24 @@ def _find(items: list, server_id: str) -> dict | None:
 
 
 # ---- resoluci\u00f3n: lo usan lrclib, musicbrainz, coverart y wikipedia en cada consulta ----
+def _register_interval(item: dict, *urls: str) -> None:
+    """Si el servidor declar\u00f3 `min_interval_ms`, el limitador de tasa lo respeta para sus direcciones."""
+    ms = item.get("min_interval_ms")
+    if isinstance(ms, int) and ms > 0:
+        for url in urls:
+            host = urlsplit(url.replace("{lang}", "es")).hostname
+            if host:
+                http.CUSTOM_INTERVAL[host] = ms / 1000
+                if "{lang}" in url:     # Wikipedia: un subdominio por idioma
+                    http.CUSTOM_INTERVAL.update({urlsplit(url.replace("{lang}", lang)).hostname: ms / 1000
+                                                 for lang in ("es", "en", "fr", "de", "pt", "it", "ca")})
+
+
 def lyrics_base(settings: online_settings.Settings | None = None) -> str:
     s = settings or online_settings.load()
     item = _find(s.lyrics_servers, s.lyrics_active)
+    if item:
+        _register_interval(item, item["url"])
     return item["url"] if item else DEFAULT_LYRICS
 
 
@@ -73,6 +89,8 @@ def lyrics_name(settings: online_settings.Settings | None = None) -> str:
 def _meta(key: str, default: str, settings) -> str:
     s = settings or online_settings.load()
     item = _find(s.meta_servers, s.meta_active)
+    if item:
+        _register_interval(item, *(u for u in (item.get("musicbrainz"), item.get("coverart"), item.get("wikipedia")) if u))
     return (item.get(key) or default) if item else default
 
 
