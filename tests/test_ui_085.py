@@ -318,3 +318,35 @@ def test_mini_player_shuffle_and_mute_buttons_work(qml_env):
     env.act("miniPlayer.muteButton.clicked()", 200)
     assert env.js("player.muted") is True
     assert env.warnings == []
+
+
+# ---- 0.11.0: botones de las listas y doble clic ----
+@needs_ffmpeg
+def test_album_buttons_switch_between_play_and_stop_and_shuffle_starts_the_list(qml_env):
+    env = qml_env
+    album, ids = _ids(env)
+    env.act("openAlbum(%d)" % album, 600)
+    assert env.js("stack.currentItem.listPlaying") is False
+    env.act("stack.currentItem.playOrStop()", 400)
+    assert env.js("stack.currentItem.listPlaying") is True and env.js("player.sourceKey") == "album:%d" % album
+    env.act("stack.currentItem.playOrStop()", 300)                             # «Detener»
+    assert env.js("stack.currentItem.listPlaying") is False and env.js("player.playing") is False
+    env.act("stack.currentItem.shuffleList()", 400)                            # «Aleatorio»
+    assert env.js("player.shuffle") is True and env.js("player.queueLength") == len(ids)
+    assert env.warnings == []
+
+
+@needs_ffmpeg
+def test_double_click_adds_only_that_song_and_a_playlist_click_starts_from_it(qml_env):
+    env = qml_env
+    album, ids = _ids(env)
+    env.act("openAlbum(%d)" % album, 600)
+    env.act("stack.currentItem.playOneRequested(%d)" % ids[1], 400)           # doble clic en una pista del álbum
+    assert env.player.queueTrackIds() == [ids[1]]
+    pid = env.playlists.createWithTracks("L", ids)["id"]
+    env.act("openPlaylist(%d)" % pid, 600)
+    env.act("stack.currentItem.playFromIndex(1)", 400)                         # clic en la 2.ª canción de la lista
+    assert env.player.queueTrackIds() == ids[1:]                               # las anteriores desaparecen
+    env.act("player.toggleShuffle(); stack.currentItem.playFromIndex(2)", 400)
+    assert sorted(env.player.queueTrackIds()) == sorted(ids) and env.player.currentId == ids[2]   # con Aleatorio: la lista completa
+    assert env.warnings == []

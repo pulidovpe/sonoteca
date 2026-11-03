@@ -10,6 +10,7 @@ Item {
                                   && homeData.tracks.length === 0 && homeData.lists.length === 0
     readonly property var trackIds: homeData.tracks.map(function (x) { return x.id })
     signal albumClicked(int albumId)
+    signal playOneRequested(int trackId)
     signal artistClicked(int artistId, string name)
     signal playlistClicked(int playlistId)
     signal menuRequested(var ids)
@@ -148,7 +149,7 @@ Item {
                     plays: modelData.plays
                     trackId: modelData.id
                     current: player.currentId === modelData.id
-                    onActivated: player.playTrackIds(page.trackIds, index)
+                    onActivated: page.playOneRequested(modelData.id)
                     onContextRequested: page.menuRequested([modelData.id])
                 }
             }

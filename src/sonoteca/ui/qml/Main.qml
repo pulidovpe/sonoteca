@@ -268,6 +268,12 @@ ApplicationWindow {
         }
     }
     function toggleMini() { if (miniMode) exitMini(); else if (player.hasTrack) enterMini() }
+    // Doble clic en una canción suelta (álbum, búsqueda, artista, Inicio): solo esa canción entra en la lista de reproducción.
+    // Con una lista ya en marcha se pregunta si se vacía o se conserva; sin lista, suena sola.
+    function playOne(trackId) {
+        if (player.queueLength > 0) queueChoice.ask(trackId)
+        else player.playOnly(trackId)
+    }
     function showQueue() { rightCollapsed = false; rightMode = "queue" }
     function toggleQueue() {
         if (rightMode === "lyrics") showQueue()           // desde la letra: volver a la lista
@@ -397,9 +403,9 @@ ApplicationWindow {
         return text
     }
 
-    Component { id: homeComp; HomePage { onAlbumClicked: (id) => win.openAlbum(id); onArtistClicked: (id, name) => win.openArtist(id, name); onPlaylistClicked: (id) => win.openPlaylist(id); onMenuRequested: (ids) => win.showTrackMenu(ids) } }
-    Component { id: albumsComp; AlbumsPage { onMenuRequested: (ids) => win.showTrackMenu(ids); onAlbumClicked: (id) => win.openAlbum(id); onNeedInternet: win.openInternetSettings(); onEditArtistRequested: (id, name) => win.editArtistTags(id, name) } }
-    Component { id: albumComp; AlbumDetail { onEditRequested: (ids) => win.editTags(ids); onMenuRequested: (ids) => win.showTrackMenu(ids); onListRequested: (ids) => win.showPlaylistPicker(ids); onLookupRequested: (id, ids, unknown) => win.lookupAlbum(id, ids, unknown); onPlayOneRequested: (id) => queueChoice.ask(id); onArtistRequested: (id, name) => win.openArtist(id, name) } }
+    Component { id: homeComp; HomePage { onPlayOneRequested: (id) => win.playOne(id); onAlbumClicked: (id) => win.openAlbum(id); onArtistClicked: (id, name) => win.openArtist(id, name); onPlaylistClicked: (id) => win.openPlaylist(id); onMenuRequested: (ids) => win.showTrackMenu(ids) } }
+    Component { id: albumsComp; AlbumsPage { onPlayOneRequested: (id) => win.playOne(id); onMenuRequested: (ids) => win.showTrackMenu(ids); onAlbumClicked: (id) => win.openAlbum(id); onNeedInternet: win.openInternetSettings(); onEditArtistRequested: (id, name) => win.editArtistTags(id, name) } }
+    Component { id: albumComp; AlbumDetail { onEditRequested: (ids) => win.editTags(ids); onMenuRequested: (ids) => win.showTrackMenu(ids); onListRequested: (ids) => win.showPlaylistPicker(ids); onLookupRequested: (id, ids, unknown) => win.lookupAlbum(id, ids, unknown); onPlayOneRequested: (id) => win.playOne(id); onArtistRequested: (id, name) => win.openArtist(id, name) } }
     Component { id: artistsComp; ArtistsPage { onArtistClicked: (id, name) => win.openArtist(id, name) } }
     Component {
         id: reviewComp
@@ -412,6 +418,7 @@ ApplicationWindow {
             items: (Theme.dataRevision, library.incomplete())
             onEditRequested: (ids) => win.editTags(ids)
             onMenuRequested: (ids) => win.showTrackMenu(ids)
+            onPlayOneRequested: (id) => win.playOne(id)
             actions: [
                 PillButton {
                     label: reviewPage.rescanning ? "Re-escaneando\u2026" : "Re-escanear tags"
@@ -434,6 +441,7 @@ ApplicationWindow {
     Component {
         id: searchComp
         SearchPage {
+            onPlayOneRequested: (id) => win.playOne(id)
             onAlbumClicked: (id) => win.openAlbum(id)
             onArtistClicked: (id, name) => win.openArtist(id, name)
             onEditRequested: (ids) => win.editTags(ids)

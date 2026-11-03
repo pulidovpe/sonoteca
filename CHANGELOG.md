@@ -5,6 +5,22 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.11.0] - 2026-10-30
+Versión que cierra la tanda posterior a la 0.10.0 (reúne la 0.10.0.1 y lo siguiente):
+### Añadido
+- **Listas y álbumes**: botón *Aleatorio* (activa el modo aleatorio y empieza por una canción al azar; si la lista ya suena,
+  lo alterna) y el botón *Reproducir* pasa a **Detener** mientras suena esa lista (pausa y vuelve al inicio, sin tocar la
+  lista de reproducción). Cada reproducción recuerda su origen (`player.sourceKey`: `album:<id>` / `playlist:<id>`).
+- **Mini reproductor**: botones *Aleatorio* y *Silencio* (0.10.0.1).
+### Cambiado
+- **Doble clic en una canción** (álbum, búsqueda, artista, Inicio, Por revisar): a la lista de reproducción solo entra esa
+  canción (si ya hay una lista, se pregunta si se vacía o se conserva, como antes).
+- **Clic en una canción de una lista guardada**: la lista de reproducción queda con esa canción al principio y las anteriores
+  desaparecen; con *Aleatorio* activo se conserva la lista completa, en orden aleatorio y empezando por esa canción.
+### Corregido
+- **Historial de navegación con estado**: Álbumes recuerda la década (y la posición), Artistas la posición y las páginas de
+  los artistas visitados su estado (0.10.0.1).
+
 ## [0.10.0.1] - 2026-10-30
 ### Añadido
 - **Mini reproductor**: botón *Aleatorio* (resaltado cuando está activo) y botón de **silencio**; la ventana mini pasa a 264 × 328.

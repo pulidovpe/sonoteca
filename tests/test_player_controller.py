@@ -316,3 +316,27 @@ def test_play_next_rows_are_flagged_until_they_start_playing(env):
     be.finish()                                                # empieza a sonar la primera «a continuación»
     rows = ctrl.queueItems()
     assert rows[0]["current"] and rows[0]["upNext"] is False and rows[1]["upNext"] is True
+
+
+def test_play_from_remembers_the_source_and_other_starts_forget_it(env):
+    ctrl, be, album, _, paths = env
+    ids = [_ids(ctrl, f"Pista {n}") for n in (1, 2, 3)]
+    ctrl.playFrom("playlist:7", ids[1:], 0)                    # clic en una canción: la lista empieza ahí
+    assert ctrl.sourceKey == "playlist:7" and titles(ctrl) == ["Pista 2", "Pista 3"]
+    ctrl.playOnly(ids[0])                                      # cualquier otra forma de empezar olvida el origen
+    assert ctrl.sourceKey == "" and titles(ctrl) == ["Pista 1"]
+
+
+def test_stop_playback_pauses_and_rewinds_without_touching_the_queue(env):
+    ctrl, be, album, _, paths = env
+    ctrl.playAlbum(album, 0)
+    be.positionChanged.emit(12000)
+    ctrl.stopPlayback()
+    assert not ctrl.playing and be.position == 0 and titles(ctrl) == ["Pista 1", "Pista 2", "Pista 3"]
+
+
+def test_play_shuffled_turns_shuffle_on_and_keeps_every_song(env):
+    ctrl, be, album, _, paths = env
+    ids = [_ids(ctrl, f"Pista {n}") for n in (1, 2, 3)]
+    ctrl.playShuffled("album:1", ids)
+    assert ctrl.shuffle and ctrl.sourceKey == "album:1" and sorted(ctrl.queueTrackIds()) == sorted(ids)

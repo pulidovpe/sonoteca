@@ -16,6 +16,12 @@ Item {
     signal artistRequested(int artistId, string name)   // ir a la ficha del artista (con su descripción)
     // ¿Lo que suena ahora pertenece a este álbum?
     readonly property bool isCurrentAlbum: player.hasTrack && player.currentTrack.albumId === albumId
+    // «Detener» mientras suena esta lista (la que se empezó desde esta página)
+    readonly property string sourceKey: "album:" + albumId
+    readonly property bool listPlaying: player.playing && player.sourceKey === sourceKey
+    function trackIds() { return page.tracks.map(function (x) { return x.id }) }
+    function playOrStop() { if (listPlaying) player.stopPlayback(); else player.playFrom(sourceKey, trackIds(), 0) }
+    function shuffleList() { if (listPlaying) player.toggleShuffle(); else player.playShuffled(sourceKey, trackIds()) }
 
     Rectangle {
         id: hero
@@ -74,17 +80,18 @@ Item {
                 Row {
                     anchors.centerIn: parent
                     spacing: 8
-                    Icon { anchors.verticalCenter: parent.verticalCenter; svg: page.isCurrentAlbum && player.playing ? Theme.iconPause : Theme.iconPlay; size: 18; color: Theme.textOnAccent }
-                    Text { anchors.verticalCenter: parent.verticalCenter; text: !page.isCurrentAlbum ? "Reproducir" : (player.playing ? "Pausar" : "Reanudar"); color: Theme.textOnAccent; font.pixelSize: 14; font.weight: Font.DemiBold }
+                    Icon { anchors.verticalCenter: parent.verticalCenter; svg: page.listPlaying ? Theme.iconStop : Theme.iconPlay; size: 18; color: Theme.textOnAccent }
+                    Text { anchors.verticalCenter: parent.verticalCenter; text: page.listPlaying ? "Detener" : "Reproducir"; color: Theme.textOnAccent; font.pixelSize: 14; font.weight: Font.DemiBold }
                 }
                 MouseArea {
                     id: playMouse
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: page.isCurrentAlbum ? player.toggle() : player.playAlbum(page.albumId, 0)
+                    onClicked: page.playOrStop()
                 }
             }
+            PillButton { height: 44; label: "Aleatorio"; primary: player.shuffle && page.listPlaying; onClicked: page.shuffleList() }
             PillButton { height: 44; label: "Ir al artista"; enabled: (page.info.artist_id || 0) > 0; onClicked: page.artistRequested(page.info.artist_id, page.info.artist || "") }
             PillButton { height: 44; label: "Agregar a la lista"; onClicked: page.addAllToQueue() }
             PillButton { height: 44; label: "Guardar en lista\u2026"; onClicked: page.listRequested(page.tracks.map(function (x) { return x.id })) }
@@ -115,8 +122,7 @@ Item {
             trackId: modelData.id
             current: player.currentId === modelData.id
             onActivated: {
-                if (player.queueLength > 0) page.playOneRequested(modelData.id)
-                else player.playAlbum(page.albumId, index)
+                page.playOneRequested(modelData.id)      // doble clic: solo esa canción entra en la lista de reproducción
             }
             onContextRequested: page.menuRequested([modelData.id])
         }

@@ -9,6 +9,7 @@ Item {
     property var ids: results.tracks.map(function (x) { return x.id })
     readonly property bool empty: results.artists.length + results.albums.length + results.tracks.length === 0
     signal albumClicked(int albumId)
+    signal playOneRequested(int trackId)
     signal artistClicked(int artistId, string name)
     signal editRequested(var ids)
     signal menuRequested(var ids)
@@ -95,7 +96,7 @@ Item {
                     duration: modelData.duration > 0 ? Theme.fmt(modelData.duration) : ""
                     current: player.currentId === modelData.id
                     trackId: modelData.id
-                    onActivated: player.playTrackIds(page.ids, index)
+                    onActivated: page.playOneRequested(modelData.id)
                     onContextRequested: page.menuRequested([modelData.id])
                 }
             }
