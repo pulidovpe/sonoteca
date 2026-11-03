@@ -76,6 +76,13 @@ El icono de la esquina de la barra de reproducción (o Ver ▸ *Mini reproductor
 compacto, siempre visible, con la portada del álbum (o del artista) y los botones de reproducción. El icono de la esquina de
 la portada devuelve la ventana completa. Solo está disponible mientras hay una canción cargada.
 
+### Reproducir desde una lista
+- **Reproducir / Detener** y **Aleatorio** en cada álbum y lista guardada. «Detener» aparece mientras suena esa lista.
+- **Doble clic en una canción** de un álbum, búsqueda, artista o Inicio añade **solo esa canción** a la lista de reproducción
+  (si ya hay una lista, pregunta si se vacía o se conserva).
+- **Clic en una canción de una lista guardada**: la lista de reproducción empieza en esa canción (las anteriores no se
+  añaden); con *Aleatorio* activo se conserva la lista completa, en orden aleatorio.
+
 ### Listas de canciones
 Todas las listas muestran las canciones igual: con espacio, *pista · nombre con el artista debajo · álbum · año · reproducciones*; al reducir la ventana (o abrir paneles) se ocultan primero el año y las reproducciones, y después el álbum.
 

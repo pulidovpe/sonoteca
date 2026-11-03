@@ -1,6 +1,7 @@
 """Controlador de reproducción expuesto a QML como `player`."""
 from __future__ import annotations
 
+import random
 from pathlib import Path
 
 from PySide6.QtCore import Property, QObject, Signal, Slot
@@ -20,6 +21,7 @@ class PlayerController(QObject):
     positionChanged = Signal()
     durationChanged = Signal()
     volumeChanged = Signal()
+    sourceChanged = Signal()
     shuffleChanged = Signal()
     repeatModeChanged = Signal()
     currentChanged = Signal()
@@ -40,6 +42,7 @@ class PlayerController(QObject):
         self._position = 0
         self._duration = 0
         self._volume = 0.8
+        self._source = ""         # de qué lista/álbum viene lo que suena («album:3», «playlist:7»); vacío si no se sabe
         self._muted = False      # silencio total: el volumen elegido se conserva para recuperarlo
         self._current: dict = {}
         self._listened = 0  # ms realmente escuchados de la pista actual
@@ -187,6 +190,35 @@ class PlayerController(QObject):
     def playAlbum(self, album_id: int, index: int) -> None:
         ids = [r["id"] for r in library.list_tracks(self._conn, album_id=album_id)]
         self._start(ids, index)
+
+    @Slot(str, "QVariantList", int)
+    def playFrom(self, source: str, ids: list, index: int) -> None:
+        """Reproduce una lista desde `index` y recuerda su origen (para que su página muestre «Detener»)."""
+        valid = [int(i) for i in ids]
+        if not valid:
+            return
+        self._start(valid, index)
+        self._set_source(source)
+
+    @Slot(str, "QVariantList")
+    def playShuffled(self, source: str, ids: list) -> None:
+        """Activa el modo Aleatorio y reproduce la lista empezando por una canción al azar."""
+        if not ids:
+            return
+        if not self._queue.shuffle:
+            self.toggleShuffle()
+        self.playFrom(source, ids, random.randrange(len(ids)))
+
+    @Slot()
+    def stopPlayback(self) -> None:
+        """Detiene la reproducción: pausa y vuelve al inicio de la canción; la lista no se toca."""
+        if self._current:
+            self._backend.pause()
+            self._backend.seek(0)
+
+    @Property(str, notify=sourceChanged)
+    def sourceKey(self) -> str:
+        return self._source
 
     @Slot("QVariantList", int)
     def playTrackIds(self, ids: list, index: int) -> None:
@@ -403,9 +435,15 @@ class PlayerController(QObject):
         self._backend.set_video_sink(sink)
 
     # ---- internos ----
+    def _set_source(self, source: str) -> None:
+        if source != self._source:
+            self._source = source
+            self.sourceChanged.emit()
+
     def _start(self, ids: list[int], index: int) -> None:
         if not ids:
             return
+        self._set_source("")        # cualquier otra forma de empezar a sonar olvida el origen
         self._error_streak = 0
         self._queue.set_items(ids, index)
         self.queueChanged.emit()

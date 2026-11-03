@@ -72,6 +72,7 @@ QtObject {
     readonly property string iconDisplay: "M3 4 H21 V16 H3 Z M5 6 V14 H19 V6 Z M8 18 H16 V20 H8 Z"
     readonly property string iconSpeaker: "M3 9 H7 L12 4 V20 L7 15 H3 Z M14.5 8.5 A5 5 0 0 1 14.5 15.5 L16 17 A7 7 0 0 0 16 7 Z"
     // Caja acústica (salida de audio): distinta del altavoz con ondas, que es el volumen
+    readonly property string iconStop: "M6 6 H18 V18 H6 Z"
     readonly property string iconShuffle: "M3.15 5.85 L4.85 4.15 L17.85 17.15 L16.15 18.85 Z M21 21 H14.5 L21 14.5 Z M3.15 18.15 L4.85 19.85 L17.85 6.85 L16.15 5.15 Z M21 3 H14.5 L21 9.5 Z"
     readonly property string iconMini: "M3 5 H21 V19 H3 Z M5 7 V17 H19 V7 Z M12 11 H18 V16 H12 Z"          // ventana con ventana pequeña: modo mini
     readonly property string iconExpand: "M4 4 H10 V6 H6 V10 H4 Z M20 4 V10 H18 V6 H14 V4 Z M4 20 V14 H6 V18 H10 V20 Z M20 20 H14 V18 H18 V14 H20 Z"   // volver a la ventana completa

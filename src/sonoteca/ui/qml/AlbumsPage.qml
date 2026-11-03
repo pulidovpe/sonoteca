@@ -19,6 +19,7 @@ Item {
         onTriggered: grid.contentY = page.restore.y || 0
     }
     signal albumClicked(int albumId)
+    signal playOneRequested(int trackId)
     signal needInternet()
     signal editArtistRequested(int artistId, string artistName)
     signal menuRequested(var ids)
@@ -115,7 +116,7 @@ Item {
                         plays: modelData.plays
                         trackId: modelData.id
                         current: player.currentId === modelData.id
-                        onActivated: player.playTrackIds(page.topIds, index)
+                        onActivated: page.playOneRequested(modelData.id)
                         onContextRequested: page.menuRequested([modelData.id])
                     }
                 }

@@ -313,3 +313,19 @@ def test_set_items_and_clear_reset_the_marks():
     q.insert_next([4])
     q.set_items([7, 8])
     assert q.up_next_flags() == [False, False]
+
+
+# ---- clic en una canción de una lista guardada ----
+def test_clicking_a_song_with_shuffle_keeps_the_whole_list_starting_from_that_song():
+    import random
+    q = PlayQueue(random.Random(3))
+    q.set_shuffle(True)
+    q.set_items([10, 20, 30, 40, 50], 2)
+    assert q.current == 30 and sorted(q.order_ids()) == [10, 20, 30, 40, 50] and q.order_ids()[0] == 30
+
+
+def test_clicking_a_song_without_shuffle_drops_the_previous_ones():
+    q = _consuming([1, 2, 3, 4])
+    ids = [1, 2, 3, 4]
+    q.set_items(ids[2:], 0)                                   # lo que hace la página: lista desde la canción pulsada
+    assert q.order_ids() == [3, 4] and q.current == 3
