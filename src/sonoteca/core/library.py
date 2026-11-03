@@ -94,7 +94,8 @@ def list_artist_track_ids(conn: sqlite3.Connection, artist_id: int) -> list[int]
 
 
 def list_incomplete(conn: sqlite3.Connection) -> list[sqlite3.Row]:
-    """Pistas con tags faltantes: sin artista o álbum, o con datos deducidos del nombre."""
+    """Pistas por revisar: sin artista, o con artista/título deducidos del nombre del archivo (sin tags).
+    Una pista con tags de artista y título NO se lista, aunque aún no tenga álbum ni portada."""
     return conn.execute(
         """
         SELECT t.id, t.title, t.inferred, ar.name AS artist, al.title AS album, f.path,
@@ -103,11 +104,11 @@ def list_incomplete(conn: sqlite3.Connection) -> list[sqlite3.Row]:
         JOIN artists ar ON ar.id = t.artist_id
         JOIN albums  al ON al.id = t.album_id
         JOIN files   f  ON f.id  = t.file_id
-        WHERE (t.inferred = 1 OR ar.name = ? OR al.title = ?)
+        WHERE (t.inferred = 1 OR ar.name = ?)
           AND t.file_id NOT IN (SELECT file_id FROM review_dismissed)
         ORDER BY f.path
         """,
-        (UNKNOWN_ARTIST, UNKNOWN_ALBUM, UNKNOWN_ARTIST, UNKNOWN_ALBUM),
+        (UNKNOWN_ARTIST, UNKNOWN_ALBUM, UNKNOWN_ARTIST),
     ).fetchall()
 
 

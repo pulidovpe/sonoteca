@@ -13,12 +13,11 @@ AppMenu {
     signal albumRequested(int albumId)
     // Datos de la canción (solo con una seleccionada) para los enlaces al artista y al álbum
     readonly property var info: ids.length === 1 ? library.trackInfo(ids[0]) : ({})
-    signal playOneRequested(int id)   // una sola canción con lista en marcha: hay que preguntar
 
-    function playNow() {
-        if (ids.length === 1 && player.queueLength > 0) playOneRequested(ids[0])
-        else player.playTrackIds(ids, 0)
-    }
+    // «Reproducir ahora»: conserva la lista y pone estas canciones de primeras (también con Aleatorio)
+    function playNow() { player.playFirst(ids) }
+    // «Vaciar y reproducir»: la lista queda solo con estas canciones
+    function replaceAndPlay() { player.playTrackIds(ids, 0) }
     function playLater() { player.playNext(ids) }
     function addToList() { player.addToQueue(ids) }
     function edit() { editRequested(ids) }
@@ -26,8 +25,12 @@ AppMenu {
     property alias albumItem: albumItem
 
     AppMenuItem {
-        text: root.ids.length > 1 ? "Reproducir ahora (" + root.ids.length + " pistas)" : "Reproducir ahora"
+        text: root.ids.length > 1 ? "Reproducir ahora (" + root.ids.length + " pistas \u00b7 conserva la lista)" : "Reproducir ahora (conserva la lista)"
         onTriggered: root.playNow()
+    }
+    AppMenuItem {
+        text: root.ids.length > 1 ? "Vaciar y reproducir (" + root.ids.length + " pistas)" : "Vaciar y reproducir"
+        onTriggered: root.replaceAndPlay()
     }
     AppMenuItem {
         text: "Reproducir a continuaci\u00f3n"

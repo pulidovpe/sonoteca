@@ -297,8 +297,6 @@ class LibraryController(QObject):
                 reasons.append("deducido del nombre")
             if r["no_artist"]:
                 reasons.append("sin artista")
-            if r["no_album"]:
-                reasons.append("sin álbum")
             out.append({
                 "id": r["id"],
                 "number": "",

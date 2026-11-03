@@ -268,12 +268,9 @@ ApplicationWindow {
         }
     }
     function toggleMini() { if (miniMode) exitMini(); else if (player.hasTrack) enterMini() }
-    // Doble clic en una canción suelta (álbum, búsqueda, artista, Inicio): solo esa canción entra en la lista de reproducción.
-    // Con una lista ya en marcha se pregunta si se vacía o se conserva; sin lista, suena sola.
-    function playOne(trackId) {
-        if (player.queueLength > 0) queueChoice.ask(trackId)
-        else player.playOnly(trackId)
-    }
+    // Doble clic en una canción (álbum, búsqueda, artista, Inicio): se conserva la lista de reproducción y esa canción
+    // se inserta de primera (también con Aleatorio); sin lista, empieza una solo con esa canción. Sin ventana de pregunta.
+    function playOne(trackId) { player.playFirst([trackId]) }
     function showQueue() { rightCollapsed = false; rightMode = "queue" }
     function toggleQueue() {
         if (rightMode === "lyrics") showQueue()           // desde la letra: volver a la lista
@@ -916,10 +913,9 @@ ApplicationWindow {
     }
 
     TagEditor { id: tagEditor }
-    TrackMenu { id: trackMenu; onPlayOneRequested: (id) => queueChoice.ask(id); onArtistRequested: (id, name) => win.openArtist(id, name); onAlbumRequested: (id) => win.openAlbum(id); onLyricsRequested: (id) => win.showLyrics(id); onEditRequested: (ids) => win.editTags(ids); onListPickerRequested: (ids) => win.showPlaylistPicker(ids) }
+    TrackMenu { id: trackMenu; onArtistRequested: (id, name) => win.openArtist(id, name); onAlbumRequested: (id) => win.openAlbum(id); onLyricsRequested: (id) => win.showLyrics(id); onEditRequested: (ids) => win.editTags(ids); onListPickerRequested: (ids) => win.showPlaylistPicker(ids) }
     NamePrompt { id: namePrompt }
     ConfirmDialog { id: confirmDialog }
-    QueueChoiceDialog { id: queueChoice }
     PlaylistPicker { id: playlistPicker; onNewRequested: (ids) => win.pickerNewList(ids) }
     Connections {
         target: playlists
