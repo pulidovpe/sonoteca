@@ -84,18 +84,18 @@ def test_playlist_header_shows_cover_name_and_description(qml_env):
 
 
 @needs_ffmpeg
-def test_single_track_with_a_running_list_asks_to_replace_or_keep(qml_env):
+def test_double_click_keeps_the_list_and_inserts_the_song_first(qml_env):
     env = qml_env
     album, ids = _ids(env)
     env.act(f"openAlbum({album})", 600)
-    env.act("stack.currentItem.playOneRequested(%d)" % ids[1], 300)   # sin lista: no hay diálogo
+    env.act("stack.currentItem.playOneRequested(%d)" % ids[1], 300)      # sin lista: empieza una solo con esa canción
+    assert env.player.queueTrackIds() == [ids[1]]
     env.player.playTrackIds(ids, 0)
-    env.act("stack.currentItem.playOneRequested(%d)" % ids[2], 300)
-    assert env.js("queueChoice.visible") is True
-    env.act("queueChoice.keepList()", 300)
-    assert env.player.queueTrackIds() == [ids[2], ids[1], ids[2]]   # suena ya y la que sonaba sale de la lista
-    assert env.player.currentId == ids[2]
-    env.act("queueChoice.ask(%d); queueChoice.replaceList()" % ids[1], 300)
+    env.act("stack.currentItem.playOneRequested(%d)" % ids[2], 300)      # con lista en marcha: se conserva e inserta de primera
+    assert env.player.queueTrackIds() == [ids[2], ids[1], ids[2]] and env.player.currentId == ids[2]
+    env.act("player.toggleShuffle(); stack.currentItem.playOneRequested(%d)" % ids[0], 300)   # también con Aleatorio
+    assert env.player.currentId == ids[0] and env.js("player.queueLength") == 3
+    env.act("trackMenu.ids = [%d]; trackMenu.replaceAndPlay()" % ids[1], 300)
     assert env.player.queueTrackIds() == [ids[1]]
     assert env.warnings == []
 

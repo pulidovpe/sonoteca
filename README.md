@@ -78,8 +78,9 @@ la portada devuelve la ventana completa. Solo está disponible mientras hay una 
 
 ### Reproducir desde una lista
 - **Reproducir / Detener** y **Aleatorio** en cada álbum y lista guardada. «Detener» aparece mientras suena esa lista.
-- **Doble clic en una canción** de un álbum, búsqueda, artista o Inicio añade **solo esa canción** a la lista de reproducción
-  (si ya hay una lista, pregunta si se vacía o se conserva).
+- **Doble clic en una canción** de un álbum, búsqueda, artista o Inicio **conserva la lista de reproducción y pone esa canción
+  de primera** (también con Aleatorio); sin lista, empieza una solo con esa canción. El menú ⋮ ofrece *Reproducir ahora (conserva
+  la lista)* y *Vaciar y reproducir*.
 - **Clic en una canción de una lista guardada**: la lista de reproducción empieza en esa canción (las anteriores no se
   añaden); con *Aleatorio* activo se conserva la lista completa, en orden aleatorio.
 
@@ -116,7 +117,7 @@ En la página de un artista: *Actualizar información*, *¿Artista equivocado?* 
 Las letras tienen copyright: se guardan solo en tu base de datos local (uso personal), nunca en el repositorio.
 
 ## Por revisar
-La sección **Por revisar** (Ctrl+3) lista las canciones sin artista o álbum, o deducidos del nombre del archivo. *Re-escanear tags* vuelve a leer los archivos de la lista; *Vaciar lista* las oculta sin tocar archivos ni tags; *Restaurar descartadas* las devuelve.
+La sección **Por revisar** (Ctrl+3) lista las canciones sin artista o con el artista/título deducidos del nombre del archivo; las que ya tienen artista y título en sus tags no aparecen, aunque les falte el álbum o la portada. *Re-escanear tags* vuelve a leer los archivos de la lista; *Vaciar lista* las oculta sin tocar archivos ni tags; *Restaurar descartadas* las devuelve.
 
 ## Desarrollo
 ```bash

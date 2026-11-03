@@ -340,3 +340,17 @@ def test_play_shuffled_turns_shuffle_on_and_keeps_every_song(env):
     ids = [_ids(ctrl, f"Pista {n}") for n in (1, 2, 3)]
     ctrl.playShuffled("album:1", ids)
     assert ctrl.shuffle and ctrl.sourceKey == "album:1" and sorted(ctrl.queueTrackIds()) == sorted(ids)
+
+
+def test_play_first_keeps_the_list_and_inserts_the_songs_first_even_with_shuffle(env):
+    ctrl, be, album, _, paths = env
+    ids = [_ids(ctrl, f"Pista {n}") for n in (1, 2, 3)]
+    ctrl.playFrom("album:1", ids[:2], 0)                       # suena Pista 1; sigue Pista 2
+    ctrl.playFirst([ids[2]])
+    assert ctrl.currentTrack["title"] == "Pista 3" and titles(ctrl) == ["Pista 3", "Pista 2"]   # la que sonaba sale
+    ctrl.toggleShuffle()
+    ctrl.playFirst([ids[0]])                                   # con Aleatorio también va de primera
+    assert ctrl.currentTrack["title"] == "Pista 1" and sorted(titles(ctrl)) == ["Pista 1", "Pista 2"]
+    ctrl.clearQueue()
+    ctrl.playFirst([ids[1]])
+    assert ctrl.currentTrack["title"] == "Pista 2"

@@ -5,6 +5,15 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.11.0.1] - 2026-10-31
+### Cambiado
+- **Por revisar**: las canciones que ya tienen en sus tags el artista y el título salen de la lista aunque aún no tengan
+  álbum ni portada. Solo quedan las que no tienen artista o cuyo artista/título se dedujo del nombre del archivo.
+- **Doble clic en una canción** (lista, búsqueda, álbum, artista, Inicio): se conserva la lista de reproducción y esa canción
+  se inserta de primera (también con *Aleatorio*); la que sonaba sale de la lista. Sin lista, empieza una solo con esa canción.
+  Se eliminó la ventana de pregunta «vaciar o conservar».
+- **Menú ⋮ de las canciones**: *Reproducir ahora (conserva la lista)* y *Vaciar y reproducir* (la lista queda solo con esas canciones).
+
 ## [0.11.0] - 2026-10-30
 Versión que cierra la tanda posterior a la 0.10.0 (reúne la 0.10.0.1 y lo siguiente):
 ### Añadido

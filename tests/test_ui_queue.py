@@ -107,14 +107,15 @@ def test_menu_entries_depend_on_whether_there_is_a_list(qml_env):
     env = qml_env
     js = env.js
     _, track_ids = ids(env)
-    assert js("trackMenu.itemAt(2).text") == "Agregar a una lista temporal nueva"
-    assert js("trackMenu.itemAt(1).enabled") is False  # sin lista no hay "a continuación"
+    assert js("trackMenu.itemAt(3).text") == "Agregar a una lista temporal nueva"
+    assert js("trackMenu.itemAt(2).enabled") is False  # sin lista no hay "a continuación"
     env.player.addToQueue(track_ids[:1])
-    assert js("trackMenu.itemAt(2).text") == "Agregar al final de la lista"
-    assert js("trackMenu.itemAt(1).enabled") is True
-    # con una lista en marcha, "Reproducir ahora" de una sola canción pregunta qué hacer
+    assert js("trackMenu.itemAt(3).text") == "Agregar al final de la lista"
+    assert js("trackMenu.itemAt(2).enabled") is True
+    assert js("trackMenu.itemAt(0).text").startswith("Reproducir ahora") and js("trackMenu.itemAt(1).text") == "Vaciar y reproducir"
+    # «Reproducir ahora» conserva la lista y pone la canción de primera; «Vaciar y reproducir» deja solo esa canción
     env.act(f"trackMenu.ids = [{track_ids[1]}]; trackMenu.playNow()", 300)
-    assert js("queueChoice.visible") is True
-    env.act("queueChoice.replaceList()", 300)
+    assert js("player.currentTrack.title") == "Pista 2" and js("player.queueLength") == 2
+    env.act(f"trackMenu.ids = [{track_ids[1]}]; trackMenu.replaceAndPlay()", 300)
     assert js("player.currentTrack.title") == "Pista 2" and js("player.queueLength") == 1
     assert env.warnings == []

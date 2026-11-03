@@ -224,18 +224,26 @@ class PlayerController(QObject):
     def playTrackIds(self, ids: list, index: int) -> None:
         self._start([int(i) for i in ids], index)
 
-    @Slot(int)
-    def playKeepingQueue(self, track_id: int) -> None:
-        """Suena ya esta canción sin tocar la lista: se coloca justo después de la actual y, cuando
-        termina, la lista sigue por donde iba."""
-        valid = self._existing([track_id])
+    @Slot("QVariantList")
+    def playFirst(self, ids: list) -> None:
+        """Doble clic / «Reproducir ahora»: se CONSERVA la lista y estas canciones se insertan de primeras (también
+        con Aleatorio) y suena ya la primera. La que sonaba sale de la lista; lo demás sigue después. Sin lista,
+        empieza una nueva con ellas."""
+        valid = self._existing(ids)
         if not valid:
+            return
+        if len(self._queue) == 0:
+            self._start(valid, 0)
             return
         at = max(self._queue.position, -1) + 1
         self._queue.insert_next(valid)
         self._queue.jump_to(at)
         self._error_streak = 0
         self._play_current()
+
+    @Slot(int)
+    def playKeepingQueue(self, track_id: int) -> None:
+        self.playFirst([track_id])
 
     @Slot(int)
     def playOnly(self, track_id: int) -> None:

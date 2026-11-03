@@ -28,14 +28,14 @@ def test_schema_has_dismiss_table(conn):
 
 
 def test_dismiss_empties_the_list_and_survives_a_rescan(conn):
-    assert len(library.list_incomplete(conn)) == 2
-    assert review.dismiss_listed(conn) == 2
+    assert len(library.list_incomplete(conn)) == 1          # «sin_album» tiene artista y título: no se lista
+    assert review.dismiss_listed(conn) == 1
     assert library.list_incomplete(conn) == []
     scan(conn, conn.root, force=True)                       # re-escanear la carpeta no los trae de vuelta
     assert library.list_incomplete(conn) == []
-    assert review.dismissed_count(conn) == 2
-    assert review.restore_dismissed(conn) == 2
-    assert len(library.list_incomplete(conn)) == 2
+    assert review.dismissed_count(conn) == 1
+    assert review.restore_dismissed(conn) == 1
+    assert len(library.list_incomplete(conn)) == 1
 
 
 def test_rescan_rereads_files_and_reports_what_got_resolved(conn):
@@ -43,8 +43,8 @@ def test_rescan_rereads_files_and_reports_what_got_resolved(conn):
     # una fila desactualizada: el archivo está bien pero la base dice "deducido"
     conn.execute("UPDATE tracks SET inferred = 1 WHERE title = 'Completa'")
     conn.commit()
-    assert len(library.list_incomplete(conn)) == 3
+    assert len(library.list_incomplete(conn)) == 2
     all_ids = [r["id"] for r in library.list_incomplete(conn)]
     out = review.rescan_tracks(conn, all_ids)
-    assert out["checked"] == 3 and out["resolved"] == 1 and out["missing"] == 0
-    assert len(library.list_incomplete(conn)) == 2 and ids
+    assert out["checked"] == 2 and out["resolved"] == 1 and out["missing"] == 0
+    assert len(library.list_incomplete(conn)) == 1 and ids

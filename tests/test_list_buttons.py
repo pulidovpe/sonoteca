@@ -20,7 +20,7 @@ def test_album_and_playlist_pages_have_stop_and_shuffle_buttons():
 
 def test_double_click_adds_only_that_song_in_albums_search_artist_and_home():
     main = _read("Main.qml")
-    assert "function playOne(trackId) {\n        if (player.queueLength > 0) queueChoice.ask(trackId)\n        else player.playOnly(trackId)" in main
+    assert "function playOne(trackId) { player.playFirst([trackId]) }" in main and "queueChoice" not in main
     for name in ("AlbumDetail.qml", "AlbumsPage.qml", "HomePage.qml", "SearchPage.qml", "TrackListPage.qml"):
         page = _read(name)
         assert "signal playOneRequested(int trackId)" in page, name
