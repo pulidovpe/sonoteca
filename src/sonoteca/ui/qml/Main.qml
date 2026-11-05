@@ -483,6 +483,7 @@ ApplicationWindow {
     }
 
     ColumnLayout {
+        enabled: !DragState.inputBlocked        // con el editor de tags abierto, nada de lo que hay detrás recibe el ratón
         id: fullUi
         visible: !win.miniMode
         anchors.fill: parent

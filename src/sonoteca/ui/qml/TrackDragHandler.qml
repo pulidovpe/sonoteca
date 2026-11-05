@@ -12,7 +12,7 @@ DragHandler {
     property real rowHeight: 56
     signal reorderRequested(int dst)
 
-    enabled: ids.length > 0
+    enabled: ids.length > 0 && !DragState.inputBlocked
     target: null
     acceptedButtons: Qt.LeftButton
     grabPermissions: PointerHandler.CanTakeOverFromAnything

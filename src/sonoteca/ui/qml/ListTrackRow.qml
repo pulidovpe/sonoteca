@@ -46,7 +46,7 @@ Item {
         rowHeight: row.height
         onReorderRequested: (dst) => row.reorderRequested(dst)
     }
-    HoverHandler { id: hover }
+    HoverHandler { id: hover; enabled: !DragState.inputBlocked }
     Rectangle {   // fondo y bandas de las canciones «a continuación»
         visible: row.upNext
         anchors {
@@ -68,6 +68,7 @@ Item {
     }
     MouseArea {
         anchors.fill: parent
+        enabled: !DragState.inputBlocked
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         onClicked: (m) => { if (m.button === Qt.RightButton) row.menuRequested() }
         onDoubleClicked: (m) => { if (m.button === Qt.LeftButton) row.activated() }

@@ -48,7 +48,13 @@ Popup {
     width: 580
     padding: 24
     closePolicy: step === 2 ? Popup.NoAutoClose : (Popup.CloseOnEscape | Popup.CloseOnPressOutside)
-    background: Rectangle { color: Theme.panel; radius: 12; border.color: Theme.border; border.width: 1 }
+    // Mientras está abierto, las filas de canciones de detrás se quedan inertes (clic, doble clic, arrastre, hover) y
+    // el propio panel se traga los clics que no recibe ningún campo.
+    onVisibleChanged: DragState.inputBlocked = visible
+    background: Rectangle {
+        color: Theme.panel; radius: 12; border.color: Theme.border; border.width: 1
+        MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons; hoverEnabled: true; onWheel: (w) => w.accepted = true }
+    }
     Overlay.modal: Rectangle { color: Theme.scrim }
     enter: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 160 } }
     exit: Transition { NumberAnimation { property: "opacity"; from: 1; to: 0; duration: 120 } }

@@ -60,9 +60,11 @@ AppMenu {
     AppMenuSeparator { }
     AppMenuItem { text: "Ver letra"; enabled: root.ids.length === 1; onTriggered: root.lyricsRequested(root.ids[0]) }
     AppMenuItem { text: "Editar tags\u2026"; onTriggered: root.edit() }
-    AppMenuSeparator { visible: root.allowDelete }
+    // Las opciones ocultas no deben ocupar espacio: alto 0 segun `allowDelete` (no segun `visible`, que es falso con el menu cerrado)
+    AppMenuSeparator { visible: root.allowDelete; height: root.allowDelete ? implicitHeight : 0 }
     AppMenuItem {
         visible: root.allowDelete
+        height: root.allowDelete ? implicitHeight : 0
         text: "Eliminar archivo (a la papelera)\u2026"
         enabled: root.ids.length === 1       // de uno en uno
         onTriggered: root.deleteRequested(root.ids[0])
