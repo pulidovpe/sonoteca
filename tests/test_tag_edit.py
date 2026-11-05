@@ -127,3 +127,23 @@ def test_title_stays_clean_after_editing_other_fields(tmp_path, monkeypatch):
     # también al reescanear con --force (relee los archivos desde cero)
     scan(conn, root, force=True)
     assert {r["title"] for r in library.list_tracks(conn)} == {"Happy Nation", "The Sign"}
+
+
+def test_editing_a_track_with_names_deduced_from_filename_writes_them_and_leaves_review(tmp_path, monkeypatch):
+    """Bug 0.12.1: el editor muestra título/artista deducidos del nombre del archivo; si solo se cambiaba
+    otro campo, esos datos no se escribían y la pista seguía en «Por revisar» con los tags ya «corregidos»."""
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path / "datos"))
+    root = tmp_path / "music"
+    make_mp3(root / "X/03- Ace Of Base - Happy Nation.mp3")  # sin tags
+    conn = connect(tmp_path / "t.db")
+    scan(conn, root)
+    ids = [r["id"] for r in library.list_incomplete(conn)]
+    assert len(ids) == 1
+    p = tag_edit.preview(conn, ids, {"album": "The Sign"})
+    assert any("deducidos del nombre del archivo" in line and "Happy Nation" in line for line in p["lines"])
+    res = tag_edit.apply_edit(conn, ids, {"album": "The Sign"}, backup=False)
+    assert res.updated == 1 and not res.failed
+    assert library.list_incomplete(conn) == []
+    meta = read_tags(root / "X/03- Ace Of Base - Happy Nation.mp3")
+    assert (meta.title, meta.artist, meta.album, meta.track_no) == ("Happy Nation", "Ace Of Base", "The Sign", 3)
+    assert meta.inferred is False

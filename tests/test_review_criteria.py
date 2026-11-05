@@ -29,3 +29,16 @@ def test_tracks_with_artist_and_title_tags_leave_the_list_even_without_album(tmp
     listed = {r["id"] for r in library.list_incomplete(conn)}
     assert listed == {inferred, no_artist}
     assert complete not in listed and no_album not in listed
+
+
+def test_derived_values_only_for_inferred_tracks(tmp_path):
+    from sonoteca.core import tag_edit
+    conn = connect(tmp_path / "d.db")
+    conn.row_factory = sqlite3.Row
+    inferred = _add(conn, 1, "Otro", UNKNOWN_ALBUM, 1)
+    tagged = _add(conn, 2, "Banda", "Disco", 0)
+    conn.execute("UPDATE tracks SET track_no = 3 WHERE id = ?", (inferred,))
+    conn.commit()
+    rows = {r["id"]: r for r in tag_edit._rows(conn, [inferred, tagged])}
+    assert tag_edit._derived(rows[inferred]) == {"title": f"T1", "artist": "Otro", "track_no": 3}
+    assert tag_edit._derived(rows[tagged]) == {}
