@@ -11,6 +11,8 @@ AppMenu {
     signal lyricsRequested(int id)
     signal artistRequested(int artistId, string name)
     signal albumRequested(int albumId)
+    signal deleteRequested(int id)       // eliminar el archivo (solo en «Por revisar», de uno en uno)
+    property bool allowDelete: false
     // Datos de la canción (solo con una seleccionada) para los enlaces al artista y al álbum
     readonly property var info: ids.length === 1 ? library.trackInfo(ids[0]) : ({})
 
@@ -58,4 +60,11 @@ AppMenu {
     AppMenuSeparator { }
     AppMenuItem { text: "Ver letra"; enabled: root.ids.length === 1; onTriggered: root.lyricsRequested(root.ids[0]) }
     AppMenuItem { text: "Editar tags\u2026"; onTriggered: root.edit() }
+    AppMenuSeparator { visible: root.allowDelete }
+    AppMenuItem {
+        visible: root.allowDelete
+        text: "Eliminar archivo (a la papelera)\u2026"
+        enabled: root.ids.length === 1       // de uno en uno
+        onTriggered: root.deleteRequested(root.ids[0])
+    }
 }

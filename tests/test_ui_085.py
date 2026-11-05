@@ -350,3 +350,17 @@ def test_double_click_adds_only_that_song_and_a_playlist_click_starts_from_it(qm
     env.act("player.toggleShuffle(); stack.currentItem.playFromIndex(2)", 400)
     assert sorted(env.player.queueTrackIds()) == sorted(ids) and env.player.currentId == ids[2]   # con Aleatorio: la lista completa
     assert env.warnings == []
+
+
+# ---- 0.12.0: eliminar archivos desde «Por revisar» ----
+@needs_ffmpeg
+def test_review_menu_offers_delete_only_there_and_duplicates_dialog_opens(qml_env):
+    env = qml_env
+    album, ids = _ids(env)
+    env.act("showTrackMenu([%d], false)" % ids[0], 200)
+    assert env.js("trackMenu.allowDelete") is False
+    env.act("showTrackMenu([%d], true)" % ids[0], 200)
+    assert env.js("trackMenu.allowDelete") is True
+    env.act("trackMenu.close(); duplicatesDialog.openDialog()", 300)
+    assert env.js("duplicatesDialog.visible") is True and env.js("duplicatesDialog.stage") == "select"
+    assert env.warnings == []
