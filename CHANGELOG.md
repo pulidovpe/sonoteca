@@ -5,6 +5,16 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.12.2] - 2026-11-05
+### Cambiado
+- **«Aleatorio» en álbumes y listas ya no reproduce ni detiene nada**: solo reordena la lista de reproducción de la derecha
+  (la canción que suena queda de primera) o, al quitarlo, la devuelve a su orden original. Lo que ya sonó no vuelve a
+  aparecer. Lo añadido con «Reproducir a continuación» y aún sin sonar se queda justo detrás de la actual en ambos casos.
+- «Reproducir» con Aleatorio activo empieza por una canción al azar. El botón «Aleatorio» se resalta mientras está activo
+  (antes solo si esa lista sonaba). El panel de la derecha se actualiza al instante al activar/desactivar Aleatorio desde
+  cualquier botón (páginas, barra de reproducción, mini reproductor).
+*(Lógica de la cola probada aquí; la UI Qt, sin ejecutar.)*
+
 ## [0.12.1] - 2026-11-05
 ### Corregido
 - **«Por revisar» seguía acumulando canciones con los tags ya corregidos.** Causa: para una pista sin tags de título/artista el

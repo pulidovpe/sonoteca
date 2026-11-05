@@ -322,7 +322,7 @@ def test_mini_player_shuffle_and_mute_buttons_work(qml_env):
 
 # ---- 0.11.0: botones de las listas y doble clic ----
 @needs_ffmpeg
-def test_album_buttons_switch_between_play_and_stop_and_shuffle_starts_the_list(qml_env):
+def test_album_buttons_switch_between_play_and_stop_and_shuffle_only_reorders(qml_env):
     env = qml_env
     album, ids = _ids(env)
     env.act("openAlbum(%d)" % album, 600)
@@ -331,8 +331,12 @@ def test_album_buttons_switch_between_play_and_stop_and_shuffle_starts_the_list(
     assert env.js("stack.currentItem.listPlaying") is True and env.js("player.sourceKey") == "album:%d" % album
     env.act("stack.currentItem.playOrStop()", 300)                             # «Detener»
     assert env.js("stack.currentItem.listPlaying") is False and env.js("player.playing") is False
-    env.act("stack.currentItem.shuffleList()", 400)                            # «Aleatorio»
-    assert env.js("player.shuffle") is True and env.js("player.queueLength") == len(ids)
+    env.act("stack.currentItem.shuffleList()", 400)                            # «Aleatorio»: no reproduce
+    assert env.js("player.shuffle") is True and env.js("player.playing") is False
+    env.act("stack.currentItem.playOrStop()", 400)                             # «Reproducir» con Aleatorio
+    assert env.js("player.playing") is True and env.js("player.queueLength") == len(ids)
+    env.act("stack.currentItem.shuffleList()", 300)                            # quitar Aleatorio no detiene
+    assert env.js("player.shuffle") is False and env.js("player.playing") is True
     assert env.warnings == []
 
 

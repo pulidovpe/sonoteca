@@ -139,23 +139,35 @@ class PlayQueue:
         return self.current
 
     def set_shuffle(self, on: bool) -> None:
+        """Activa/desactiva Aleatorio reordenando la lista que queda por sonar (lo que ya sonó no está: ver
+        `consume_played`). Con Aleatorio la pista actual sigue de primera; al quitarlo la lista vuelve a su orden
+        original. En ambos casos lo añadido con «Reproducir a continuación» y aún sin sonar se queda justo detrás de la
+        actual, porque se pidió expresamente."""
         if on == self.shuffle:
             return
         self.shuffle = on
         if not self._order:
             return
-        if not 0 <= self._pos < len(self._order):  # nada sonando todavía: se reordena todo
-            self._order = list(range(len(self._items)))
-            if on:
-                self._rng.shuffle(self._order)
-            return
-        current_index = self._order[self._pos]
+        playing = 0 <= self._pos < len(self._order)
+        current = self._order[self._pos] if playing else None
+        pending = [i for i in self._order if self._flags[i] and i != current]   # «a continuación», en su orden
+        marked = set(pending)
+        rest = [i for i in range(len(self._items)) if i != current and i not in marked]
         if on:
-            self._order = self._shuffled_with_first(current_index)
-            self._pos = 0
+            self._rng.shuffle(rest)
+            head = [current] if playing else []
+            self._order = [*head, *pending, *rest]
+            self._pos = 0 if playing else -1
         else:
-            self._order = list(range(len(self._items)))
-            self._pos = current_index
+            # orden original; la actual conserva su lugar y lo pendiente va justo detrás de ella
+            base = [i for i in range(len(self._items)) if i not in marked]
+            if self.consume_played and playing:
+                base.remove(current)                  # lo que ya sonó salió de la lista: todo lo demás va después
+                self._order = [current, *pending, *base]
+            else:
+                at = base.index(current) + 1 if playing else 0
+                self._order = [*base[:at], *pending, *base[at:]]
+            self._pos = self._order.index(current) if playing else -1
 
     # ---- edición de la lista (cola temporal) ----
     @property

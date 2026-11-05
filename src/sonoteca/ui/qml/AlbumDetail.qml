@@ -20,8 +20,13 @@ Item {
     readonly property string sourceKey: "album:" + albumId
     readonly property bool listPlaying: player.playing && player.sourceKey === sourceKey
     function trackIds() { return page.tracks.map(function (x) { return x.id }) }
-    function playOrStop() { if (listPlaying) player.stopPlayback(); else player.playFrom(sourceKey, trackIds(), 0) }
-    function shuffleList() { if (listPlaying) player.toggleShuffle(); else player.playShuffled(sourceKey, trackIds()) }
+    // Con Aleatorio activo, Reproducir empieza por una canci\u00f3n al azar. El bot\u00f3n Aleatorio solo reordena la lista de la derecha.
+    function playOrStop() {
+        if (listPlaying) player.stopPlayback()
+        else if (player.shuffle) player.playShuffled(sourceKey, trackIds())
+        else player.playFrom(sourceKey, trackIds(), 0)
+    }
+    function shuffleList() { player.toggleShuffle() }
 
     Rectangle {
         id: hero
@@ -91,7 +96,7 @@ Item {
                     onClicked: page.playOrStop()
                 }
             }
-            PillButton { height: 44; label: "Aleatorio"; primary: player.shuffle && page.listPlaying; onClicked: page.shuffleList() }
+            PillButton { height: 44; label: "Aleatorio"; primary: player.shuffle; onClicked: page.shuffleList() }
             PillButton { height: 44; label: "Ir al artista"; enabled: (page.info.artist_id || 0) > 0; onClicked: page.artistRequested(page.info.artist_id, page.info.artist || "") }
             PillButton { height: 44; label: "Agregar a la lista"; onClicked: page.addAllToQueue() }
             PillButton { height: 44; label: "Guardar en lista\u2026"; onClicked: page.listRequested(page.tracks.map(function (x) { return x.id })) }
