@@ -4,6 +4,8 @@ import QtQuick
 // Estado compartido del arrastre de canciones (a una lista de la barra lateral o para reordenar)
 QtObject {
     property bool active: false
+    // true mientras una ventana modal (p. ej. el editor de tags) está abierta: las filas de detrás no deben reaccionar
+    property bool inputBlocked: false
     property var ids: []
     property string label: ""
     property real sceneX: 0       // posición del puntero en coordenadas de la ventana
@@ -13,6 +15,7 @@ QtObject {
     signal dropOnList(int listId, var ids)
 
     function begin(trackIds, text, x, y) {
+        if (inputBlocked) return
         if (!trackIds || trackIds.length === 0) return
         ids = trackIds
         label = text

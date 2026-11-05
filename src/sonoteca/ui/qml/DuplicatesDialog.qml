@@ -194,7 +194,7 @@ Popup {
                    text: root.result.error ? ("No se pudo completar: " + root.result.error)
                          : ((root.result.deleted ? root.result.deleted.length : 0) + " archivos movidos a la papelera (" + root.mb(root.result.bytes || 0) + " liberados).") }
             Text { width: parent.width; wrapMode: Text.WordWrap; color: Theme.warn; font.pixelSize: 13
-                   visible: root.result.skipped && root.result.skipped.length > 0
+                   visible: !!root.result.skipped && root.result.skipped.length > 0
                    text: root.result.skipped ? (root.result.skipped.length + " no se eliminaron: " + root.result.skipped.slice(0, 4).map(function (s) { return s.reason }).join("; ") + (root.result.skipped.length > 4 ? "\u2026" : "")) : "" }
         }
 

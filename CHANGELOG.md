@@ -5,6 +5,25 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.12.4] - 2026-11-05
+### Corregido
+- **Duplicados: «Unable to assign [undefined] to bool»** (`DuplicatesDialog.qml:197`): `visible` recibía `undefined` cuando el
+  resultado aún no tenía `skipped`.
+- **Menú de clic derecho con un espacio vacío al final** (p. ej. al eliminar un duplicado): las opciones «Eliminar archivo»
+  ocupaban espacio según el momento en que se calculaba el alto. Ahora su alto es 0 si no aplican y el menú fuerza el cálculo
+  de su lista (`forceLayout`) antes de mostrarse. *(Causa deducida; sin ejecutar.)*
+- **Editar tags: aún se arrastraban las canciones de detrás.** Además del bloqueo de 0.12.3, ahora toda la columna principal
+  se deshabilita (`enabled: !DragState.inputBlocked`) mientras el editor está abierto, y `DragState.begin` no inicia arrastres
+  bloqueados. Efecto visible: los botones de detrás se ven atenuados bajo el velo. *(Sin ejecutar.)*
+
+## [0.12.3] - 2026-11-05
+### Corregido
+- **Editar tags: los clics y la selección de texto en los campos afectaban a las canciones de detrás** (doble clic = reproducir,
+  arrastre = arrastrar la canción). Mientras el editor está abierto, las filas de detrás ignoran clics, doble clics, hover y
+  arrastres (`DragState.inputBlocked`), y el fondo del panel se traga los clics que no recibe ningún campo.
+  *(Causa probable: el doble clic/arrastre de la selección de texto llegaba a `MouseArea`/`DragHandler` de las filas; no
+  reproducido. QML sin ejecutar. Otros diálogos no se tocaron: basta la misma línea `onVisibleChanged` si presentan lo mismo.)*
+
 ## [0.12.2] - 2026-11-05
 ### Cambiado
 - **«Aleatorio» en álbumes y listas ya no reproduce ni detiene nada**: solo reordena la lista de reproducción de la derecha

@@ -26,7 +26,7 @@ Item {
     height: 52
     opacity: dragHandler.active ? 0.45 : 1
 
-    HoverHandler { id: rowHover }
+    HoverHandler { id: rowHover; enabled: !DragState.inputBlocked }
     TrackDragHandler { id: dragHandler; ids: root.trackId > 0 ? [root.trackId] : []; label: root.title }
 
     Rectangle {
@@ -126,6 +126,7 @@ Item {
     MouseArea {
         id: mouse
         anchors.fill: parent
+        enabled: !DragState.inputBlocked
         hoverEnabled: true
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         onClicked: (m) => { if (m.button === Qt.RightButton) root.contextRequested() }

@@ -20,7 +20,7 @@ Item {
     readonly property string sourceKey: "album:" + albumId
     readonly property bool listPlaying: player.playing && player.sourceKey === sourceKey
     function trackIds() { return page.tracks.map(function (x) { return x.id }) }
-    // Con Aleatorio activo, Reproducir empieza por una canci\u00f3n al azar. El bot\u00f3n Aleatorio solo reordena la lista de la derecha.
+    // Con Aleatorio activo, Reproducir empieza por una canción al azar. El botón Aleatorio solo reordena la lista de la derecha.
     function playOrStop() {
         if (listPlaying) player.stopPlayback()
         else if (player.shuffle) player.playShuffled(sourceKey, trackIds())
