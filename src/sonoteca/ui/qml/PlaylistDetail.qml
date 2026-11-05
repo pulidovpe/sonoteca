@@ -16,9 +16,13 @@ Item {
     // «Detener» mientras suena esta lista (la que se empezó desde esta página)
     readonly property string sourceKey: "playlist:" + playlistId
     readonly property bool listPlaying: player.playing && player.sourceKey === sourceKey
-    function playAll() { if (ids.length > 0) player.playFrom(sourceKey, ids, 0) }
+    function playAll() {
+        if (ids.length === 0) return
+        if (player.shuffle) player.playShuffled(sourceKey, ids)      // con Aleatorio, empieza por una al azar
+        else player.playFrom(sourceKey, ids, 0)
+    }
     function playOrStop() { if (listPlaying) player.stopPlayback(); else playAll() }
-    function shuffleList() { if (listPlaying) player.toggleShuffle(); else if (ids.length > 0) player.playShuffled(sourceKey, ids) }
+    function shuffleList() { player.toggleShuffle() }      // solo reordena la lista de la derecha; no reproduce ni detiene
     // Clic en una canción: la lista de reproducción queda con esa canción al principio y las anteriores desaparecen;
     // con Aleatorio activo se conserva la lista completa (en orden aleatorio, empezando por esa canción).
     function playFromIndex(index) {
@@ -79,7 +83,7 @@ Item {
                 width: parent.width
                 spacing: 12
                 PillButton { height: 44; label: page.listPlaying ? "Detener" : "Reproducir"; primary: true; enabled: page.items.length > 0; onClicked: page.playOrStop() }
-                PillButton { height: 44; label: "Aleatorio"; primary: player.shuffle && page.listPlaying; enabled: page.items.length > 0; onClicked: page.shuffleList() }
+                PillButton { height: 44; label: "Aleatorio"; primary: player.shuffle; onClicked: page.shuffleList() }
                 PillButton { height: 44; label: "Agregar a la lista de reproducci\u00f3n"; enabled: page.items.length > 0; onClicked: player.addToQueue(page.ids) }
                 PillButton { height: 44; label: "Renombrar"; onClicked: page.renameRequested(page.playlistId, page.info.name || "") }
                 PillButton { height: 44; label: "Eliminar"; onClicked: page.deleteRequested(page.playlistId, page.info.name || "") }

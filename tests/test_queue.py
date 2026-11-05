@@ -329,3 +329,28 @@ def test_clicking_a_song_without_shuffle_drops_the_previous_ones():
     ids = [1, 2, 3, 4]
     q.set_items(ids[2:], 0)                                   # lo que hace la página: lista desde la canción pulsada
     assert q.order_ids() == [3, 4] and q.current == 3
+
+
+# ---- 0.12.2: Aleatorio reordena la lista que queda; sin Aleatorio vuelve al orden original ----
+def test_shuffle_toggle_reorders_what_is_left_and_restores_the_original_order():
+    q = PlayQueue(random.Random(1))
+    q.consume_played = True
+    q.set_items(range(10), 0)
+    q.next()
+    q.next()                                   # sonaron 0 y 1; suena 2
+    q.set_shuffle(True)
+    assert q.current == 2 and q.order_ids()[0] == 2 and sorted(q.order_ids()) == list(range(2, 10))
+    q.set_shuffle(False)
+    assert q.order_ids() == list(range(2, 10)) and q.current == 2 and q.position == 0
+
+
+def test_shuffle_toggle_keeps_play_next_songs_right_after_the_current_one():
+    q = PlayQueue(random.Random(1))
+    q.consume_played = True
+    q.set_items(range(6), 0)
+    q.insert_next([100, 101])
+    q.set_shuffle(True)
+    assert q.order_ids()[:3] == [0, 100, 101]
+    q.next()
+    q.set_shuffle(False)                       # 100 suena; 101 sigue «a continuación»; el resto en su orden original
+    assert q.order_ids() == [100, 101, 1, 2, 3, 4, 5] and q.position == 0

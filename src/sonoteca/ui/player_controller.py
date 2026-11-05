@@ -299,8 +299,11 @@ class PlayerController(QObject):
 
     @Slot()
     def toggleShuffle(self) -> None:
+        """Aleatorio: reordena la lista de reproducción (aleatorio / orden original, sin lo que ya sonó). No reproduce
+        ni detiene nada."""
         self._queue.set_shuffle(not self._queue.shuffle)
         self.shuffleChanged.emit()
+        self.queueChanged.emit()          # el panel de la derecha muestra el nuevo orden
 
     @Slot()
     def cycleRepeat(self) -> None:

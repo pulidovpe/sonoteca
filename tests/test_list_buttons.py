@@ -16,6 +16,9 @@ def test_album_and_playlist_pages_have_stop_and_shuffle_buttons():
         assert "readonly property bool listPlaying: player.playing && player.sourceKey === sourceKey" in page, name
         assert 'page.listPlaying ? "Detener" : "Reproducir"' in page, name
         assert 'label: "Aleatorio"' in page and "player.stopPlayback()" in page and "player.playShuffled(sourceKey" in page, name
+        # 0.12.2: «Aleatorio» solo reordena la lista de la derecha; Reproducir/Detener es el otro botón
+        assert "function shuffleList() { player.toggleShuffle() }" in page, name
+        assert "primary: player.shuffle;" in page, name
 
 
 def test_double_click_adds_only_that_song_in_albums_search_artist_and_home():
