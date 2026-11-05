@@ -370,6 +370,16 @@ class PlayerController(QObject):
         self.durationChanged.emit()
         self.queueChanged.emit()
 
+    @Slot("QVariantList")
+    def forgetTracks(self, ids: list) -> None:
+        """Quita de la lista (y detiene, si suena) las pistas cuyo archivo se va a eliminar."""
+        wanted = {int(i) for i in ids}
+        for position in reversed(range(len(self._queue))):
+            if self._queue.order_ids()[position] in wanted:
+                self.removeFromQueue(position)
+        if self._current is not None and self.currentId in wanted:
+            self._stop_and_clear()
+
     @Slot(int)
     def removeFromQueue(self, position: int) -> None:
         was_current = position == self._queue.position and self._queue.current is not None

@@ -345,8 +345,9 @@ ApplicationWindow {
             return r.ok ? "" : r.error
         })
     }
-    function showTrackMenu(ids) {
+    function showTrackMenu(ids, allowDelete) {
         trackMenu.ids = ids
+        trackMenu.allowDelete = !!allowDelete        // «Eliminar archivo» solo en Por revisar
         trackMenu.popup()
     }
     function editTags(ids) {
@@ -371,6 +372,17 @@ ApplicationWindow {
             var removed = library.dismissReview()
             Theme.dataRevision++
             toast("Lista vaciada (" + Theme.plural(removed, "pista", "pistas") + ")", 3500)
+        })
+    }
+    // Eliminar el archivo de UNA canción (a la papelera del sistema), con confirmación
+    function confirmDeleteFile(id) {
+        var info = library.trackInfo(id)
+        if (!info.id) return
+        confirmDialog.ask("Eliminar archivo", "Se mover\u00e1 a la papelera del sistema y se quitar\u00e1 de la biblioteca:\n\n" + info.artist + " \u2014 " + info.title + "\n" + info.path + "\n\nPodr\u00e1s recuperarlo desde la papelera.", "Mover a la papelera", function () {
+            player.forgetTracks([id])
+            var r = library.deleteTrackFile(id)
+            Theme.dataRevision++
+            toast(r.message, 4000)
         })
     }
     function restoreReview() {
@@ -408,19 +420,23 @@ ApplicationWindow {
         id: reviewComp
         TrackListPage {
             heading: "Por revisar"
-            hint: "sin artista o álbum en los tags, o deducidos del nombre del archivo"
+            hint: "sin artista en los tags, deducidos del nombre del archivo o con posible archivo dañado"
             id: reviewPage
             property bool rescanning: false
             property int dismissed: (Theme.dataRevision, library.dismissedCount())
             items: (Theme.dataRevision, library.incomplete())
             onEditRequested: (ids) => win.editTags(ids)
-            onMenuRequested: (ids) => win.showTrackMenu(ids)
+            onMenuRequested: (ids) => win.showTrackMenu(ids, true)
             onPlayOneRequested: (id) => win.playOne(id)
             actions: [
                 PillButton {
                     label: reviewPage.rescanning ? "Re-escaneando\u2026" : "Re-escanear tags"
                     enabled: !reviewPage.rescanning && reviewPage.items.length > 0
                     onClicked: win.rescanReview(reviewPage)
+                },
+                PillButton {
+                    label: "Buscar duplicados\u2026"
+                    onClicked: duplicatesDialog.openDialog()
                 },
                 PillButton {
                     label: "Vaciar lista"
@@ -913,7 +929,7 @@ ApplicationWindow {
     }
 
     TagEditor { id: tagEditor }
-    TrackMenu { id: trackMenu; onArtistRequested: (id, name) => win.openArtist(id, name); onAlbumRequested: (id) => win.openAlbum(id); onLyricsRequested: (id) => win.showLyrics(id); onEditRequested: (ids) => win.editTags(ids); onListPickerRequested: (ids) => win.showPlaylistPicker(ids) }
+    TrackMenu { id: trackMenu; onDeleteRequested: (id) => win.confirmDeleteFile(id); onArtistRequested: (id, name) => win.openArtist(id, name); onAlbumRequested: (id) => win.openAlbum(id); onLyricsRequested: (id) => win.showLyrics(id); onEditRequested: (ids) => win.editTags(ids); onListPickerRequested: (ids) => win.showPlaylistPicker(ids) }
     NamePrompt { id: namePrompt }
     ConfirmDialog { id: confirmDialog }
     PlaylistPicker { id: playlistPicker; onNewRequested: (ids) => win.pickerNewList(ids) }
@@ -943,6 +959,10 @@ ApplicationWindow {
         id: harvestDialog
         onToastRequested: (text) => win.toast(text, 6000)
         onInternetRequested: win.openInternetSettings()
+    }
+    DuplicatesDialog {
+        id: duplicatesDialog
+        onFinished: (r) => { Theme.dataRevision++; toast((r.deleted ? r.deleted.length : 0) + " duplicados a la papelera", 4000) }
     }
     LibraryTransfer {
         id: transfer

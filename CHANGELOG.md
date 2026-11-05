@@ -5,6 +5,23 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.12.0] - 2026-10-31
+Versión que cierra la tanda de «Por revisar» y doble clic (reúne la 0.11.0.1 y lo siguiente):
+### Añadido
+- **Eliminar archivos desde «Por revisar»**, siempre a la **papelera del sistema** (nunca borrado definitivo) y con
+  confirmación:
+  - **De uno en uno**: menú ⋮ ▸ *Eliminar archivo (a la papelera)…* (solo en Por revisar; desactivado con varias canciones
+    seleccionadas). Sirve para archivos corruptos u otros.
+  - **Duplicados por lotes**: *Buscar duplicados…* agrupa los archivos que coinciden en **artista, título, duración, nombre de
+    archivo y tamaño**; en cada grupo se conserva una copia (por defecto la de mejores tags, con portada, mayor bitrate y la
+    más antigua; se puede cambiar) y las demás van a la papelera tras un paso de confirmación. Antes de mover cada copia se
+    **verifica su contenido (SHA-256)** contra la que se conserva; si difiere o la conservada no existe, no se toca.
+- «Por revisar» incluye como **posible archivo dañado** las pistas sin duración.
+- Lo que se elimina se quita también de la lista de reproducción (y se detiene si suena).
+### Cambiado (0.11.0.1)
+- Por revisar solo lista pistas sin artista o con artista/título deducidos del nombre; el doble clic conserva la lista e
+  inserta la canción de primera (también con Aleatorio); menú con *Reproducir ahora (conserva la lista)* y *Vaciar y reproducir*.
+
 ## [0.11.0.1] - 2026-10-31
 ### Cambiado
 - **Por revisar**: las canciones que ya tienen en sus tags el artista y el título salen de la lista aunque aún no tengan

@@ -4,10 +4,10 @@ from __future__ import annotations
 import threading
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QUrl, Signal, Slot
+from PySide6.QtCore import QFile, QObject, QUrl, Signal, Slot
 
 from sonoteca import __version__
-from sonoteca.core import cleanup, covers, library, paths, review, stats, tag_edit
+from sonoteca.core import cleanup, covers, duplicates, file_delete, library, paths, review, stats, tag_edit
 from sonoteca.core.db import connect, default_db_path
 from sonoteca.core.models import UNKNOWN_ALBUM, UNKNOWN_ARTIST
 from sonoteca.core.search import SearchIndex, normalize
@@ -29,6 +29,8 @@ class LibraryController(QObject):
     editProgress = Signal(int, int)
     editFinished = Signal("QVariantMap")
     rescanProgress = Signal(int, int)
+    duplicatesProgress = Signal(int, int)
+    duplicatesDeleted = Signal("QVariantMap")
     rescanFinished = Signal("QVariantMap")
 
     def __init__(self, db_path: Path | str | None = None, parent: QObject | None = None) -> None:
@@ -36,6 +38,7 @@ class LibraryController(QObject):
         self._db_arg = db_path
         self._editing = False
         self._rescanning = False
+        self._deleting = False
         self._conn = connect(db_path)
         self._db_path = str(db_path) if db_path else str(default_db_path())
         self._index: SearchIndex | None = None
@@ -149,7 +152,8 @@ class LibraryController(QObject):
         return {"id": row["id"], "title": row["title"], "artist": row["artist"],
                 "album": album_display(row["album"]), "duration": row["duration"],
                 "artistId": row["artist_id"], "albumId": row["album_id"],
-                "hasArtist": row["artist"] != UNKNOWN_ARTIST, "hasAlbum": row["album"] != UNKNOWN_ALBUM}
+                "hasArtist": row["artist"] != UNKNOWN_ARTIST, "hasAlbum": row["album"] != UNKNOWN_ALBUM,
+                "path": row["path"]}
 
     @Slot(str, result=str)
     def localPath(self, url: str) -> str:
@@ -288,6 +292,58 @@ class LibraryController(QObject):
         self._rescanning = False
         self.rescanFinished.emit(result)
 
+    # ---- eliminar archivos (siempre a la papelera del sistema) ----
+    @staticmethod
+    def _trash(path: str) -> bool:
+        result = QFile.moveToTrash(path)          # PySide6 devuelve bool o (bool, ruta_en_la_papelera)
+        return bool(result[0] if isinstance(result, tuple) else result)
+
+    @Slot(int, result="QVariantMap")
+    def deleteTrackFile(self, track_id: int) -> dict:
+        """Mueve a la papelera el archivo de UNA pista y la quita de la biblioteca."""
+        ok, message = file_delete.delete_track(self._conn, track_id, self._trash)
+        self._index = None
+        return {"ok": ok, "message": message}
+
+    @Slot(result="QVariantList")
+    def duplicateGroups(self) -> list:
+        """Grupos de duplicados (mismo artista, título, duración, nombre de archivo y tamaño). Cada grupo: `items`,
+        de mejor a peor copia; la primera es la que se conserva por defecto."""
+        groups = []
+        for number, members in enumerate(duplicates.find_groups(self._conn)):
+            groups.append({
+                "key": number,
+                "title": f"{members[0].artist} — {members[0].title}",
+                "items": [{"id": m.track_id, "path": m.path, "size": m.size, "album": album_display(m.album),
+                           "bitrate": m.bitrate, "hasCover": m.has_cover, "inferred": m.inferred} for m in members],
+            })
+        return groups
+
+    @Slot("QVariantList")
+    def deleteDuplicates(self, plan: list) -> None:
+        """Mueve a la papelera, por lotes y en un hilo aparte, las copias indicadas (tras verificar su contenido)."""
+        if self._deleting:
+            return
+        self._deleting = True
+        clean = [{"keep": int(g["keep"]), "remove": [int(i) for i in g["remove"]]} for g in plan]
+        threading.Thread(target=self._delete_worker, args=(clean,), daemon=True).start()
+
+    def _delete_worker(self, plan: list) -> None:
+        try:
+            conn = connect(self._db_arg)
+            try:
+                out = file_delete.delete_duplicates(
+                    conn, plan, self._trash, progress=lambda done, total: self.duplicatesProgress.emit(done, total))
+            finally:
+                conn.close()
+            result = {"deleted": out["deleted"], "skipped": [{"id": i, "reason": r} for i, r in out["skipped"]],
+                      "bytes": out["bytes"], "error": ""}
+        except Exception as exc:  # noqa: BLE001  (se informa a la interfaz en vez de perderse)
+            result = {"deleted": [], "skipped": [], "bytes": 0, "error": str(exc)}
+        self._index = None
+        self._deleting = False
+        self.duplicatesDeleted.emit(result)
+
     @Slot(result="QVariantList")
     def incomplete(self) -> list[dict]:
         out = []
@@ -297,6 +353,8 @@ class LibraryController(QObject):
                 reasons.append("deducido del nombre")
             if r["no_artist"]:
                 reasons.append("sin artista")
+            if r["damaged"]:
+                reasons.append("posible archivo dañado (sin duración)")
             out.append({
                 "id": r["id"],
                 "number": "",
