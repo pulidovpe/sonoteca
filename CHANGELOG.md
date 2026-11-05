@@ -5,6 +5,14 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.12.1] - 2026-11-05
+### Corregido
+- **«Por revisar» seguía acumulando canciones con los tags ya corregidos.** Causa: para una pista sin tags de título/artista el
+  editor muestra los valores deducidos del nombre del archivo, pero solo escribía los campos que el usuario cambiaba; si no
+  tocaba el título o el artista, el archivo seguía sin ellos y la pista nunca salía de la lista. Ahora, al guardar una pista
+  deducida, se escriben también los datos deducidos (título, artista, álbum, año, nº de pista) y la vista previa lo indica.
+  *(Causa deducida leyendo el código; sin ejecutar en la Mac.)*
+
 ## [0.12.0] - 2026-10-31
 Versión que cierra la tanda de «Por revisar» y doble clic (reúne la 0.11.0.1 y lo siguiente):
 ### Añadido

@@ -28,7 +28,7 @@ def _rows(conn: sqlite3.Connection, track_ids: list[int]) -> list[sqlite3.Row]:
     marks = ",".join("?" * len(track_ids))
     return conn.execute(
         f"""
-        SELECT t.id, t.title, t.track_no, t.disc_no, t.year, t.genre,
+        SELECT t.id, t.title, t.track_no, t.disc_no, t.year, t.genre, t.inferred,
                ar.name AS artist, aa.name AS album_artist, al.title AS album
         FROM tracks t
         JOIN artists ar ON ar.id = t.artist_id
@@ -49,6 +49,24 @@ def _clean(value: object) -> str:
 
 def _unique(ids: list[int]) -> list[int]:
     return list(dict.fromkeys(int(i) for i in ids))
+
+
+_DERIVED = ("title", "artist", "album", "year", "track_no")
+
+
+def _derived(row: sqlite3.Row) -> dict:
+    """Datos que la biblioteca dedujo del nombre del archivo (la pista está «por revisar») y que el editor
+    muestra como si fueran tags. Si no se escriben, el archivo sigue sin ellos y la pista nunca sale de la lista."""
+    if not row["inferred"]:
+        return {}
+    raw = {f: row[f] for f in _DERIVED if row[f] not in (None, "") and _clean(row[f]) != ""}
+    out: dict = {}
+    for key, value in raw.items():
+        try:
+            out.update(normalize_changes({key: value}))
+        except ValueError:
+            continue  # un dato deducido inválido simplemente no se escribe
+    return out
 
 
 def common_values(conn: sqlite3.Connection, track_ids: list[int]) -> dict:
@@ -85,6 +103,14 @@ def preview(conn: sqlite3.Connection, track_ids: list[int], raw_changes: dict,
         lines.append(f"{LABELS[f]}: {shown} \u2192 {new}")
     if cover_path:
         lines.append(f"Portada: se reemplaza por {Path(cover_path).name}")
+    derived = [(r, {k: v for k, v in _derived(r).items() if k not in changes}) for r in rows]
+    derived = [(r, d) for r, d in derived if d]
+    if len(derived) == 1:
+        shown = ", ".join(f"{LABELS[k]} «{v}»" for k, v in derived[0][1].items())
+        lines.append(f"Se escribirán también los datos deducidos del nombre del archivo: {shown}")
+    elif derived:
+        lines.append(f"En {len(derived)} pistas se escribirán también los datos deducidos del nombre del archivo "
+                     "(título, artista, álbum, año o nº de pista que se ven en el editor)")
     return {"count": len(ids), "lines": lines}
 
 
@@ -132,7 +158,9 @@ def apply_edit(conn: sqlite3.Connection, track_ids: list[int], raw_changes: dict
             try:
                 if cover is not None:
                     cover_store.archive_embedded(path)  # si no se puede archivar, no se toca el archivo
-                write_tags(path, changes, cover, id3_version=id3_version, backup_dir=backup_dir)
+                per_file = {**{k: v for k, v in _derived(_rows(conn, [track_id])[0]).items()
+                               if k not in changes}, **changes}
+                write_tags(path, per_file, cover, id3_version=id3_version, backup_dir=backup_dir)
                 reindex_file(conn, path)
                 result.updated += 1
             except (TagWriteError, OSError) as exc:
