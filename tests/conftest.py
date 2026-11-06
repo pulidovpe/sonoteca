@@ -135,6 +135,10 @@ def qml_env(qapp, db_file, tmp_path):
     from sonoteca.ui.servers_controller import ServersController
     server_config = ServersController()
     engine.rootContext().setContextProperty("serverConfig", server_config)
+    from sonoteca.core.prefs import Prefs
+    from sonoteca.ui.prefs_controller import PrefsController
+    ui_prefs = PrefsController(Prefs(tmp_path / "ui_prefs.json"))
+    engine.rootContext().setContextProperty("prefs", ui_prefs)
     engine.load(QUrl.fromLocalFile(str(QML_DIR / "Main.qml")))
     assert engine.rootObjects(), warnings
     win = engine.rootObjects()[0]
@@ -160,7 +164,7 @@ def qml_env(qapp, db_file, tmp_path):
         wait(settle)
 
     yield SimpleNamespace(engine=engine, win=win, controller=controller, player=player, online=online, playlists=playlists,
-                          lyrics=lyrics, scan=scan, warnings=warnings, wait=wait, js=js, act=act)
+                          lyrics=lyrics, scan=scan, prefs=ui_prefs, warnings=warnings, wait=wait, js=js, act=act)
 
     wait(500)  # deja terminar las cargas de imágenes pendientes antes de destruir el motor
     engine.deleteLater()

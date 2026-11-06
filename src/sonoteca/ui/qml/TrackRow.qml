@@ -8,8 +8,10 @@ Item {
     property string number: ""
     property string title
     property string artist: ""      // segunda línea del nombre
-    property string album: ""
-    property string year: ""
+    // album y year: si la página no los da (undefined) no hay columna; si los da, la columna existe en TODAS las filas
+    // (aunque una canción no tenga el dato), para que las columnas queden alineadas entre canciones
+    property var album: undefined
+    property var year: undefined
     property string subtitle: ""    // texto libre cuando no hay artista (p. ej. «Por revisar»)
     property string badge: ""
     property string duration: ""
@@ -19,8 +21,8 @@ Item {
     signal activated()
     signal contextRequested()
     readonly property int tier: Theme.tier(width)
-    readonly property bool showAlbum: tier >= 2 && album !== ""
-    readonly property bool showYear: width >= Theme.yearMin && year !== ""
+    readonly property bool showAlbum: tier >= 2 && album !== undefined
+    readonly property bool showYear: width >= Theme.yearMin && year !== undefined
     readonly property bool showPlays: tier >= 3 && plays >= 0
     readonly property string line2: artist !== "" ? artist : subtitle
     height: 52
@@ -53,12 +55,36 @@ Item {
         anchors.rightMargin: 8
         anchors.verticalCenter: parent.verticalCenter
         spacing: 2
-        Text {
+        Item {   // título; la etiqueta (p. ej. VIDEO) va al final de esta columna, sin desplazar las demás
             width: parent.width
-            text: root.title
-            color: root.current ? Theme.accent : Theme.text
-            font.pixelSize: 15
-            elide: Text.ElideRight
+            height: titleText.implicitHeight
+            Text {
+                id: titleText
+                anchors { left: parent.left; right: badgeBox.visible ? badgeBox.left : parent.right; rightMargin: badgeBox.visible ? 8 : 0 }
+                text: root.title
+                color: root.current ? Theme.accent : Theme.text
+                font.pixelSize: 15
+                elide: Text.ElideRight
+            }
+            Rectangle {
+                id: badgeBox
+                visible: root.badge !== ""
+                anchors { right: parent.right; verticalCenter: parent.verticalCenter }
+                width: badgeText.width + 14
+                height: 20
+                radius: 4
+                color: "transparent"
+                border.color: Theme.textDim
+                border.width: 1
+                Text {
+                    id: badgeText
+                    anchors.centerIn: parent
+                    text: root.badge
+                    color: Theme.textDim
+                    font.pixelSize: 10
+                    font.weight: Font.DemiBold
+                }
+            }
         }
         Text {
             width: parent.width
@@ -69,7 +95,7 @@ Item {
             elide: Text.ElideRight
         }
     }
-    // Columnas de la derecha, en este orden: álbum, año, reproducciones, etiqueta y duración
+    // Columnas de la derecha, en este orden: álbum, año, reproducciones y duración (todas de ancho fijo)
     Row {
         id: cells
         anchors { right: parent.right; rightMargin: 28; verticalCenter: parent.verticalCenter }
@@ -77,7 +103,7 @@ Item {
         Text {
             visible: root.showAlbum
             width: Theme.albumColumn(root.width)
-            text: root.album
+            text: root.album ? root.album : ""
             color: Theme.textDim
             font.pixelSize: 13
             elide: Text.ElideRight
@@ -85,7 +111,7 @@ Item {
         Text {
             visible: root.showYear
             width: Theme.yearColumn
-            text: root.year
+            text: root.year ? root.year : ""
             color: Theme.textDim
             font.pixelSize: 13
         }
@@ -96,29 +122,11 @@ Item {
             color: Theme.textDim
             font.pixelSize: 12
         }
-        Rectangle {
-            id: badgeBox
-            visible: root.badge !== ""
-            width: visible ? badgeText.width + 14 : 0
-            height: 20
-            radius: 4
-            color: "transparent"
-            border.color: Theme.textDim
-            border.width: 1
-            anchors.verticalCenter: parent.verticalCenter
-            Text {
-                id: badgeText
-                anchors.centerIn: parent
-                text: root.badge
-                color: Theme.textDim
-                font.pixelSize: 10
-                font.weight: Font.DemiBold
-            }
-        }
         Text {
             id: dur
             text: root.duration
-            width: root.duration === "" ? 0 : implicitWidth
+            width: Theme.durationColumn
+            horizontalAlignment: Text.AlignRight
             color: Theme.textDim
             font.pixelSize: 14
         }
