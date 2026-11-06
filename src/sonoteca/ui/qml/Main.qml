@@ -459,6 +459,9 @@ ApplicationWindow {
             onArtistClicked: (id, name) => win.openArtist(id, name)
             onEditRequested: (ids) => win.editTags(ids)
             onMenuRequested: (ids) => win.showTrackMenu(ids)
+            onListRequested: (ids) => win.showPlaylistPicker(ids)
+            onNewListRequested: (ids) => win.pickerNewList(ids)
+            onLookupRequested: (id, ids, unknown) => win.lookupAlbum(id, ids, unknown)
         }
     }
     Component {

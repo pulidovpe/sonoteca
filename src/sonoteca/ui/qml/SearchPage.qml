@@ -8,11 +8,35 @@ Item {
     property var results: (Theme.dataRevision, library.searchAll(query))
     property var ids: results.tracks.map(function (x) { return x.id })
     readonly property bool empty: results.artists.length + results.albums.length + results.tracks.length === 0
+    // Canciones sobre las que actúan los botones: las encontradas; si no hay canciones pero el resultado es un solo
+    // álbum o un solo artista (lo normal al buscar su nombre), las de ese álbum o artista.
+    readonly property var actionIds: {
+        if (ids.length > 0) return ids
+        if (results.albums.length === 1) return library.tracks(results.albums[0].id).map(function (x) { return x.id })
+        if (results.albums.length === 0 && results.artists.length === 1) return library.artistTrackIds(results.artists[0].id)
+        return []
+    }
+    // «Portada e info» necesita un álbum concreto: el único álbum de los resultados (o al que pertenecen las canciones)
+    readonly property int lookupAlbumId: {
+        var found = {}, count = 0, last = 0
+        function add(id) { if (id > 0 && !found[id]) { found[id] = true; count++; last = id } }
+        results.albums.forEach(function (a) { add(a.id) })
+        results.tracks.forEach(function (t) { var info = library.trackInfo(t.id); if (info.hasAlbum) add(info.albumId) })
+        return count === 1 ? last : 0
+    }
+    function lookupAlbum() {
+        var info = library.album(lookupAlbumId)
+        lookupRequested(lookupAlbumId, library.tracks(lookupAlbumId).map(function (x) { return x.id }),
+                        info.title === "\u00c1lbum desconocido")
+    }
     signal albumClicked(int albumId)
     signal playOneRequested(int trackId)
     signal artistClicked(int artistId, string name)
     signal editRequested(var ids)
     signal menuRequested(var ids)
+    signal listRequested(var ids)            // «Guardar en lista…» (elegir una lista o crear una)
+    signal newListRequested(var ids)         // «Nueva lista» con las canciones
+    signal lookupRequested(int albumId, var ids, bool unknown)
 
     Flickable {
         id: flick
@@ -36,6 +60,16 @@ Item {
                 font.pixelSize: 30
                 font.weight: Font.Bold
                 elide: Text.ElideRight
+            }
+            Flow {
+                x: 24
+                width: parent.width - 48
+                spacing: 10
+                visible: !page.empty
+                PillButton { label: "Nueva lista"; enabled: page.actionIds.length > 0; onClicked: page.newListRequested(page.actionIds) }
+                PillButton { label: "Guardar en lista\u2026"; enabled: page.actionIds.length > 0; onClicked: page.listRequested(page.actionIds) }
+                PillButton { label: "Portada e info"; enabled: page.lookupAlbumId > 0; onClicked: page.lookupAlbum() }
+                PillButton { label: "Editar tags"; enabled: page.actionIds.length > 0; onClicked: page.editRequested(page.actionIds) }
             }
             Text {
                 x: 24
