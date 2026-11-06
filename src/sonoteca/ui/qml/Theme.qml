@@ -58,7 +58,7 @@ QtObject {
     readonly property string iconArtist: "M12 4 A4 4 0 1 0 12 12 A4 4 0 1 0 12 4 Z M4 20 C4 15.5 8 14 12 14 C16 14 20 15.5 20 20 Z"
     readonly property string iconList: "M9 6 H21 V8 H9 Z M9 11 H21 V13 H9 Z M9 16 H21 V18 H9 Z M3 6 H6 V8 H3 Z M3 11 H6 V13 H3 Z M3 16 H6 V18 H3 Z"
     readonly property string iconQueue: "M4 12 H8 V20 H4 Z M10 4 H14 V20 H10 Z M16 9 H20 V20 H16 Z"
-    readonly property string iconLyrics: "M4 5 H20 V7 H4 Z M4 10 H16 V12 H4 Z M4 15 H20 V17 H4 Z M4 20 H12 V22 H4 Z"
+    readonly property string iconLyrics: "M0.9 13 L3.3 3 L5.5 3 L7.9 13 L5.8 13 L5.4 11 L3.4 11 L3 13 Z M4.4 5.3 L5.1 8.8 L3.7 8.8 Z M8.7 3 L13.4 3 L14.8 4.3 L14.8 7.2 L14 8 L15 8.9 L15 11.7 L13.5 13 L8.7 13 Z M10.6 4.9 L12.7 4.9 L12.9 5.1 L12.9 6.5 L12.7 6.7 L10.6 6.7 Z M10.6 9.2 L13 9.2 L13.2 9.4 L13.2 11 L13 11.2 L10.6 11.2 Z M18 3 L22.9 3 L22.9 5.1 L18.8 5.1 L18.8 10.9 L22.9 10.9 L22.9 13 L18 13 L16.5 11.5 L16.5 4.5 Z M1 15.5 L23 15.5 L23 17.3 L1 17.3 Z M1 19.5 L15 19.5 L15 21.3 L1 21.3 Z"          // «ABC» con dos líneas de letra
     readonly property string iconReview: "M12 3 A9 9 0 1 0 12 21 A9 9 0 1 0 12 3 Z M11 7 H13 V13 H11 Z M11 15 H13 V17 H11 Z"
     readonly property string iconGlobe: "M12 3 A9 9 0 1 0 12 21 A9 9 0 1 0 12 3 Z M12 4.8 A7.2 7.2 0 1 1 12 19.2 A7.2 7.2 0 1 1 12 4.8 Z M4.8 11 H19.2 V13 H4.8 Z M12 4.8 A3.5 7.2 0 1 0 12 19.2 A3.5 7.2 0 1 0 12 4.8 Z M12 6.3 A2 5.7 0 1 1 12 17.7 A2 5.7 0 1 1 12 6.3 Z"
     readonly property string iconPlay: "M8 4 L20 12 L8 20 Z"

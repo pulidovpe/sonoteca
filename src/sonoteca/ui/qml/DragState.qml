@@ -15,6 +15,7 @@ QtObject {
     signal dropOnList(int listId, var ids)
 
     function begin(trackIds, text, x, y) {
+        console.log("[arrastre] begin bloqueado=" + inputBlocked + " pista=" + text)   // diagnóstico (0.12.5)
         if (inputBlocked) return
         if (!trackIds || trackIds.length === 0) return
         ids = trackIds

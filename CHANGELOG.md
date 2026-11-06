@@ -5,6 +5,15 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.12.5] - 2026-11-05
+### Cambiado
+- **Icono de «Letra»**: ahora es «ABC» con dos líneas de letra debajo (antes, cuatro rayas).
+### Corregido / diagnóstico
+- Editar tags, arrastre por detrás (aparecía la etiqueta flotante con el título): el aviso de «editor abierto» se aplica también
+  con un `Binding` en `Main.qml` (`tagEditor.visible || tagEditor.opened`), la etiqueta flotante no se muestra con el bloqueo
+  activo y `DragState.begin` escribe en la consola `[arrastre] begin bloqueado=… pista=…`. Si la etiqueta sigue apareciendo,
+  ese mensaje dirá si el bloqueo estaba activo. *(Sin ejecutar.)*
+
 ## [0.12.4] - 2026-11-05
 ### Corregido
 - **Duplicados: «Unable to assign [undefined] to bool»** (`DuplicatesDialog.qml:197`): `visible` recibía `undefined` cuando el

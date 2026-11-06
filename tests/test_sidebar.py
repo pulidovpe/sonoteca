@@ -54,3 +54,13 @@ def test_right_panel_is_always_there_and_lyrics_replaces_the_queue():
     assert re.search(r"id: queueComp\s*QueuePage \{\s*panel: true", main)
     assert "property bool panel" in queue and "compact: page.panel" in queue
     assert "stack.replace(null, queueComp)" not in main
+
+
+def test_lyrics_icon_is_abc_with_lines():
+    # 0.12.5: «ABC» (A, B, C con sus huecos) + dos líneas de letra; ya no son solo cuatro rayas
+    theme = (QML / "Theme.qml").read_text(encoding="utf-8") if "QML" in globals() else None
+    if theme is None:
+        from pathlib import Path
+        theme = (Path(__file__).resolve().parents[1] / "src/sonoteca/ui/qml/Theme.qml").read_text(encoding="utf-8")
+    line = next(l for l in theme.splitlines() if "iconLyrics" in l)
+    assert line.count("M") >= 8 and "M4 5 H20 V7 H4 Z" not in line
