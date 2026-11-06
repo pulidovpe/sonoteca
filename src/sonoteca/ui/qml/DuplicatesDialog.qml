@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import "."
 
-// Duplicados: mismo artista, título, duración, nombre de archivo y tamaño. En cada grupo se conserva UNA copia (la mejor,
+// Duplicados: archivos idénticos (mismo contenido), aunque tengan otro nombre o tags. En cada grupo se conserva UNA copia (la mejor,
 // por defecto) y las demás van a la papelera, por lotes. Antes de mover nada se verifica que el contenido sea idéntico.
 Popup {
     id: root
@@ -88,8 +88,8 @@ Popup {
             Text {
                 width: parent.width; wrapMode: Text.WordWrap; color: Theme.textDim; font.pixelSize: 13
                 text: root.groups.length === 0
-                      ? "No hay duplicados: ninguna pareja de archivos coincide a la vez en artista, título, duraci\u00f3n, nombre de archivo y tama\u00f1o."
-                      : "Archivos que coinciden en artista, t\u00edtulo, duraci\u00f3n, nombre de archivo y tama\u00f1o. Elige la copia que se conserva en cada grupo (por defecto, la de mejores tags, portada y bitrate); las dem\u00e1s ir\u00e1n a la papelera."
+                      ? "No hay duplicados: ning\u00fan archivo tiene el mismo contenido que otro (se buscan aunque tengan distinto nombre)."
+                      : "Archivos con exactamente el mismo contenido, aunque tengan distinto nombre o tags. Elige la copia que se conserva en cada grupo (por defecto, la de mejores tags, portada y bitrate); las dem\u00e1s ir\u00e1n a la papelera."
             }
             ScrollView {
                 id: scroll

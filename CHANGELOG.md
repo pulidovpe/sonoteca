@@ -5,6 +5,15 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.12.6] - 2026-11-05
+### Corregido
+- **Duplicados con nombres distintos no se encontraban**: se exigía el mismo nombre de archivo (además de artista, título,
+  duración y tamaño). Ahora un duplicado es un archivo **idéntico byte a byte** (mismo tamaño y SHA-256) con cualquier
+  nombre, carpeta o tags: «Canción.mp3» y «Canción (1).mp3», o una copia sin los tags corregidos. Solo se lee el contenido de
+  los archivos que comparten tamaño. Es la misma prueba que ya repite el borrado, así que todo lo listado se puede eliminar con
+  seguridad. Las canciones parecidas pero no idénticas (otro bitrate, otro formato) **no** se listan.
+  *(Lógica probada aquí con un arnés; pytest y la UI sin ejecutar.)*
+
 ## [0.12.5] - 2026-11-05
 ### Cambiado
 - **Icono de «Letra»**: ahora es «ABC» con dos líneas de letra debajo (antes, cuatro rayas).
