@@ -414,7 +414,7 @@ ApplicationWindow {
 
     Component { id: homeComp; HomePage { onPlayOneRequested: (id) => win.playOne(id); onAlbumClicked: (id) => win.openAlbum(id); onArtistClicked: (id, name) => win.openArtist(id, name); onPlaylistClicked: (id) => win.openPlaylist(id); onMenuRequested: (ids) => win.showTrackMenu(ids) } }
     Component { id: albumsComp; AlbumsPage { onPlayOneRequested: (id) => win.playOne(id); onMenuRequested: (ids) => win.showTrackMenu(ids); onAlbumClicked: (id) => win.openAlbum(id); onNeedInternet: win.openInternetSettings(); onEditArtistRequested: (id, name) => win.editArtistTags(id, name) } }
-    Component { id: albumComp; AlbumDetail { onEditRequested: (ids) => win.editTags(ids); onMenuRequested: (ids) => win.showTrackMenu(ids); onListRequested: (ids) => win.showPlaylistPicker(ids); onLookupRequested: (id, ids, unknown) => win.lookupAlbum(id, ids, unknown); onPlayOneRequested: (id) => win.playOne(id); onArtistRequested: (id, name) => win.openArtist(id, name) } }
+    Component { id: albumComp; AlbumDetail { onEditRequested: (ids) => win.editTags(ids); onMenuRequested: (ids) => win.showTrackMenu(ids); onListRequested: (ids) => win.showPlaylistPicker(ids); onNewListRequested: (ids) => win.pickerNewList(ids); onLookupRequested: (id, ids, unknown) => win.lookupAlbum(id, ids, unknown); onPlayOneRequested: (id) => win.playOne(id); onArtistRequested: (id, name) => win.openArtist(id, name) } }
     Component { id: artistsComp; ArtistsPage { onArtistClicked: (id, name) => win.openArtist(id, name) } }
     Component {
         id: reviewComp
@@ -932,6 +932,7 @@ ApplicationWindow {
         onRestoreRequested: win.exitMini()
     }
 
+    Connections { target: NavBus; function onAlbumRequested(albumId) { win.openAlbum(albumId) } }      // enlaces de álbum en las filas
     TagEditor { id: tagEditor }
     Binding { target: DragState; property: "inputBlocked"; value: tagEditor.visible || tagEditor.opened }   // también aquí, por si el aviso del propio editor no llega
     TrackMenu { id: trackMenu; onDeleteRequested: (id) => win.confirmDeleteFile(id); onArtistRequested: (id, name) => win.openArtist(id, name); onAlbumRequested: (id) => win.openAlbum(id); onLyricsRequested: (id) => win.showLyrics(id); onEditRequested: (ids) => win.editTags(ids); onListPickerRequested: (ids) => win.showPlaylistPicker(ids) }

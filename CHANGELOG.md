@@ -5,6 +5,21 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.13.0] - 2026-11-05
+Cierra la tanda 0.12.1–0.12.15 (incluye todo lo de esas versiones; ver sus entradas).
+### Añadido
+- **El álbum de las columnas de las listas es un enlace** a la página del álbum (subrayado y color de acento al pasar el ratón;
+  el clic derecho sigue abriendo el menú de la fila). Las filas piden la navegación por el bus `NavBus`, que escucha `Main`.
+- **Seleccionar canciones concretas para agregarlas a una lista**, en álbumes y en resultados de búsqueda: botón «Seleccionar
+  canciones» → casilla en cada fila (un clic marca/desmarca; no reproduce ni arrastra mientras tanto) y barra inferior con
+  «Seleccionar todas / Quitar selección», «Nueva lista», «Guardar en lista…» (con el aviso de repetidas de 0.12.8) y «Cancelar».
+  Componentes nuevos `SelectionState` y `SelectionBar`. *(UI sin ejecutar.)*
+### Resumen de la tanda
+Por revisar (0.12.1) · Aleatorio solo reordena la lista (0.12.2) · bloqueo del editor de tags (0.12.3-5) · duplicados bool y menú
+(0.12.4) · icono ABC (0.12.5) · duplicados idénticos con cualquier nombre (0.12.6) · botones de búsqueda (0.12.7) · aviso de
+repetidas en listas (0.12.8) · mini reproductor y avisos arriba (0.12.9-13) · columnas (0.12.10, 0.12.15) · listas en cuadrícula
+(0.12.14) · almacén de preferencias (0.12.15).
+
 ## [0.12.15] - 2026-11-05
 ### Añadido
 - **Almacén de preferencias de interfaz** (`core/prefs.py` + `ui/prefs_controller.py`, expuesto a QML como `prefs`): un JSON

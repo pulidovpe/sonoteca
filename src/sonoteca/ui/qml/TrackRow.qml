@@ -18,6 +18,14 @@ Item {
     property int plays: -1          // < 0: no se muestra
     property int trackId: 0         // > 0: se puede arrastrar a una lista de la barra lateral
     property bool current: false
+    // modo «seleccionar canciones»: casilla a la izquierda; un clic marca/desmarca
+    property bool selectable: false
+    property bool selected: false
+    signal toggled()
+    function openAlbum() {
+        var info = library.trackInfo(trackId)
+        if (info && info.hasAlbum && info.albumId > 0) NavBus.albumRequested(info.albumId)
+    }
     signal activated()
     signal contextRequested()
     readonly property int tier: Theme.tier(width)
@@ -29,28 +37,41 @@ Item {
     opacity: dragHandler.active ? 0.45 : 1
 
     HoverHandler { id: rowHover; enabled: !DragState.inputBlocked }
-    TrackDragHandler { id: dragHandler; ids: root.trackId > 0 ? [root.trackId] : []; label: root.title }
+    TrackDragHandler { id: dragHandler; ids: root.trackId > 0 && !root.selectable ? [root.trackId] : []; label: root.title }
 
     Rectangle {
         anchors.fill: parent
         anchors.leftMargin: 12
         anchors.rightMargin: 12
         radius: 6
-        color: mouse.containsMouse ? Theme.surfaceHover : "transparent"
+        color: root.selected ? Theme.accentSoft : (mouse.containsMouse ? Theme.surfaceHover : "transparent")
         Behavior on color { ColorAnimation { duration: Theme.fast } }
     }
     Text {
         id: num
         text: root.number
         x: 28
-        width: root.number === "" ? 0 : 36
+        width: (root.selectable || root.number !== "") ? 36 : 0
+        visible: !root.selectable
         anchors.verticalCenter: parent.verticalCenter
         color: Theme.textDim
         font.pixelSize: 14
     }
+    Rectangle {   // casilla del modo selección
+        visible: root.selectable
+        x: 28
+        width: 20
+        height: 20
+        radius: 4
+        anchors.verticalCenter: parent.verticalCenter
+        color: root.selected ? Theme.accent : "transparent"
+        border.color: root.selected ? Theme.accent : Theme.textDim
+        border.width: 2
+        Text { anchors.centerIn: parent; visible: root.selected; text: "\u2713"; color: Theme.textOnAccent; font.pixelSize: 14; font.weight: Font.Bold }
+    }
     Column {
         anchors.left: num.right
-        anchors.leftMargin: root.number === "" ? 0 : 8
+        anchors.leftMargin: (root.selectable || root.number !== "") ? 8 : 0
         anchors.right: moreButton.left
         anchors.rightMargin: 8
         anchors.verticalCenter: parent.verticalCenter
@@ -100,13 +121,25 @@ Item {
         id: cells
         anchors { right: parent.right; rightMargin: 28; verticalCenter: parent.verticalCenter }
         spacing: 16
-        Text {
+        Text {   // el álbum es un enlace a su página
+            id: albumText
             visible: root.showAlbum
             width: Theme.albumColumn(root.width)
             text: root.album ? root.album : ""
-            color: Theme.textDim
+            color: albumLink.containsMouse ? Theme.accent : Theme.textDim
             font.pixelSize: 13
+            font.underline: albumLink.containsMouse
             elide: Text.ElideRight
+            MouseArea {
+                id: albumLink
+                enabled: !DragState.inputBlocked && !root.selectable && root.trackId > 0 && albumText.text !== ""
+                width: Math.min(parent.width, parent.implicitWidth)
+                height: parent.height
+                hoverEnabled: true
+                acceptedButtons: Qt.LeftButton
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.openAlbum()
+            }
         }
         Text {
             visible: root.showYear
@@ -137,8 +170,11 @@ Item {
         enabled: !DragState.inputBlocked
         hoverEnabled: true
         acceptedButtons: Qt.LeftButton | Qt.RightButton
-        onClicked: (m) => { if (m.button === Qt.RightButton) root.contextRequested() }
-        onDoubleClicked: (m) => { if (m.button === Qt.LeftButton) root.activated() }
+        onClicked: (m) => {
+            if (m.button === Qt.RightButton) root.contextRequested()
+            else if (root.selectable) root.toggled()
+        }
+        onDoubleClicked: (m) => { if (m.button === Qt.LeftButton && !root.selectable) root.activated() }
     }
     // Botón de opciones (⋮): aparece al pasar el ratón y abre el menú con todas las acciones
     IconButton {

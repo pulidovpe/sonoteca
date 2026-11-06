@@ -1,5 +1,6 @@
 singleton Theme 1.0 Theme.qml
 singleton DragState 1.0 DragState.qml
+singleton NavBus 1.0 NavBus.qml
 TrackDragHandler 1.0 TrackDragHandler.qml
 SideButton 1.0 SideButton.qml
 Chip 1.0 Chip.qml
@@ -48,3 +49,5 @@ AppToolTip 1.0 AppToolTip.qml
 MiniPlayer 1.0 MiniPlayer.qml
 DuplicatesDialog 1.0 DuplicatesDialog.qml
 DuplicateInListDialog 1.0 DuplicateInListDialog.qml
+SelectionState 1.0 SelectionState.qml
+SelectionBar 1.0 SelectionBar.qml
