@@ -30,6 +30,10 @@ Item {
     property bool compact: false   // true: panel estrecho (sin contador de reproducciones; acciones sobre la duración al pasar el ratón)
     signal reorderRequested(int dst)
     property bool current: false
+    function openAlbum() {
+        var info = library.trackInfo(trackId)
+        if (info && info.hasAlbum && info.albumId > 0) NavBus.albumRequested(info.albumId)
+    }
     property bool playing: false
     signal activated()
     signal menuRequested()
@@ -137,13 +141,25 @@ Item {
         id: cells
         anchors { right: parent.right; rightMargin: row.compact ? 14 : 28; verticalCenter: parent.verticalCenter }
         spacing: row.compact ? 10 : 16
-        Text {
+        Text {   // el álbum es un enlace a su página
+            id: albumText
             visible: row.showAlbum
             width: Theme.albumColumn(row.width)
             text: row.album ? row.album : ""
-            color: Theme.textDim
+            color: albumLink.containsMouse ? Theme.accent : Theme.textDim
             font.pixelSize: 13
+            font.underline: albumLink.containsMouse
             elide: Text.ElideRight
+            MouseArea {
+                id: albumLink
+                enabled: !DragState.inputBlocked && row.trackId > 0 && albumText.text !== ""
+                width: Math.min(parent.width, parent.implicitWidth)
+                height: parent.height
+                hoverEnabled: true
+                acceptedButtons: Qt.LeftButton
+                cursorShape: Qt.PointingHandCursor
+                onClicked: row.openAlbum()
+            }
         }
         Text { visible: row.showYear; width: row.compact ? Theme.yearColumnCompact : Theme.yearColumn; text: row.year ? row.year : ""; color: Theme.textDim; font.pixelSize: 13 }
         Text { visible: row.showPlays; width: Theme.playsColumn; text: "▶ " + row.plays; color: Theme.textDim; font.pixelSize: 12 }

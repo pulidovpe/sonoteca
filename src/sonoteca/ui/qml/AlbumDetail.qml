@@ -10,6 +10,7 @@ Item {
     signal editRequested(var ids)
     signal menuRequested(var ids)
     signal listRequested(var ids)
+    signal newListRequested(var ids)
     signal playOneRequested(int trackId)   // con una lista ya en marcha, Main pregunta qué hacer
     function addAllToQueue() { player.addToQueue(page.tracks.map(function (x) { return x.id })) }
     signal lookupRequested(int albumId, var ids, bool unknownAlbum)
@@ -27,6 +28,7 @@ Item {
         else player.playFrom(sourceKey, trackIds(), 0)
     }
     function shuffleList() { player.toggleShuffle() }
+    SelectionState { id: sel }          // «Seleccionar canciones»: elegir algunas para agregarlas a una lista
 
     Rectangle {
         id: hero
@@ -100,6 +102,7 @@ Item {
             PillButton { height: 44; label: "Ir al artista"; enabled: (page.info.artist_id || 0) > 0; onClicked: page.artistRequested(page.info.artist_id, page.info.artist || "") }
             PillButton { height: 44; label: "Agregar a la lista"; onClicked: page.addAllToQueue() }
             PillButton { height: 44; label: "Guardar en lista\u2026"; onClicked: page.listRequested(page.tracks.map(function (x) { return x.id })) }
+            PillButton { height: 44; label: sel.active ? "Terminar selecci\u00f3n" : "Seleccionar canciones"; primary: sel.active; onClicked: sel.active ? sel.stop() : sel.start() }
             PillButton {
                 height: 44
                 label: "Portada e info"
@@ -112,7 +115,7 @@ Item {
     ListView {
         id: list
         clip: true
-        anchors { left: parent.left; right: parent.right; bottom: parent.bottom; top: hero.bottom; topMargin: 8 }
+        anchors { left: parent.left; right: parent.right; bottom: parent.bottom; top: hero.bottom; topMargin: 8; bottomMargin: selBar.visible ? selBar.height : 0 }
         model: page.tracks
         delegate: TrackRow {
             width: list.width
@@ -126,6 +129,9 @@ Item {
             plays: (player.statsRevision, player.playsOf(modelData.id))
             trackId: modelData.id
             current: player.currentId === modelData.id
+            selectable: sel.active
+            selected: (sel.picked, sel.has(modelData.id))
+            onToggled: sel.toggle(modelData.id)
             onActivated: {
                 page.playOneRequested(modelData.id)      // doble clic: solo esa canción entra en la lista de reproducción
             }
@@ -133,5 +139,17 @@ Item {
         }
         add: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 240 } }
         ScrollBar.vertical: ScrollBar { }
+    }
+    SelectionBar {
+        id: selBar
+        visible: sel.active
+        anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+        count: sel.count
+        total: page.tracks.length
+        onSelectAllRequested: sel.all(page.trackIds())
+        onClearRequested: sel.clear()
+        onCancelRequested: sel.stop()
+        onSaveRequested: { var ids = sel.ordered(page.trackIds()); sel.stop(); page.listRequested(ids) }
+        onNewRequested: { var ids = sel.ordered(page.trackIds()); sel.stop(); page.newListRequested(ids) }
     }
 }

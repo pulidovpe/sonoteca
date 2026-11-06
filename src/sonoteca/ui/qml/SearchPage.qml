@@ -34,6 +34,8 @@ Item {
     signal artistClicked(int artistId, string name)
     signal editRequested(var ids)
     signal menuRequested(var ids)
+    SelectionState { id: sel }          // «Seleccionar canciones» entre las canciones encontradas
+    function trackIds() { return results.tracks.map(function (x) { return x.id }) }
     signal listRequested(var ids)            // «Guardar en lista…» (elegir una lista o crear una)
     signal newListRequested(var ids)         // «Nueva lista» con las canciones
     signal lookupRequested(int albumId, var ids, bool unknown)
@@ -41,6 +43,7 @@ Item {
     Flickable {
         id: flick
         anchors.fill: parent
+        anchors.bottomMargin: selBar.visible ? selBar.height : 0
         contentWidth: width
         contentHeight: col.height + 32
         clip: true
@@ -70,6 +73,7 @@ Item {
                 PillButton { label: "Guardar en lista\u2026"; enabled: page.actionIds.length > 0; onClicked: page.listRequested(page.actionIds) }
                 PillButton { label: "Portada e info"; enabled: page.lookupAlbumId > 0; onClicked: page.lookupAlbum() }
                 PillButton { label: "Editar tags"; enabled: page.actionIds.length > 0; onClicked: page.editRequested(page.actionIds) }
+                PillButton { label: sel.active ? "Terminar selecci\u00f3n" : "Seleccionar canciones"; primary: sel.active; enabled: page.results.tracks.length > 0; onClicked: sel.active ? sel.stop() : sel.start() }
             }
             Text {
                 x: 24
@@ -130,10 +134,25 @@ Item {
                     duration: modelData.duration > 0 ? Theme.fmt(modelData.duration) : ""
                     current: player.currentId === modelData.id
                     trackId: modelData.id
+                    selectable: sel.active
+                    selected: (sel.picked, sel.has(modelData.id))
+                    onToggled: sel.toggle(modelData.id)
                     onActivated: page.playOneRequested(modelData.id)
                     onContextRequested: page.menuRequested([modelData.id])
                 }
             }
         }
+    }
+    SelectionBar {
+        id: selBar
+        visible: sel.active
+        anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+        count: sel.count
+        total: page.results.tracks.length
+        onSelectAllRequested: sel.all(page.trackIds())
+        onClearRequested: sel.clear()
+        onCancelRequested: sel.stop()
+        onSaveRequested: { var ids = sel.ordered(page.trackIds()); sel.stop(); page.listRequested(ids) }
+        onNewRequested: { var ids = sel.ordered(page.trackIds()); sel.stop(); page.newListRequested(ids) }
     }
 }
