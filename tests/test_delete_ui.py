@@ -36,7 +36,7 @@ def test_duplicates_are_batched_verified_and_need_a_confirmation_step():
     assert "Buscar duplicados" in _read(QML / "Main.qml") and "DuplicatesDialog 1.0" in _read(QML / "qmldir")
 
 
-def test_duplicate_criteria_are_the_four_requested():
+def test_duplicates_are_found_by_identical_content_not_by_name():
     source = _read(CORE / "duplicates.py")
-    for needle in ("normalize(r[\"artist\"])", "normalize(r[\"title\"])", 'round(r["duration"] or 0)', ".name.lower()", 'r["size"]'):
-        assert needle in source, needle
+    assert "_sha256(r[\"path\"])" in source and "by_size" in source
+    assert ".name.lower()" not in source              # 0.12.6: el nombre del archivo ya no cuenta

@@ -307,7 +307,7 @@ class LibraryController(QObject):
 
     @Slot(result="QVariantList")
     def duplicateGroups(self) -> list:
-        """Grupos de duplicados (mismo artista, título, duración, nombre de archivo y tamaño). Cada grupo: `items`,
+        """Grupos de duplicados (archivos idénticos, con cualquier nombre). Cada grupo: `items`,
         de mejor a peor copia; la primera es la que se conserva por defecto."""
         groups = []
         for number, members in enumerate(duplicates.find_groups(self._conn)):

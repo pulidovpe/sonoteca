@@ -1,4 +1,4 @@
-"""Duplicados (mismo artista, título, duración, nombre de archivo y tamaño) y borrado seguro a la papelera."""
+"""Duplicados (archivos idénticos, con cualquier nombre) y borrado seguro a la papelera."""
 import shutil
 import sqlite3
 
@@ -40,17 +40,28 @@ def _fake_trash(tmp_path):
     return trash
 
 
-def test_only_files_that_match_all_four_criteria_are_duplicates(tmp_path):
+def test_duplicates_are_identical_files_whatever_their_name_folder_or_tags(tmp_path):
     conn, artist, album = _library(tmp_path)
     a = _file(conn, tmp_path, "uno", "cancion.mp3", b"x" * 100, artist, album)
-    b = _file(conn, tmp_path, "dos", "cancion.mp3", b"x" * 100, artist, album, duration=199.9)       # redondea a 200: igual
-    _file(conn, tmp_path, "tres", "otro-nombre.mp3", b"x" * 100, artist, album)                     # otro nombre de archivo
-    _file(conn, tmp_path, "cuatro", "cancion.mp3", b"x" * 101, artist, album)                       # otro tamaño
-    _file(conn, tmp_path, "cinco", "cancion.mp3", b"x" * 100, artist, album, duration=230)           # otra duración
-    _file(conn, tmp_path, "seis", "cancion.mp3", b"x" * 100, artist, album, title="Otra")            # otro título
+    b = _file(conn, tmp_path, "dos", "cancion.mp3", b"x" * 100, artist, album)
+    renamed = _file(conn, tmp_path, "tres", "otro-nombre (1).mp3", b"x" * 100, artist, album)
+    retagged = _file(conn, tmp_path, "cuatro", "01 - Sin tags.mp3", b"x" * 100, artist, album,
+                     title="Otro título", duration=0, inferred=1)
+    _file(conn, tmp_path, "cinco", "cancion.mp3", b"x" * 101, artist, album)                  # otro tamaño: no es igual
+    _file(conn, tmp_path, "seis", "cancion.mp3", b"y" * 100, artist, album)                   # mismo tamaño, otro contenido
+    _file(conn, tmp_path, "siete", "unica.mp3", b"z" * 77, artist, album)                     # tamaño único: ni se lee
     conn.commit()
     groups = duplicates.find_groups(conn)
-    assert len(groups) == 1 and {m.track_id for m in groups[0]} == {a, b}
+    assert len(groups) == 1 and {m.track_id for m in groups[0]} == {a, b, renamed, retagged}
+
+
+def test_missing_files_are_not_listed_because_they_cannot_be_verified(tmp_path):
+    conn, artist, album = _library(tmp_path)
+    _file(conn, tmp_path, "a", "t.mp3", b"k" * 30, artist, album)
+    gone = _file(conn, tmp_path, "b", "t2.mp3", b"k" * 30, artist, album)
+    conn.commit()
+    (tmp_path / "b" / "t2.mp3").unlink()
+    assert gone and duplicates.find_groups(conn) == []
 
 
 def test_best_copy_is_kept_first(tmp_path):
