@@ -28,7 +28,7 @@ def test_corner_icon_and_shortcut_enter_mini_mode_and_mini_has_a_restore_icon():
     # solo portada y botones de reproducción (más el tooltip con el título)
     for call in ("player.previous()", "player.toggle()", "player.next()"):
         assert call in mini
-    assert "Slider" not in mini and "title" not in re.sub(r"text: player\.currentTrack\.title", "", mini)
+    assert "Slider" not in mini
     assert "Ctrl+Shift+M" in (QML / "Main.qml").read_text(encoding="utf-8")
 
 
@@ -64,3 +64,11 @@ def test_cover_kind_prefers_the_album_then_the_artist_then_nothing(tmp_path, mon
     photo.mkdir(parents=True)
     (photo / f"{artist}.jpg").write_bytes(b"\xff\xd8\xff" + b"0" * 20)
     assert covers.cover_kind(conn, without_cover, artist) == "artist"                # foto del artista
+
+
+def test_mini_player_shows_a_scrolling_accent_title_above_a_smaller_cover():
+    mini = (QML / "MiniPlayer.qml").read_text(encoding="utf-8")
+    assert "text: player.hasTrack ? player.currentTrack.title : \"\"" in mini and "color: Theme.accent" in mini
+    assert "readonly property real overflow: Math.max(0, titleText.implicitWidth - width)" in mini
+    assert "SequentialAnimation" in mini and "loops: Animation.Infinite" in mini and "PauseAnimation" in mini
+    assert "top: titleBox.bottom" in mini and "width: parent.width - 48" in mini      # portada más pequeña que la ventana

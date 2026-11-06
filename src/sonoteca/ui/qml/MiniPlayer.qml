@@ -2,8 +2,10 @@ import QtQuick
 import QtQuick.Controls
 import "."
 
-// Modo compacto de la ventana principal: solo la portada (del álbum o, si no tiene, la del artista) y los botones de
-// reproducción (aleatorio, anterior, reproducir/pausar, siguiente y silencio). El icono de la esquina devuelve la ventana completa. El título y el artista salen como tooltip.
+// Modo compacto de la ventana principal: el título de la canción que suena (en el color de acento; si es más largo que el
+// ancho, se desplaza cada cierto tiempo para leerlo completo), debajo la portada (del álbum o, si no tiene, la del artista) algo
+// más pequeña que la ventana y los botones de reproducción (aleatorio, anterior, reproducir/pausar, siguiente y silencio).
+// El icono de la esquina devuelve la ventana completa; el artista sale como tooltip de la portada.
 Rectangle {
     id: root
     color: Theme.bg
@@ -16,10 +18,43 @@ Rectangle {
     property alias shuffleButton: shuffleButton
     property alias muteButton: muteButton
     property alias coverImage: cover
+    property alias titleBox: titleBox
 
+    Item {   // título: centrado si cabe; si no, va y viene con pausas
+        id: titleBox
+        anchors { left: parent.left; right: parent.right; top: parent.top; leftMargin: 14; rightMargin: 14; topMargin: 8 }
+        height: 26
+        clip: true
+        property real offset: 0
+        readonly property real overflow: Math.max(0, titleText.implicitWidth - width)
+        Text {
+            id: titleText
+            y: (parent.height - height) / 2
+            x: titleBox.overflow > 0 ? -titleBox.offset : (titleBox.width - implicitWidth) / 2
+            text: player.hasTrack ? player.currentTrack.title : ""
+            color: Theme.accent
+            font.pixelSize: 17
+            font.weight: Font.Bold
+            wrapMode: Text.NoWrap
+            onTextChanged: titleBox.offset = 0
+        }
+        SequentialAnimation {
+            id: marquee
+            running: titleBox.overflow > 0 && root.visible
+            loops: Animation.Infinite
+            onRunningChanged: if (!running) titleBox.offset = 0
+            PauseAnimation { duration: 2500 }
+            NumberAnimation { target: titleBox; property: "offset"; from: 0; to: titleBox.overflow
+                              duration: Math.max(1200, titleBox.overflow * 30); easing.type: Easing.InOutSine }
+            PauseAnimation { duration: 1500 }
+            NumberAnimation { target: titleBox; property: "offset"; to: 0
+                              duration: Math.max(700, titleBox.overflow * 14); easing.type: Easing.InOutSine }
+        }
+    }
     Rectangle {
         id: coverBox
-        anchors { left: parent.left; right: parent.right; top: parent.top }
+        anchors { horizontalCenter: parent.horizontalCenter; top: titleBox.bottom; topMargin: 6 }
+        width: parent.width - 48
         height: width
         color: Theme.placeholder
         Image {
