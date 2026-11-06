@@ -937,7 +937,8 @@ ApplicationWindow {
     TrackMenu { id: trackMenu; onDeleteRequested: (id) => win.confirmDeleteFile(id); onArtistRequested: (id, name) => win.openArtist(id, name); onAlbumRequested: (id) => win.openAlbum(id); onLyricsRequested: (id) => win.showLyrics(id); onEditRequested: (ids) => win.editTags(ids); onListPickerRequested: (ids) => win.showPlaylistPicker(ids) }
     NamePrompt { id: namePrompt }
     ConfirmDialog { id: confirmDialog }
-    PlaylistPicker { id: playlistPicker; onNewRequested: (ids) => win.pickerNewList(ids) }
+    PlaylistPicker { id: playlistPicker; onNewRequested: (ids) => win.pickerNewList(ids); onDuplicatesFound: (listId, ids, count) => duplicateDialog.openFor(listId, ids, count) }
+    DuplicateInListDialog { id: duplicateDialog; onFailed: (text) => win.toast(text) }
     Connections {
         target: playlists
         function onMessage(message) { win.toast(message, 3000) }
@@ -1020,9 +1021,10 @@ ApplicationWindow {
     Connections {
         target: DragState
         function onDropOnList(listId, ids) {
+            var dup = playlists.existingCount(listId, ids)
+            if (dup > 0) { duplicateDialog.openFor(listId, ids, dup); return }      // ya estaba: preguntar
             var r = playlists.addTracks(listId, ids)
             if (!r.ok) win.toast(r.error)
-            else if (r.added === 0) win.toast("Esa canci\u00f3n ya estaba en la lista")
         }
     }
     Rectangle {   // etiqueta que sigue al puntero mientras se arrastra una canción

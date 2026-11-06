@@ -113,10 +113,17 @@ class PlaylistController(QObject):
             self.message.emit(f"Lista \u00ab{info['name']}\u00bb eliminada")
         return self._result()
 
-    @Slot(int, "QVariantList", result="QVariantMap")
-    def addTracks(self, playlist_id: int, ids: list) -> dict:
+    @Slot(int, "QVariantList", result=int)
+    def existingCount(self, playlist_id: int, ids: list) -> int:
+        """Cuántas de estas canciones ya están en la lista (para preguntar antes de repetirlas)."""
         try:
-            added = store.add_tracks(self._conn, playlist_id, [int(i) for i in ids])
+            return len(store.already_in(self._conn, playlist_id, [int(i) for i in ids]))
+        except ValueError:
+            return 0
+
+    def _add(self, playlist_id: int, ids: list, skip_existing: bool) -> dict:
+        try:
+            added = store.add_tracks(self._conn, playlist_id, [int(i) for i in ids], skip_existing)
         except ValueError as exc:
             return self._error(exc)
         info = store.get_playlist(self._conn, playlist_id)
@@ -125,6 +132,16 @@ class PlaylistController(QObject):
             self.message.emit(f"{_songs(added).capitalize()} agregada{'' if added == 1 else 's'} "
                               f"a \u00ab{info['name']}\u00bb")
         return self._result(added=added)
+
+    @Slot(int, "QVariantList", result="QVariantMap")
+    def addTracks(self, playlist_id: int, ids: list) -> dict:
+        """Agrega todas, incluso las que ya estaban (la lista admite repetidas)."""
+        return self._add(playlist_id, ids, False)
+
+    @Slot(int, "QVariantList", result="QVariantMap")
+    def addNewTracks(self, playlist_id: int, ids: list) -> dict:
+        """Agrega solo las que aún no están en la lista."""
+        return self._add(playlist_id, ids, True)
 
     @Slot(int, int, result="QVariantMap")
     def removeAt(self, playlist_id: int, position: int) -> dict:

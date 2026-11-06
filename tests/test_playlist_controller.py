@@ -71,3 +71,12 @@ def test_create_with_tracks_rename_move_remove_and_delete(ctrl):
     assert ctrl.createWithTracks("otro NOMBRE", [1])["ok"] is False
     assert ctrl.remove(pid)["ok"] and ctrl.count == 0 and msgs[-1] == "Lista «Otro nombre» eliminada"
     assert ctrl.info(pid) == {}
+
+
+def test_existing_count_and_add_only_new(ctrl):
+    pid = ctrl.create("L")["id"]
+    ctrl.addTracks(pid, [1])
+    assert ctrl.existingCount(pid, [1, 2]) == 1 and ctrl.existingCount(pid, [2]) == 0 and ctrl.existingCount(999, [1]) == 0
+    assert ctrl.addNewTracks(pid, [1, 2, 2])["added"] == 1 and ctrl.trackIds(pid) == [1, 2]
+    assert ctrl.addNewTracks(pid, [1, 2])["added"] == 0
+    assert ctrl.addTracks(pid, [1])["added"] == 1 and ctrl.trackIds(pid) == [1, 2, 1]    # «agregar de nuevo» sigue permitido
