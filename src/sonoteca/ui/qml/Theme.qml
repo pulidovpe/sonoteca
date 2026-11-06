@@ -52,6 +52,8 @@ QtObject {
     readonly property int yearMin: 360          // desde este ancho de fila (también en el panel derecho) se muestra el año
     readonly property int yearColumn: 52
     readonly property int yearColumnCompact: 40
+    readonly property int durationColumn: 60          // ancho fijo (alineada a la derecha): así las columnas no se desplazan de una canción a otra
+    readonly property int durationColumnCompact: 48
     readonly property int playsColumn: 76
     // Color de una portada sin imagen: tono estable por id dentro de la gama cian → violeta del logo
     function coverColor(id) { return Qt.hsla((185 + ((id * 61) % 105)) / 360, 0.55, 0.28, 1) }
@@ -63,6 +65,8 @@ QtObject {
     readonly property string iconList: "M9 6 H21 V8 H9 Z M9 11 H21 V13 H9 Z M9 16 H21 V18 H9 Z M3 6 H6 V8 H3 Z M3 11 H6 V13 H3 Z M3 16 H6 V18 H3 Z"
     readonly property string iconQueue: "M4 12 H8 V20 H4 Z M10 4 H14 V20 H10 Z M16 9 H20 V20 H16 Z"
     readonly property string iconLyrics: "M0.9 13 L3.3 3 L5.5 3 L7.9 13 L5.8 13 L5.4 11 L3.4 11 L3 13 Z M4.4 5.3 L5.1 8.8 L3.7 8.8 Z M8.7 3 L13.4 3 L14.8 4.3 L14.8 7.2 L14 8 L15 8.9 L15 11.7 L13.5 13 L8.7 13 Z M10.6 4.9 L12.7 4.9 L12.9 5.1 L12.9 6.5 L12.7 6.7 L10.6 6.7 Z M10.6 9.2 L13 9.2 L13.2 9.4 L13.2 11 L13 11.2 L10.6 11.2 Z M18 3 L22.9 3 L22.9 5.1 L18.8 5.1 L18.8 10.9 L22.9 10.9 L22.9 13 L18 13 L16.5 11.5 L16.5 4.5 Z M1 15.5 L23 15.5 L23 17.3 L1 17.3 Z M1 19.5 L15 19.5 L15 21.3 L1 21.3 Z"          // «ABC» con dos líneas de letra
+    readonly property string iconGrid: "M4 4 H10.5 V10.5 H4 Z M13.5 4 H20 V10.5 H13.5 Z M4 13.5 H10.5 V20 H4 Z M13.5 13.5 H20 V20 H13.5 Z"      // vista en cuadrícula
+    readonly property string iconRows: "M4 5 H20 V8 H4 Z M4 10.5 H20 V13.5 H4 Z M4 16 H20 V19 H4 Z"                                          // vista en lista
     readonly property string iconReview: "M12 3 A9 9 0 1 0 12 21 A9 9 0 1 0 12 3 Z M11 7 H13 V13 H11 Z M11 15 H13 V17 H11 Z"
     readonly property string iconGlobe: "M12 3 A9 9 0 1 0 12 21 A9 9 0 1 0 12 3 Z M12 4.8 A7.2 7.2 0 1 1 12 19.2 A7.2 7.2 0 1 1 12 4.8 Z M4.8 11 H19.2 V13 H4.8 Z M12 4.8 A3.5 7.2 0 1 0 12 19.2 A3.5 7.2 0 1 0 12 4.8 Z M12 6.3 A2 5.7 0 1 1 12 17.7 A2 5.7 0 1 1 12 6.3 Z"
     readonly property string iconPlay: "M8 4 L20 12 L8 20 Z"

@@ -5,6 +5,26 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.12.15] - 2026-11-05
+### Añadido
+- **Almacén de preferencias de interfaz** (`core/prefs.py` + `ui/prefs_controller.py`, expuesto a QML como `prefs`): un JSON
+  pequeño `ui_prefs.json` en la carpeta de datos (escritura atómica; archivo ausente o dañado = sin preferencias; si no se puede
+  escribir, se conserva en memoria). Valores tipados `boolValue/intValue/stringValue` y `setBool/setInt/setString`. «Empezar
+  desde cero» también lo borra. Primer uso: la **vista en cuadrícula de Listas ahora se recuerda entre sesiones**.
+### Corregido
+- **Las columnas de las listas se desalineaban de una canción a otra.** La duración, la etiqueta (VIDEO…) y las columnas de
+  álbum/año/reproducciones cambiaban de ancho o desaparecían según los datos de cada fila. Ahora todas tienen ancho fijo
+  (`Theme.durationColumn` = 60, alineada a la derecha; 48 en el panel estrecho); la columna de álbum y la de año existen en todas
+  las filas de una página si la página las da (aunque una canción no tenga el dato); la etiqueta pasa al final de la columna del
+  nombre. *(UI sin ejecutar; la lógica de preferencias, probada aquí con un script.)*
+
+## [0.12.14] - 2026-11-05
+### Añadido
+- **Listas de reproducción en cuadrícula.** En la página Listas, dos botones (lista / cuadrícula) a la derecha de «Nueva lista»
+  cambian la vista; la cuadrícula muestra la portada (collage) en tarjetas con nombre y número de canciones y duración, y se
+  adapta al ancho. La vista elegida se conserva mientras la app esté abierta (aún no se guarda entre sesiones). Iconos nuevos
+  `iconGrid` e `iconRows`. *(UI sin ejecutar.)*
+
 ## [0.12.13] - 2026-11-05
 ### Corregido
 - **La app no arrancaba: «MiniPlayer.qml: id is not unique».** En la 0.12.12 reordené `MiniPlayer.qml` con un script y dejé

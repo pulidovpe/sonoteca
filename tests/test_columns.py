@@ -71,3 +71,20 @@ def test_year_column_also_in_narrow_lists_and_album_takes_a_share_of_the_free_wi
     assert "readonly property int yearMin: 360" in theme and "Math.round((width - 300) * 0.42)" in theme
     compact = (QML / "ListTrackRow.qml").read_text(encoding="utf-8")
     assert "width: row.compact ? Theme.yearColumnCompact : Theme.yearColumn" in compact
+
+
+def test_columns_have_fixed_widths_so_they_align_between_songs():
+    """0.12.15: la duración, el año, el álbum y las reproducciones no dependen del contenido de cada fila."""
+    theme = _theme()
+    assert "readonly property int durationColumn: 60" in theme and "readonly property int durationColumnCompact: 48" in theme
+    for name in ("TrackRow.qml", "ListTrackRow.qml"):
+        row = (QML / name).read_text(encoding="utf-8")
+        cells = row[row.index("id: cells"):]
+        assert "implicitWidth" not in cells, name                          # ningún ancho depende del texto de la fila
+        assert "horizontalAlignment: Text.AlignRight" in cells, name       # duraciones alineadas a la derecha
+        assert 'album !== ""' not in row and 'year !== ""' not in row, name   # la columna no desaparece si falta el dato
+        assert "album !== undefined" in row and "year !== undefined" in row, name
+    track = (QML / "TrackRow.qml").read_text(encoding="utf-8")
+    assert "width: Theme.durationColumn" in track
+    assert "id: badgeBox" in track and "id: badgeBox" not in track[track.index("id: cells"):]   # la etiqueta va en la columna del nombre
+    assert "width: row.compact ? Theme.durationColumnCompact : Theme.durationColumn" in (QML / "ListTrackRow.qml").read_text(encoding="utf-8")

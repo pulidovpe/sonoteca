@@ -19,11 +19,12 @@ Item {
     property bool upNextBottom: false
     // Columnas según el ancho (Theme.tier): pista · nombre con artista debajo · álbum · año · reproducciones
     property string artist: ""
-    property string album: ""
-    property string year: ""
+    // album y year: si la página no los da (undefined) no hay columna; si los da, existe en TODAS las filas
+    property var album: undefined
+    property var year: undefined
     readonly property int tier: Theme.tier(width)
-    readonly property bool showAlbum: tier >= 2 && album !== ""
-    readonly property bool showYear: width >= Theme.yearMin && year !== ""
+    readonly property bool showAlbum: tier >= 2 && album !== undefined
+    readonly property bool showYear: width >= Theme.yearMin && year !== undefined
     readonly property bool showPlays: tier >= 3 && plays >= 0
     readonly property string line2: artist !== "" ? artist : subtitle
     property bool compact: false   // true: panel estrecho (sin contador de reproducciones; acciones sobre la duración al pasar el ratón)
@@ -139,15 +140,17 @@ Item {
         Text {
             visible: row.showAlbum
             width: Theme.albumColumn(row.width)
-            text: row.album
+            text: row.album ? row.album : ""
             color: Theme.textDim
             font.pixelSize: 13
             elide: Text.ElideRight
         }
-        Text { visible: row.showYear; width: row.compact ? Theme.yearColumnCompact : Theme.yearColumn; text: row.year; color: Theme.textDim; font.pixelSize: 13 }
+        Text { visible: row.showYear; width: row.compact ? Theme.yearColumnCompact : Theme.yearColumn; text: row.year ? row.year : ""; color: Theme.textDim; font.pixelSize: 13 }
         Text { visible: row.showPlays; width: Theme.playsColumn; text: "▶ " + row.plays; color: Theme.textDim; font.pixelSize: 12 }
         Text {
             id: dur
+            width: row.compact ? Theme.durationColumnCompact : Theme.durationColumn
+            horizontalAlignment: Text.AlignRight
             text: Theme.fmt(row.duration)
             color: Theme.textDim
             font.pixelSize: row.compact ? 12 : 14

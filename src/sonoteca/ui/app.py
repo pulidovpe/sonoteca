@@ -30,6 +30,7 @@ def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int
     from .portable_controller import PortableController
     from .servers_controller import ServersController
     from .playlist_controller import PlaylistController
+    from .prefs_controller import PrefsController
     from .scan_controller import ScanController
 
     if db_path is None:   # arranque normal: traer los datos de la versión anterior («musicapp») si los hay
@@ -76,6 +77,8 @@ def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int
     engine.rootContext().setContextProperty("portable", portable_io)
     server_config = ServersController()
     engine.rootContext().setContextProperty("serverConfig", server_config)
+    ui_prefs = PrefsController()
+    engine.rootContext().setContextProperty("prefs", ui_prefs)
 
     # Teclas multimedia (reproducir/pausa, siguiente, anterior): en la app y, en macOS, tambi\u00e9n globales
     media = MediaKeys()
