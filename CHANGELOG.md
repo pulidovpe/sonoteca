@@ -5,6 +5,21 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.12.13] - 2026-11-05
+### Corregido
+- **La app no arrancaba: «MiniPlayer.qml: id is not unique».** En la 0.12.12 reordené `MiniPlayer.qml` con un script y dejé
+  la portada, el título y la animación duplicados. El archivo queda con una sola copia de cada bloque. Nuevo
+  `tests/test_qml_ids.py`: ningún QML puede repetir un `id` ni tener llaves desbalanceadas. *(Ids y llaves de todos los QML
+  comprobados aquí con un script; la app sin ejecutar.)*
+
+## [0.12.12] - 2026-11-05
+### Cambiado
+- **Mini reproductor: el título va sobre la portada** (franja baja, con fondo oscuro de contraste y el texto en el color de
+  acento) y la ventana baja a **236 px** de alto (antes 262; 328 en la 0.12.10). La portada mide 170 px y los botones quedan
+  debajo.
+- **Avisos emergentes arriba de la ventana** (antes abajo, donde los tapaba la barra de reproducción), incluido el de «tags
+  actualizados». En el mini reproductor el aviso ya no se estrecha a 64 px. *(UI sin ejecutar.)*
+
 ## [0.12.11] - 2026-11-05
 ### Cambiado
 - **Mini reproductor: alto al 80 %** (328 → 262 px) **y título debajo de la portada.** La portada (166 px, cuadrada) queda
