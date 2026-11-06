@@ -66,9 +66,11 @@ def test_cover_kind_prefers_the_album_then_the_artist_then_nothing(tmp_path, mon
     assert covers.cover_kind(conn, without_cover, artist) == "artist"                # foto del artista
 
 
-def test_mini_player_shows_a_scrolling_accent_title_above_a_smaller_cover():
+def test_mini_player_shows_a_scrolling_accent_title_below_the_cover():
     mini = (QML / "MiniPlayer.qml").read_text(encoding="utf-8")
     assert "text: player.hasTrack ? player.currentTrack.title : \"\"" in mini and "color: Theme.accent" in mini
     assert "readonly property real overflow: Math.max(0, titleText.implicitWidth - width)" in mini
     assert "SequentialAnimation" in mini and "loops: Animation.Infinite" in mini and "PauseAnimation" in mini
-    assert "top: titleBox.bottom" in mini and "width: parent.width - 48" in mini      # portada más pequeña que la ventana
+    assert "top: coverBox.bottom" in mini and "anchors { horizontalCenter: parent.horizontalCenter; top: titleBox.bottom; bottom: parent.bottom }" in mini
+    assert "parent.height - 8 - 6 - 24 - 52 - 6" in mini                                # la portada cede alto al título y a los botones
+    assert "readonly property int miniHeight: 262" in (QML / "Main.qml").read_text(encoding="utf-8")

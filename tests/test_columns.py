@@ -24,7 +24,7 @@ def test_both_row_types_show_columns_by_tier_in_the_requested_order():
     for name in ("TrackRow.qml", "ListTrackRow.qml"):
         row = (QML / name).read_text(encoding="utf-8")
         assert "readonly property int tier: Theme.tier(width)" in row, name
-        assert "tier >= 2 && album" in row and "tier >= 3 && year" in row and "tier >= 3 && plays" in row, name
+        assert "tier >= 2 && album" in row and "width >= Theme.yearMin && year" in row and "tier >= 3 && plays" in row, name
         cells = row[row.index("Row {\n        id: cells") if "Row {\n        id: cells" in row else row.index("id: cells"):]
         order = [cells.index(k) for k in ("showAlbum", "showYear", "showPlays")]
         assert order == sorted(order), f"{name}: orden álbum, año, reproducciones"
@@ -64,3 +64,10 @@ def test_every_data_source_provides_a_year_falling_back_to_the_album_year(tmp_pa
     pid = playlists.create(conn, "L")
     playlists.add_tracks(conn, pid, ids)
     assert [r["year"] for r in playlists.tracks(conn, pid)] == [2001, 1999]
+
+
+def test_year_column_also_in_narrow_lists_and_album_takes_a_share_of_the_free_width():
+    theme = (QML / "Theme.qml").read_text(encoding="utf-8")
+    assert "readonly property int yearMin: 360" in theme and "Math.round((width - 300) * 0.42)" in theme
+    compact = (QML / "ListTrackRow.qml").read_text(encoding="utf-8")
+    assert "width: row.compact ? Theme.yearColumnCompact : Theme.yearColumn" in compact

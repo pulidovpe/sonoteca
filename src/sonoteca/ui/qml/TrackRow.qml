@@ -2,7 +2,7 @@ import QtQuick
 import "."
 
 // Fila de canción. Columnas según el ancho (Theme.tier): pista · nombre con el artista debajo · álbum · año · reproducciones.
-// Ancho amplio: todas; medio: hasta el álbum; mínimo: pista y nombre. La duración y el menú ⋮ se mantienen siempre.
+// Ancho amplio: todas; medio: hasta el álbum (+ año); estrecho: pista, nombre y año. La duración y el menú ⋮ se mantienen siempre.
 Item {
     id: root
     property string number: ""
@@ -20,7 +20,7 @@ Item {
     signal contextRequested()
     readonly property int tier: Theme.tier(width)
     readonly property bool showAlbum: tier >= 2 && album !== ""
-    readonly property bool showYear: tier >= 3 && year !== ""
+    readonly property bool showYear: width >= Theme.yearMin && year !== ""
     readonly property bool showPlays: tier >= 3 && plays >= 0
     readonly property string line2: artist !== "" ? artist : subtitle
     height: 52

@@ -5,6 +5,18 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.12.11] - 2026-11-05
+### Cambiado
+- **Mini reproductor: alto al 80 %** (328 → 262 px) **y título debajo de la portada.** La portada (166 px, cuadrada) queda
+  arriba, el título con desplazamiento justo debajo y la fila de botones al final. *(UI sin ejecutar.)*
+
+## [0.12.10] - 2026-11-05
+### Cambiado
+- **Columnas de las listas: Nombre/Artista, Álbum, Año y Duración.** El año ahora se muestra desde filas de 360 px (antes
+  solo desde 860), así también aparece en el panel «Reproduciendo» de la derecha; las reproducciones siguen en filas anchas.
+  El álbum se lleva el 42 % del ancho libre (antes ~24 %, máx. 240 px), de modo que la columna del nombre ya no se estira por
+  todo el espacio; los nombres largos se recortan con «…». *(UI sin ejecutar: conviene ajustar los porcentajes mirándolo.)*
+
 ## [0.12.9] - 2026-11-05
 ### Cambiado
 - **Mini reproductor: título de la canción sobre una portada algo más pequeña.** El título va arriba en el color de acento

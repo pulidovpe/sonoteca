@@ -46,8 +46,12 @@ QtObject {
     readonly property int tierWideMin: 860
     readonly property int tierMediumMin: 560
     function tier(width) { return width >= tierWideMin ? 3 : (width >= tierMediumMin ? 2 : 1) }
-    function albumColumn(width) { return Math.max(120, Math.min(240, Math.round(width * 0.24))) }
+    // Reparto del ancho de una fila: el álbum se lleva el 42 % de lo que sobra tras las columnas fijas, así el nombre
+    // (que ocupa el resto) no se estira de más; los nombres largos se recortan con «…»
+    function albumColumn(width) { return Math.max(130, Math.min(480, Math.round((width - 300) * 0.42))) }
+    readonly property int yearMin: 360          // desde este ancho de fila (también en el panel derecho) se muestra el año
     readonly property int yearColumn: 52
+    readonly property int yearColumnCompact: 40
     readonly property int playsColumn: 76
     // Color de una portada sin imagen: tono estable por id dentro de la gama cian → violeta del logo
     function coverColor(id) { return Qt.hsla((185 + ((id * 61) % 105)) / 360, 0.55, 0.28, 1) }
