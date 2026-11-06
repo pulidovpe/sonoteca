@@ -23,7 +23,7 @@ Item {
     property string year: ""
     readonly property int tier: Theme.tier(width)
     readonly property bool showAlbum: tier >= 2 && album !== ""
-    readonly property bool showYear: tier >= 3 && year !== ""
+    readonly property bool showYear: width >= Theme.yearMin && year !== ""
     readonly property bool showPlays: tier >= 3 && plays >= 0
     readonly property string line2: artist !== "" ? artist : subtitle
     property bool compact: false   // true: panel estrecho (sin contador de reproducciones; acciones sobre la duración al pasar el ratón)
@@ -135,7 +135,7 @@ Item {
     Row {
         id: cells
         anchors { right: parent.right; rightMargin: row.compact ? 14 : 28; verticalCenter: parent.verticalCenter }
-        spacing: 16
+        spacing: row.compact ? 10 : 16
         Text {
             visible: row.showAlbum
             width: Theme.albumColumn(row.width)
@@ -144,7 +144,7 @@ Item {
             font.pixelSize: 13
             elide: Text.ElideRight
         }
-        Text { visible: row.showYear; width: Theme.yearColumn; text: row.year; color: Theme.textDim; font.pixelSize: 13 }
+        Text { visible: row.showYear; width: row.compact ? Theme.yearColumnCompact : Theme.yearColumn; text: row.year; color: Theme.textDim; font.pixelSize: 13 }
         Text { visible: row.showPlays; width: Theme.playsColumn; text: "▶ " + row.plays; color: Theme.textDim; font.pixelSize: 12 }
         Text {
             id: dur
