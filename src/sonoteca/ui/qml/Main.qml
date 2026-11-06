@@ -930,6 +930,7 @@ ApplicationWindow {
     }
 
     TagEditor { id: tagEditor }
+    Binding { target: DragState; property: "inputBlocked"; value: tagEditor.visible || tagEditor.opened }   // también aquí, por si el aviso del propio editor no llega
     TrackMenu { id: trackMenu; onDeleteRequested: (id) => win.confirmDeleteFile(id); onArtistRequested: (id, name) => win.openArtist(id, name); onAlbumRequested: (id) => win.openAlbum(id); onLyricsRequested: (id) => win.showLyrics(id); onEditRequested: (ids) => win.editTags(ids); onListPickerRequested: (ids) => win.showPlaylistPicker(ids) }
     NamePrompt { id: namePrompt }
     ConfirmDialog { id: confirmDialog }
@@ -1025,7 +1026,7 @@ ApplicationWindow {
         id: dragGhost
         parent: Overlay.overlay
         z: 2000
-        visible: DragState.active
+        visible: DragState.active && !DragState.inputBlocked
         enabled: false
         x: DragState.sceneX + 14
         y: DragState.sceneY + 8

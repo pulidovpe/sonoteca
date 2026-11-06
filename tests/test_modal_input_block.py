@@ -36,3 +36,9 @@ def test_hidden_track_menu_items_take_no_space():
     text = _read("TrackMenu.qml")
     assert text.count("height: root.allowDelete ? implicitHeight : 0") == 2
     assert "forceLayout" in _read("AppMenu.qml")
+
+
+def test_drag_ghost_and_binding_in_main():
+    main = _read("Main.qml")
+    assert "visible: DragState.active && !DragState.inputBlocked" in main
+    assert 'Binding { target: DragState; property: "inputBlocked"; value: tagEditor.visible || tagEditor.opened }' in main
