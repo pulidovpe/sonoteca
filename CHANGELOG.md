@@ -5,6 +5,13 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.12.7] - 2026-11-05
+### Añadido
+- **Resultados de búsqueda: botones «Nueva lista», «Guardar en lista…», «Portada e info» y «Editar tags».** Actúan sobre las
+  canciones encontradas; si no hay canciones pero el resultado es un solo álbum o un solo artista, sobre las suyas.
+  «Nueva lista» crea una lista de reproducción con ellas (pide el nombre); «Guardar en lista…» abre el selector de listas.
+  «Portada e info» se activa cuando los resultados corresponden a un único álbum. *(UI sin ejecutar.)*
+
 ## [0.12.6] - 2026-11-05
 ### Corregido
 - **Duplicados con nombres distintos no se encontraban**: se exigía el mismo nombre de archivo (además de artista, título,
