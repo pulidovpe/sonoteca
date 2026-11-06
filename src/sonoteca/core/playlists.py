@@ -135,12 +135,35 @@ def _rewrite(conn: sqlite3.Connection, playlist_id: int, ids: list[int]) -> None
                          " VALUES (?, ?, ?)", [(playlist_id, t, i) for i, t in enumerate(ids)])
 
 
-def add_tracks(conn: sqlite3.Connection, playlist_id: int, ids: list[int]) -> int:
-    """Agrega al final. Devuelve cuántas pistas se agregaron (las que no existen se ignoran)."""
+def already_in(conn: sqlite3.Connection, playlist_id: int, ids: list[int]) -> list[int]:
+    """Las pistas de `ids` que ya están en la lista (sin repetir, en el orden pedido)."""
+    _require(conn, playlist_id)
+    present = set(track_ids(conn, playlist_id))
+    seen: set[int] = set()
+    out: list[int] = []
+    for i in (int(x) for x in ids):
+        if i in present and i not in seen:
+            seen.add(i)
+            out.append(i)
+    return out
+
+
+def add_tracks(conn: sqlite3.Connection, playlist_id: int, ids: list[int], skip_existing: bool = False) -> int:
+    """Agrega al final. Devuelve cuántas pistas se agregaron (las que no existen se ignoran).
+    Con `skip_existing` no agrega las que ya están en la lista ni repite una pista pedida dos veces."""
     _require(conn, playlist_id)
     valid = _existing(conn, ids)
+    current = track_ids(conn, playlist_id)
+    if skip_existing:
+        present = set(current)
+        fresh: list[int] = []
+        for i in valid:
+            if i not in present:
+                present.add(i)
+                fresh.append(i)
+        valid = fresh
     if valid:
-        _rewrite(conn, playlist_id, track_ids(conn, playlist_id) + valid)
+        _rewrite(conn, playlist_id, current + valid)
     return len(valid)
 
 

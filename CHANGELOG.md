@@ -5,6 +5,14 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.12.8] - 2026-11-05
+### Añadido
+- **Al guardar canciones en una lista se detecta si ya estaban.** Vale para el selector «Agregar a una lista» y para arrastrar
+  canciones a una lista de la barra lateral. Si alguna ya está, un aviso pregunta: **Cancelar**, **Agregar solo las nuevas** o
+  **Agregar todas** (repitiendo las que ya tiene); con una sola canción, o si todas ya estaban, **Agregar de nuevo**.
+  Antes se repetían en silencio y el aviso «ya estaba» de arrastrar nunca llegaba a salir. Nuevo: `playlists.already_in`,
+  `add_tracks(skip_existing=…)`, `existingCount` / `addNewTracks`. *(Lógica y UI sin ejecutar aquí.)*
+
 ## [0.12.7] - 2026-11-05
 ### Añadido
 - **Resultados de búsqueda: botones «Nueva lista», «Guardar en lista…», «Portada e info» y «Editar tags».** Actúan sobre las

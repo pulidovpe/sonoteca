@@ -38,10 +38,11 @@ def test_dropping_a_dragged_track_on_a_sidebar_list_adds_it(qml_env):
     env.act(f"var id = DragState.hoverListId; DragState.end(); DragState.dropOnList(id, [{ids[0]}])", 300)
     assert env.playlists.trackIds(pid) == [ids[0]]
     assert env.js("listsGroup.open") is False        # al soltar vuelve a plegarse
-    # soltar de nuevo la misma canción avisa en vez de duplicarla en silencio
+    # soltar de nuevo la misma canción pregunta en vez de duplicarla en silencio
     env.act(f"DragState.dropOnList({pid}, [{ids[0]}])", 200)
-    assert env.playlists.trackIds(pid) == [ids[0]]
-    assert "ya estaba" in env.js("toastText.text")
+    assert env.js("duplicateDialog.visible") is True and env.playlists.trackIds(pid) == [ids[0]]
+    env.act("duplicateDialog.addAnyway()", 200)                  # «Agregar de nuevo»
+    assert env.playlists.trackIds(pid) == [ids[0], ids[0]]
     assert env.warnings == []
 
 

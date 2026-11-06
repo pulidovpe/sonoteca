@@ -47,3 +47,4 @@ ServersDialog 1.0 ServersDialog.qml
 AppToolTip 1.0 AppToolTip.qml
 MiniPlayer 1.0 MiniPlayer.qml
 DuplicatesDialog 1.0 DuplicatesDialog.qml
+DuplicateInListDialog 1.0 DuplicateInListDialog.qml

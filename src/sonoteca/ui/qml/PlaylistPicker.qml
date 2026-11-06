@@ -9,6 +9,7 @@ Popup {
     property var lists: []
     property string error: ""
     signal newRequested(var ids)
+    signal duplicatesFound(int playlistId, var ids, int count)   // ya estaban: Main pregunta qué hacer
 
     modal: true
     focus: true
@@ -27,6 +28,13 @@ Popup {
         open()
     }
     function add(playlistId) {
+        var dup = playlists.existingCount(playlistId, ids)
+        if (dup > 0) {
+            var chosen = ids
+            close()
+            duplicatesFound(playlistId, chosen, dup)
+            return
+        }
         var result = playlists.addTracks(playlistId, ids)
         if (!result.ok) { error = result.error; return }
         close()
