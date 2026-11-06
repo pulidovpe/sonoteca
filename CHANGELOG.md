@@ -5,6 +5,13 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.12.9] - 2026-11-05
+### Cambiado
+- **Mini reproductor: título de la canción sobre una portada algo más pequeña.** El título va arriba en el color de acento
+  (cian); si es más largo que el ancho se desplaza (pausa, recorre, pausa, vuelve) cada pocos segundos para verse completo, y si
+  cabe queda centrado. La portada pasa a ser 48 px más estrecha que la ventana; el artista sigue como tooltip de la portada.
+  *(UI sin ejecutar.)*
+
 ## [0.12.8] - 2026-11-05
 ### Añadido
 - **Al guardar canciones en una lista se detecta si ya estaban.** Vale para el selector «Agregar a una lista» y para arrastrar

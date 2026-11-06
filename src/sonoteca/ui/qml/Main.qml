@@ -235,7 +235,7 @@ ApplicationWindow {
     property bool miniMode: false
     property var fullGeometry: null
     readonly property int miniWidth: 264
-    readonly property int miniHeight: 328          // portada cuadrada + fila de botones
+    readonly property int miniHeight: 328          // título + portada cuadrada algo más pequeña + fila de botones
     function enterMini() {
         if (miniMode) return
         fullGeometry = { x: win.x, y: win.y, w: win.width, h: win.height, visibility: win.visibility,
