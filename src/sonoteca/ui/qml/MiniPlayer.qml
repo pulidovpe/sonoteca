@@ -2,9 +2,9 @@ import QtQuick
 import QtQuick.Controls
 import "."
 
-// Modo compacto de la ventana principal: la portada (del álbum o, si no tiene, la del artista), debajo el título de la canción
-// que suena (en el color de acento; si es más largo que el ancho, se desplaza cada cierto tiempo para leerlo completo) y los
-// botones de reproducción (aleatorio, anterior, reproducir/pausar, siguiente y silencio).
+// Modo compacto de la ventana principal: la portada (del álbum o, si no tiene, la del artista) con el título de la canción que
+// suena sobre su parte baja (color de acento sobre un fondo oscuro; si es más largo que el ancho, se desplaza cada cierto
+// tiempo para leerlo completo) y debajo los botones de reproducción (aleatorio, anterior, reproducir/pausar, siguiente y silencio).
 // El icono de la esquina devuelve la ventana completa; el artista sale como tooltip de la portada.
 Rectangle {
     id: root
@@ -23,8 +23,8 @@ Rectangle {
     Rectangle {
         id: coverBox
         anchors { horizontalCenter: parent.horizontalCenter; top: parent.top; topMargin: 8 }
-        // cuadrada: cabe en el ancho (menos 48) y deja sitio al título (24 + 6) y a la fila de botones (52)
-        width: Math.max(80, Math.min(parent.width - 48, parent.height - 8 - 6 - 24 - 52 - 6))
+        // cuadrada: cabe en el ancho (menos 48) y deja sitio a la fila de botones (52)
+        width: Math.max(80, Math.min(parent.width - 48, parent.height - 8 - 52 - 6))
         height: width
         color: Theme.placeholder
         Image {
@@ -49,6 +49,45 @@ Rectangle {
             visible: coverMouse.containsMouse && player.hasTrack
             text: player.currentTrack.title + "\n" + player.currentTrack.artist
         }
+        Rectangle {   // fondo de contraste del título, sobre la parte baja de la portada
+            id: titleBar
+            anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+            height: 32
+            color: Theme.bg
+            opacity: 0.86
+            visible: player.hasTrack
+        }
+        Item {   // título: centrado si cabe; si no, va y viene con pausas
+            id: titleBox
+            anchors { left: titleBar.left; right: titleBar.right; verticalCenter: titleBar.verticalCenter; leftMargin: 10; rightMargin: 10 }
+            height: 24
+            clip: true
+            property real offset: 0
+            readonly property real overflow: Math.max(0, titleText.implicitWidth - width)
+            Text {
+                id: titleText
+                y: (parent.height - height) / 2
+                x: titleBox.overflow > 0 ? -titleBox.offset : (titleBox.width - implicitWidth) / 2
+                text: player.hasTrack ? player.currentTrack.title : ""
+                color: Theme.accent
+                font.pixelSize: 16
+                font.weight: Font.Bold
+                wrapMode: Text.NoWrap
+                onTextChanged: titleBox.offset = 0
+            }
+            SequentialAnimation {
+                id: marquee
+                running: titleBox.overflow > 0 && root.visible
+                loops: Animation.Infinite
+                onRunningChanged: if (!running) titleBox.offset = 0
+                PauseAnimation { duration: 2500 }
+                NumberAnimation { target: titleBox; property: "offset"; from: 0; to: titleBox.overflow
+                                  duration: Math.max(1200, titleBox.overflow * 30); easing.type: Easing.InOutSine }
+                PauseAnimation { duration: 1500 }
+                NumberAnimation { target: titleBox; property: "offset"; to: 0
+                                  duration: Math.max(700, titleBox.overflow * 14); easing.type: Easing.InOutSine }
+            }
+        }
         Rectangle {   // volver a la ventana completa
             anchors { top: parent.top; right: parent.right; margins: 6 }
             width: 30
@@ -65,39 +104,8 @@ Rectangle {
             }
         }
     }
-    Item {   // título: centrado si cabe; si no, va y viene con pausas
-        id: titleBox
-        anchors { left: parent.left; right: parent.right; top: coverBox.bottom; leftMargin: 14; rightMargin: 14; topMargin: 6 }
-        height: 24
-        clip: true
-        property real offset: 0
-        readonly property real overflow: Math.max(0, titleText.implicitWidth - width)
-        Text {
-            id: titleText
-            y: (parent.height - height) / 2
-            x: titleBox.overflow > 0 ? -titleBox.offset : (titleBox.width - implicitWidth) / 2
-            text: player.hasTrack ? player.currentTrack.title : ""
-            color: Theme.accent
-            font.pixelSize: 17
-            font.weight: Font.Bold
-            wrapMode: Text.NoWrap
-            onTextChanged: titleBox.offset = 0
-        }
-        SequentialAnimation {
-            id: marquee
-            running: titleBox.overflow > 0 && root.visible
-            loops: Animation.Infinite
-            onRunningChanged: if (!running) titleBox.offset = 0
-            PauseAnimation { duration: 2500 }
-            NumberAnimation { target: titleBox; property: "offset"; from: 0; to: titleBox.overflow
-                              duration: Math.max(1200, titleBox.overflow * 30); easing.type: Easing.InOutSine }
-            PauseAnimation { duration: 1500 }
-            NumberAnimation { target: titleBox; property: "offset"; to: 0
-                              duration: Math.max(700, titleBox.overflow * 14); easing.type: Easing.InOutSine }
-        }
-    }
     Row {
-        anchors { horizontalCenter: parent.horizontalCenter; top: titleBox.bottom; bottom: parent.bottom }
+        anchors { horizontalCenter: parent.horizontalCenter; top: coverBox.bottom; bottom: parent.bottom }
         spacing: 10
         IconButton {
             id: shuffleButton

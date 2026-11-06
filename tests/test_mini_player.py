@@ -66,11 +66,20 @@ def test_cover_kind_prefers_the_album_then_the_artist_then_nothing(tmp_path, mon
     assert covers.cover_kind(conn, without_cover, artist) == "artist"                # foto del artista
 
 
-def test_mini_player_shows_a_scrolling_accent_title_below_the_cover():
+def test_mini_player_shows_a_scrolling_accent_title_over_the_cover_with_a_contrast_background():
     mini = (QML / "MiniPlayer.qml").read_text(encoding="utf-8")
     assert "text: player.hasTrack ? player.currentTrack.title : \"\"" in mini and "color: Theme.accent" in mini
     assert "readonly property real overflow: Math.max(0, titleText.implicitWidth - width)" in mini
     assert "SequentialAnimation" in mini and "loops: Animation.Infinite" in mini and "PauseAnimation" in mini
-    assert "top: coverBox.bottom" in mini and "anchors { horizontalCenter: parent.horizontalCenter; top: titleBox.bottom; bottom: parent.bottom }" in mini
-    assert "parent.height - 8 - 6 - 24 - 52 - 6" in mini                                # la portada cede alto al título y a los botones
-    assert "readonly property int miniHeight: 262" in (QML / "Main.qml").read_text(encoding="utf-8")
+    cover = mini[mini.index("id: coverBox"):mini.index("Row {\n")]
+    assert "id: titleBar" in cover and "id: titleBox" in cover        # el título y su fondo van dentro de la portada
+    assert "color: Theme.bg" in cover and "opacity: 0.86" in cover
+    assert "top: coverBox.bottom; bottom: parent.bottom" in mini
+    assert "parent.height - 8 - 52 - 6" in mini                       # la portada solo cede alto a los botones
+    assert "readonly property int miniHeight: 236" in (QML / "Main.qml").read_text(encoding="utf-8")
+
+
+def test_toast_appears_at_the_top_of_the_window():
+    main = (QML / "Main.qml").read_text(encoding="utf-8")
+    box = main[main.index("id: toastBox"):main.index("Timer { id: toastTimer")]
+    assert "top: parent.top; topMargin: 20" in box and "bottom: parent.bottom" not in box

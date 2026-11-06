@@ -235,7 +235,7 @@ ApplicationWindow {
     property bool miniMode: false
     property var fullGeometry: null
     readonly property int miniWidth: 264
-    readonly property int miniHeight: 262          // 80 % de los 328 anteriores: portada cuadrada + título debajo + fila de botones
+    readonly property int miniHeight: 236          // 72 % de los 328 originales: portada cuadrada (con el título encima) + fila de botones
     function enterMini() {
         if (miniMode) return
         fullGeometry = { x: win.x, y: win.y, w: win.width, h: win.height, visibility: win.visibility,
@@ -1056,7 +1056,8 @@ ApplicationWindow {
         id: toastBox
         opacity: 0
         visible: opacity > 0
-        anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: 28 }
+        anchors { horizontalCenter: parent.horizontalCenter; top: parent.top; topMargin: 20 }      // arriba: abajo lo tapa la barra de reproducción
+        z: 100
         width: toastText.width + 40
         height: toastText.height + 26
         radius: 16
@@ -1067,7 +1068,7 @@ ApplicationWindow {
         Text {
             id: toastText
             anchors.centerIn: parent
-            width: Math.min(implicitWidth, win.width - 200)
+            width: Math.min(implicitWidth, win.width - (win.miniMode ? 60 : 200))
             wrapMode: Text.WrapAtWordBoundaryOrAnywhere
             horizontalAlignment: Text.AlignHCenter
             color: Theme.text
