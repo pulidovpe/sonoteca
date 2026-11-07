@@ -19,7 +19,7 @@ from importlib import metadata
 from pathlib import Path
 
 MB = 1024 * 1024
-PACKAGES = ("PySide6", "PySide6_Essentials", "PySide6_Addons", "shiboken6", "pyobjc-core", "pyobjc-framework-MediaPlayer",
+PACKAGES = ("PySide6", "PySide6_Essentials", "PySide6_Addons", "PySide6_WebEngine", "PySide6_Pdf", "shiboken6", "pyobjc-core", "pyobjc-framework-MediaPlayer",
             "pyobjc-framework-Cocoa", "httpx", "keyring", "mutagen", "pyinstaller")
 
 # (nombre, expresión sobre la ruta relativa en minúsculas y con «/»); gana la primera que coincida

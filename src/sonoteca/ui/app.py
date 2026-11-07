@@ -10,6 +10,16 @@ ICON_PATH = Path(__file__).parent / "icon.png"   # icono de la ventana (se empaq
 
 
 def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int:
+    # SONOTECA_DEBUG_TIMING=1: escribe en stderr cuánto tarda cada fase del arranque (desde que empieza `run`)
+    import time
+
+    t0 = time.perf_counter()
+    timing = bool(os.environ.get("SONOTECA_DEBUG_TIMING"))
+
+    def mark(label: str) -> None:
+        if timing:
+            print(f"[tiempos] {label}: {(time.perf_counter() - t0) * 1000:.0f} ms", file=sys.stderr)
+
     # El estilo "Basic" permite personalizar los controles por completo
     os.environ.setdefault("QT_QUICK_CONTROLS_STYLE", "Basic")
     # Silencia el aviso informativo de Qt Multimedia («Using Qt multimedia with FFmpeg…»); los avisos de error siguen saliendo
@@ -33,6 +43,7 @@ def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int
     from .prefs_controller import PrefsController
     from .scan_controller import ScanController
 
+    mark("imports de Qt y de la aplicación")
     if db_path is None:   # arranque normal: traer los datos de la versión anterior («musicapp») si los hay
         from sonoteca.core import legacy
 
@@ -96,9 +107,22 @@ def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int
     player.currentChanged.connect(publish_now_playing)
     player.durationChanged.connect(publish_now_playing)
     media.install(app)
+    mark("base de datos y controladores listos")
     engine.load(QUrl.fromLocalFile(str(QML_DIR / "Main.qml")))
     if not engine.rootObjects():
         return 1
+    mark("QML cargado")
+    if timing:
+        try:
+            window = engine.rootObjects()[0]
+
+            def first_frame() -> None:
+                mark("primer fotograma en pantalla")
+                window.frameSwapped.disconnect(first_frame)
+
+            window.frameSwapped.connect(first_frame)
+        except Exception as exc:  # noqa: BLE001  (solo diagnóstico: nunca debe impedir el arranque)
+            print(f"[tiempos] no se pudo medir el primer fotograma: {exc}", file=sys.stderr)
     code = app.exec()
     # Cierre ordenado: primero se destruye la interfaz QML y después los controladores. Si Python libera los
     # controladores antes, los enlaces QML que siguen vivos leen `library` o `playlists` ya destruidos y salen

@@ -5,6 +5,23 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.14.3] - 2026-11-06
+Medido en macOS con PySide6 6.12.0: el binario pesa **161,9 MB** (179,2 MB en la 0.12).
+### Cambiado
+- **El extra `ui` pide `PySide6-Essentials` y `PySide6-Addons`** en vez del metapaquete `PySide6`: desde 6.12 este instala además
+  `PySide6_WebEngine` (~115 MB) y `PySide6_Pdf`, que la app no usa (la poda ya los quitaba del binario, pero engordaban el entorno).
+- **`packaging/build-constraints.txt` fija PySide6 6.12.0** (la versión verificada) para que una versión nueva no cambie el peso
+  sin avisar.
+- **SQLite: `PRAGMA synchronous = NORMAL`** (con WAL). El escáner hace una transacción por archivo y cada una hacía `fsync`;
+  medido en una máquina de desarrollo: 2 000 transacciones, 0,24 s → 0,02 s (mucho más en Windows/discos lentos). Sin riesgo de
+  corrupción; ante una caída del sistema puede perderse lo último escrito.
+### Añadido
+- **`SONOTECA_DEBUG_TIMING=1`**: escribe en stderr el tiempo de cada fase del arranque (imports, base de datos y controladores,
+  QML cargado, primer fotograma). Solo diagnóstico; no puede impedir el arranque.
+- `docs/RENDIMIENTO.md`: mediciones de la base de datos y la búsqueda (con 2 000 y 20 000 canciones no hay cuello de botella) y cómo
+  medir arranque y fluidez (`QSG_RENDER_TIMING`, `QSG_VISUALIZE`…). El informe de tamaño muestra también si hay wheels sin usar.
+*(Sin cambios en la interfaz. La medición de arranque y el cambio de dependencias, sin ejecutar aquí.)*
+
 ## [0.14.2] - 2026-11-06
 ### Añadido
 - **Informe de tamaño del binario** (`packaging/size_report.py`): al final de cada compilación (macOS, Windows, Linux/Docker) agrupa el

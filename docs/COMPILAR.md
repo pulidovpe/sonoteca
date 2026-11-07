@@ -214,16 +214,24 @@ y *no se puede medir desde el código fuente*: se mide sobre el paquete compilad
 qué versiones de paquetes cambiaron (p. ej. `PySide6 6.8.1 → 6.10.0`) y qué archivos son nuevos o crecieron. A mano:
 `python packaging/size_report.py dist/Sonoteca.app --compare dist/size-report-macos-arm64.prev.json`.
 
+**Medido en macOS (0.14.2 con PySide6 6.12.0): 161,9 MB sin comprimir**, frente a los 179,2 MB de la 0.12. No se sabe cuánto se debe
+a cada cambio (poda nueva, `AppKit`, versión de PySide6): el informe por categorías de la siguiente compilación lo dirá.
+
+**PySide6 6.12:** el metapaquete `PySide6` instala también `PySide6_WebEngine` (~115 MB) y `PySide6_Pdf` (~20 MB) y la app no usa
+ninguno. No entran en el binario (la poda los quita), pero engordaban el entorno de compilación. Desde la 0.14.3 el extra `ui` pide
+solo `PySide6-Essentials` y `PySide6-Addons` (QtMultimedia está en Addons). Si ya tienes un entorno con el metapaquete:
+`pip uninstall PySide6 PySide6_WebEngine PySide6_Pdf` y `pip install -e ".[ui,dev]"`.
+
 **Qué suele pesar (hipótesis, sin medir):**
 - **FFmpeg dentro de Qt Multimedia** (`libavcodec`, `libavformat`, `libswscale`…): lo trae PySide6 y es la categoría que más puede
-  cambiar entre versiones de PySide6. Como `pyproject.toml` pide `PySide6>=6.7` sin tope, cada compilación usa la última, y es la
+  cambiar entre versiones de PySide6. Como `pyproject.toml` pedía `PySide6>=6.7` sin tope (ahora lo fija `build-constraints.txt`), cada compilación usaba la última, y era la
   causa más probable de que el binario «siga subiendo».
 - **Bibliotecas y plugins de Qt** (QtQuick, QtQml, QtGui…): fijas, ya podadas (ver `PRUNE` en `packaging/sonoteca.spec`).
 - **PyObjC en macOS**: `pyobjc-framework-MediaPlayer` arrastra otras envolturas de frameworks de Apple. Solo sirve a las teclas
   multimedia globales.
 
-**Si el informe confirma que PySide6 es la causa:** fija la versión con la que pesaba menos en `packaging/build-constraints.txt`
-(los tres scripts la usan; viene vacío) y vuelve a compilar. Comprueba qué cambia con el informe.
+**Versiones fijas:** `packaging/build-constraints.txt` fija PySide6 a la versión verificada (6.12.0) para que una versión nueva no
+cambie el peso sin que lo decidas. Para actualizar, cambia el número (o borra las líneas), compila y compara con el informe.
 
 **Qué se recortó ya (0.14.2):** módulos QML que la app no importa (NativeStyle, Particles, Effects, LocalStorage + Qt SQL, Qt.labs),
 las bibliotecas huérfanas de los estilos de Quick Controls podados, `AppKit` como importación forzada en macOS y paquetes de

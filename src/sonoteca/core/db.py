@@ -112,6 +112,9 @@ def connect(path: Path | str | None = None) -> sqlite3.Connection:
     conn.execute("PRAGMA foreign_keys = ON")
     if str(path) != ":memory:":
         conn.execute("PRAGMA journal_mode = WAL")
+        # Con WAL, NORMAL no hace fsync en cada commit (solo al vaciar el WAL): no hay corrupción posible, y como mucho se
+        # pierde lo último escrito si el sistema se cae. El escáner hace una transacción por archivo, así que esto lo acelera.
+        conn.execute("PRAGMA synchronous = NORMAL")
     migrate(conn)
     return conn
 
