@@ -305,35 +305,54 @@ class LibraryController(QObject):
         self._index = None
         return {"ok": ok, "message": message}
 
+    @staticmethod
+    def _group_dicts(groups: list) -> list:
+        out = []
+        for number, members in enumerate(groups):
+            out.append({
+                "key": number,
+                "title": f"{members[0].artist} \u2014 {members[0].title}",
+                "items": [{"id": m.track_id, "path": m.path, "size": m.size, "album": album_display(m.album),
+                           "bitrate": m.bitrate, "hasCover": m.has_cover, "inferred": m.inferred,
+                           "format": Path(m.path).suffix.lstrip(".").upper(), "duration": m.duration} for m in members],
+            })
+        return out
+
     @Slot(result="QVariantList")
     def duplicateGroups(self) -> list:
         """Grupos de duplicados (archivos idénticos, con cualquier nombre). Cada grupo: `items`,
         de mejor a peor copia; la primera es la que se conserva por defecto."""
-        groups = []
-        for number, members in enumerate(duplicates.find_groups(self._conn)):
-            groups.append({
-                "key": number,
-                "title": f"{members[0].artist} — {members[0].title}",
-                "items": [{"id": m.track_id, "path": m.path, "size": m.size, "album": album_display(m.album),
-                           "bitrate": m.bitrate, "hasCover": m.has_cover, "inferred": m.inferred} for m in members],
-            })
-        return groups
+        return self._group_dicts(duplicates.find_groups(self._conn))
+
+    @Slot(result="QVariantList")
+    def similarGroups(self) -> list:
+        """Grupos de la misma canción en archivos distintos (otro bitrate o formato); la primera es la de mayor bitrate."""
+        return self._group_dicts(duplicates.find_similar_groups(self._conn))
 
     @Slot("QVariantList")
     def deleteDuplicates(self, plan: list) -> None:
         """Mueve a la papelera, por lotes y en un hilo aparte, las copias indicadas (tras verificar su contenido)."""
+        self._start_delete(plan, "exact")
+
+    @Slot("QVariantList")
+    def deleteSimilar(self, plan: list) -> None:
+        """Igual, para la misma canción en otro bitrate o formato (se verifica artista, título y duración)."""
+        self._start_delete(plan, "similar")
+
+    def _start_delete(self, plan: list, mode: str) -> None:
         if self._deleting:
             return
         self._deleting = True
         clean = [{"keep": int(g["keep"]), "remove": [int(i) for i in g["remove"]]} for g in plan]
-        threading.Thread(target=self._delete_worker, args=(clean,), daemon=True).start()
+        threading.Thread(target=self._delete_worker, args=(clean, mode), daemon=True).start()
 
-    def _delete_worker(self, plan: list) -> None:
+    def _delete_worker(self, plan: list, mode: str = "exact") -> None:
         try:
             conn = connect(self._db_arg)
             try:
                 out = file_delete.delete_duplicates(
-                    conn, plan, self._trash, progress=lambda done, total: self.duplicatesProgress.emit(done, total))
+                    conn, plan, self._trash, progress=lambda done, total: self.duplicatesProgress.emit(done, total),
+                    mode=mode)
             finally:
                 conn.close()
             result = {"deleted": out["deleted"], "skipped": [{"id": i, "reason": r} for i, r in out["skipped"]],

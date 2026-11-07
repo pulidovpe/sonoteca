@@ -119,6 +119,7 @@ Item {
     // Columnas de la derecha, en este orden: álbum, año, reproducciones y duración (todas de ancho fijo)
     Row {
         id: cells
+        z: 1                                  // por encima del MouseArea de toda la fila: si no, tapa el enlace del álbum
         anchors { right: parent.right; rightMargin: 28; verticalCenter: parent.verticalCenter }
         spacing: 16
         Text {   // el álbum es un enlace a su página

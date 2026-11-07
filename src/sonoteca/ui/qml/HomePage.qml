@@ -136,8 +136,15 @@ Item {
 
             // ---- Canciones m\u00e1s escuchadas ----
             Text { visible: page.homeData.tracks.length > 0; x: 24; text: "Canciones m\u00e1s escuchadas"; color: Theme.text; font.pixelSize: 18; font.weight: Font.Bold }
+            ColumnHeader {
+                id: hdr
+                width: col.width
+                hasNumber: true
+                visible: page.homeData.tracks.length > 1
+                height: visible ? implicitHeight : 0
+            }
             Repeater {
-                model: page.homeData.tracks
+                model: (hdr.sortKey, hdr.sortAsc, hdr.sorted(page.homeData.tracks))
                 delegate: TrackRow {
                     width: col.width
                     number: (index + 1).toString()

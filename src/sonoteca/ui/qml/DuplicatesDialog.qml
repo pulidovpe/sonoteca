@@ -2,12 +2,15 @@ import QtQuick
 import QtQuick.Controls
 import "."
 
-// Duplicados: archivos idénticos (mismo contenido), aunque tengan otro nombre o tags. En cada grupo se conserva UNA copia (la mejor,
-// por defecto) y las demás van a la papelera, por lotes. Antes de mover nada se verifica que el contenido sea idéntico.
+// Duplicados, de dos clases (pestañas): archivos IDÉNTICOS (mismo contenido, aunque tengan otro nombre o tags) y la MISMA CANCIÓN
+// en otro bitrate o formato. En cada grupo se conserva UNA copia (la mejor, por defecto) y las demás van a la papelera, por
+// lotes. Antes de mover nada se verifica: el contenido idéntico, o (misma canción) artista, título y duración.
 Popup {
     id: root
     property var groups: []              // [{title, items: [...], keepId, include}]
     property string stage: "select"      // select | confirm | running | done
+    property string mode: "exact"        // exact (idénticos) | similar (misma canción, otro bitrate o formato)
+    readonly property bool similar: mode === "similar"
     property var result: ({})
     property int done: 0
     property int total: 0
@@ -40,10 +43,15 @@ Popup {
     Overlay.modal: Rectangle { color: Theme.scrim }
 
     function mb(bytes) { return (bytes / 1048576).toFixed(1) + " MB" }
-    function openDialog() {
-        var raw = library.duplicateGroups()
+    function load() {
+        var raw = similar ? library.similarGroups() : library.duplicateGroups()
         groups = raw.map(function (g) { return { title: g.title, items: g.items, keepId: g.items[0].id, include: true } })
         stage = "select"
+    }
+    function setMode(newMode) { mode = newMode; load() }
+    function openDialog() {
+        mode = "exact"
+        load()
         open()
     }
     function setKeep(index, id) { var copy = groups.slice(); copy[index].keepId = id; groups = copy }
@@ -66,7 +74,8 @@ Popup {
         total = ids.length
         stage = "running"
         player.forgetTracks(ids)          // lo que suena o está en la lista deja de apuntar a archivos que se van a eliminar
-        library.deleteDuplicates(p)
+        if (similar) library.deleteSimilar(p)
+        else library.deleteDuplicates(p)
     }
 
     Connections {
@@ -85,11 +94,18 @@ Popup {
             width: parent.width
             spacing: 10
             visible: root.stage === "select"
+            Row {
+                spacing: 8
+                PillButton { height: 32; label: "Archivos id\u00e9nticos"; primary: !root.similar; onClicked: root.setMode("exact") }
+                PillButton { height: 32; label: "Misma canci\u00f3n, otro bitrate o formato"; primary: root.similar; onClicked: root.setMode("similar") }
+            }
             Text {
                 width: parent.width; wrapMode: Text.WordWrap; color: Theme.textDim; font.pixelSize: 13
                 text: root.groups.length === 0
-                      ? "No hay duplicados: ning\u00fan archivo tiene el mismo contenido que otro (se buscan aunque tengan distinto nombre)."
-                      : "Archivos con exactamente el mismo contenido, aunque tengan distinto nombre o tags. Elige la copia que se conserva en cada grupo (por defecto, la de mejores tags, portada y bitrate); las dem\u00e1s ir\u00e1n a la papelera."
+                      ? (root.similar ? "No hay canciones repetidas en otro bitrate o formato (mismo artista y t\u00edtulo, duraci\u00f3n casi igual)."
+                                      : "No hay duplicados: ning\u00fan archivo tiene el mismo contenido que otro (se buscan aunque tengan distinto nombre).")
+                      : (root.similar ? "La misma canci\u00f3n (mismo artista y t\u00edtulo, duraci\u00f3n casi igual) en archivos distintos. Elige la copia que se conserva (por defecto, la de mayor bitrate); las dem\u00e1s ir\u00e1n a la papelera. Revisa el \u00e1lbum de cada una: puede ser la misma canci\u00f3n en un disco y en un recopilatorio."
+                                      : "Archivos con exactamente el mismo contenido, aunque tengan distinto nombre o tags. Elige la copia que se conserva en cada grupo (por defecto, la de mejores tags, portada y bitrate); las dem\u00e1s ir\u00e1n a la papelera.")
             }
             ScrollView {
                 id: scroll
@@ -139,7 +155,7 @@ Popup {
                                         }
                                         Text {
                                             anchors { left: radio.right; leftMargin: 8; right: tag.left; rightMargin: 8; verticalCenter: parent.verticalCenter }
-                                            text: modelData.path
+                                            text: (root.similar ? modelData.album + "  \u00b7  " : "") + modelData.path
                                             color: parent.kept ? Theme.text : Theme.textDim
                                             font.pixelSize: 12
                                             elide: Text.ElideMiddle
@@ -147,7 +163,7 @@ Popup {
                                         Text {
                                             id: tag
                                             anchors { right: parent.right; verticalCenter: parent.verticalCenter }
-                                            text: (parent.kept ? "Se conserva  \u00b7  " : "A la papelera  \u00b7  ") + root.mb(modelData.size) + (modelData.bitrate ? "  \u00b7  " + modelData.bitrate + " kbps" : "")
+                                            text: (parent.kept ? "Se conserva  \u00b7  " : "A la papelera  \u00b7  ") + root.mb(modelData.size) + (modelData.bitrate ? "  \u00b7  " + modelData.bitrate + " kbps" : "") + (root.similar && modelData.format ? "  \u00b7  " + modelData.format : "")
                                             color: parent.kept ? Theme.accent : Theme.textFaint
                                             font.pixelSize: 11
                                         }
@@ -172,7 +188,7 @@ Popup {
                     id: warn
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 12 }
                     wrapMode: Text.WordWrap; color: Theme.warn; font.pixelSize: 13
-                    text: "Se mover\u00e1n " + root.removeCount + " archivos (" + root.mb(root.removeBytes) + ") a la papelera del sistema y se quitar\u00e1n de la biblioteca. Antes se verifica que cada copia sea id\u00e9ntica a la que se conserva; las que no lo sean se dejan intactas. Podr\u00e1s recuperarlas desde la papelera."
+                    text: "Se mover\u00e1n " + root.removeCount + " archivos (" + root.mb(root.removeBytes) + ") a la papelera del sistema y se quitar\u00e1n de la biblioteca. " + (root.similar ? "Estas copias NO son id\u00e9nticas (otro bitrate o formato): solo se conserva la que elegiste. Antes se comprueba que cada una siga siendo la misma canci\u00f3n (artista, t\u00edtulo y duraci\u00f3n); las que no lo sean se dejan intactas. " : "Antes se verifica que cada copia sea id\u00e9ntica a la que se conserva; las que no lo sean se dejan intactas. ") + "Podr\u00e1s recuperarlas desde la papelera."
                 }
             }
         }
@@ -184,7 +200,7 @@ Popup {
             visible: root.stage === "running"
             Rectangle { width: parent.width; height: 8; radius: 4; color: Theme.track
                 Rectangle { height: parent.height; radius: 4; color: Theme.accent; width: root.total > 0 ? parent.width * Math.min(1, root.done / root.total) : 0 } }
-            Text { width: parent.width; color: Theme.text; font.pixelSize: 14; text: root.done + " de " + root.total + " (se verifica el contenido de cada archivo)" }
+            Text { width: parent.width; color: Theme.text; font.pixelSize: 14; text: root.done + " de " + root.total + " (se verifica cada archivo)" }
         }
         Column {
             width: parent.width

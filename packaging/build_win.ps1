@@ -6,7 +6,7 @@ if (Test-Path .venv-build) { Remove-Item -Recurse -Force .venv-build }
 python -m venv --clear .venv-build
 .\.venv-build\Scripts\Activate.ps1
 python -m pip install --upgrade pip
-python -m pip install -e ".[ui,build]"
+python -m pip install -c packaging/build-constraints.txt -e ".[ui,build]"
 pyinstaller packaging/sonoteca.spec --noconfirm --clean
 
 Write-Host "== Prueba de humo (5 s, sin pantalla) =="
@@ -20,4 +20,7 @@ Remove-Item Env:SONOTECA_SELFTEST
 python packaging/check_bundle.py dist\sonoteca
 $version = python -c "import sonoteca; print(sonoteca.__version__)"
 "{0:N0} MB" -f ((Get-ChildItem dist\sonoteca -Recurse | Measure-Object Length -Sum).Sum / 1MB)
-Compress-Archive -Force -Path dist\sonoteca -DestinationPath "dist\Sonoteca-$version-alpha-windows-x86_64.zip"
+$report = "dist\size-report-windows.json"
+if (Test-Path $report) { Move-Item -Force $report "dist\size-report-windows.prev.json" }
+python packaging/size_report.py dist\sonoteca --top 20 --save $report --compare "dist\size-report-windows.prev.json"
+Compress-Archive -Force -Path dist\sonoteca -DestinationPath "dist\Sonoteca-$version-beta-windows-x86_64.zip"

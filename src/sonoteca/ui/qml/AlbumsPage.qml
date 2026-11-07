@@ -103,8 +103,15 @@ Item {
                 id: topColumn
                 width: parent.width - 8
                 Text { text: "Canciones destacadas"; leftPadding: 12; height: 40; verticalAlignment: Text.AlignVCenter; color: Theme.text; font.pixelSize: 18; font.weight: Font.Bold }
+                ColumnHeader {
+                    id: topHdr
+                    width: topColumn.width
+                    hasNumber: true
+                    visible: page.shownTop.length > 1
+                    height: visible ? implicitHeight : 0
+                }
                 Repeater {
-                    model: page.shownTop
+                    model: (topHdr.sortKey, topHdr.sortAsc, topHdr.sorted(page.shownTop))
                     delegate: TrackRow {
                         width: topColumn.width
                         number: (index + 1).toString()

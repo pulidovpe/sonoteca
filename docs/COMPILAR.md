@@ -17,9 +17,9 @@ sistema que quieras entregar.
 
 | Plataforma | Dónde compilar | Script | Resultado |
 |---|---|---|---|
-| macOS | un Mac | `packaging/build_mac.sh` | `dist/Sonoteca.app` y `dist/Sonoteca-<versión>-alpha-macos-<arq>.zip` |
-| Windows | un PC con Windows | `packaging/build_win.ps1` | `dist\sonoteca\sonoteca.exe` y `dist\Sonoteca-<versión>-alpha-windows-x86_64.zip` |
-| Linux | una máquina Linux **o Docker** (también desde Mac/Windows) | `packaging/build_linux_docker.sh` (o pasos manuales, §5) | `dist/Sonoteca-<versión>-alpha-linux-<arq>.tar.gz` |
+| macOS | un Mac | `packaging/build_mac.sh` | `dist/Sonoteca.app` y `dist/Sonoteca-<versión>-beta-macos-<arq>.zip` |
+| Windows | un PC con Windows | `packaging/build_win.ps1` | `dist\sonoteca\sonoteca.exe` y `dist\Sonoteca-<versión>-beta-windows-x86_64.zip` |
+| Linux | una máquina Linux **o Docker** (también desde Mac/Windows) | `packaging/build_linux_docker.sh` (o pasos manuales, §5) | `dist/Sonoteca-<versión>-beta-linux-<arq>.tar.gz` |
 
 La arquitectura del binario es la de la máquina donde compilas: un `.app` hecho en un Mac con Apple Silicon (arm64) es
 para Apple Silicon; uno hecho en un Mac Intel, para Intel. Lo mismo con Linux (x86_64 o arm64).
@@ -81,7 +81,7 @@ muestra el **tamaño** y crea el zip.
 
 ### 3.3 Resultado y primera ejecución
 - `dist/Sonoteca.app` — la aplicación.
-- `dist/Sonoteca-<versión>-alpha-macos-<arq>.zip` — para compartirla.
+- `dist/Sonoteca-<versión>-beta-macos-<arq>.zip` — para compartirla.
 
 La app **no está firmada ni notarizada**. En el mismo Mac donde la compilaste se abre normal; en otro Mac, macOS la
 bloqueará la primera vez: **clic derecho ▸ Abrir ▸ Abrir**, o desde la terminal:
@@ -114,7 +114,7 @@ personales, tamaño y zip.
 
 ### 4.3 Resultado y primera ejecución
 - `dist\sonoteca\sonoteca.exe` (con sus bibliotecas en la misma carpeta; **no muevas el .exe solo**).
-- `dist\Sonoteca-<versión>-alpha-windows-x86_64.zip` — descomprime y ejecuta `sonoteca\sonoteca.exe`.
+- `dist\Sonoteca-<versión>-beta-windows-x86_64.zip` — descomprime y ejecuta `sonoteca\sonoteca.exe`.
 
 El ejecutable **no está firmado**: Windows SmartScreen puede mostrar «Windows protegió su PC» (*Más información ▸ Ejecutar de
 todas formas*), y algunos antivirus marcan por error los programas empaquetados con PyInstaller. Firmar el ejecutable
@@ -133,7 +133,7 @@ Hay dos caminos. El de **Docker** es el recomendado porque deja siempre el mismo
    ./packaging/build_linux_docker.sh                        # x86_64 (en un Mac Apple Silicon va emulado: lento)
    PLATFORM=linux/arm64 ./packaging/build_linux_docker.sh   # arm64 (nativo en Apple Silicon)
    ```
-3. Resultado: `dist/Sonoteca-<versión>-alpha-linux-<arquitectura>.tar.gz`.
+3. Resultado: `dist/Sonoteca-<versión>-beta-linux-<arquitectura>.tar.gz`.
 
 El script compila dentro de un contenedor Debian 12 (`python:3.12-bookworm`), así que el binario resultante necesita
 una versión de **glibc igual o mayor** que la de Debian 12 (2.36). Para distribuciones más antiguas habría que compilar en
@@ -156,7 +156,7 @@ pyinstaller packaging/sonoteca.spec --noconfirm --clean
 SONOTECA_SELFTEST=1 QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software \
   SONOTECA_DATA_DIR=/tmp/d SONOTECA_CACHE_DIR=/tmp/c dist/sonoteca/sonoteca && echo "humo OK"
 python packaging/check_bundle.py dist/sonoteca
-tar -C dist -czf Sonoteca-alpha-linux-$(uname -m).tar.gz sonoteca
+tar -C dist -czf Sonoteca-beta-linux-$(uname -m).tar.gz sonoteca
 ```
 
 ### 5.3 Usarlo en otra máquina Linux
@@ -203,6 +203,39 @@ logo original (`assets/icons/original.png`) con `packaging/make_icons.py`:
 - **Ejecutando desde el código fuente** (`sonoteca gui`) la ventana usa también `icon.png`.
 
 ---
+
+## 6b. Tamaño del binario
+El código y los datos de Sonoteca pesan **menos de 1 MB** (el QML son ~420 KB). Casi todo el peso es Qt (PySide6) y lo que arrastra,
+y *no se puede medir desde el código fuente*: se mide sobre el paquete compilado.
+
+**Cómo medirlo.** Cada script de compilación termina con un informe (`packaging/size_report.py`) que agrupa el paquete por categoría
+(FFmpeg, Qt Multimedia, QML y plugins de Qt, PyObjC, Python…), lista los archivos más pesados y lo guarda en
+`dist/size-report-<sistema>.json`. En la compilación siguiente lo compara con el anterior: te dice cuántos MB creció cada categoría,
+qué versiones de paquetes cambiaron (p. ej. `PySide6 6.8.1 → 6.10.0`) y qué archivos son nuevos o crecieron. A mano:
+`python packaging/size_report.py dist/Sonoteca.app --compare dist/size-report-macos-arm64.prev.json`.
+
+**Qué suele pesar (hipótesis, sin medir):**
+- **FFmpeg dentro de Qt Multimedia** (`libavcodec`, `libavformat`, `libswscale`…): lo trae PySide6 y es la categoría que más puede
+  cambiar entre versiones de PySide6. Como `pyproject.toml` pide `PySide6>=6.7` sin tope, cada compilación usa la última, y es la
+  causa más probable de que el binario «siga subiendo».
+- **Bibliotecas y plugins de Qt** (QtQuick, QtQml, QtGui…): fijas, ya podadas (ver `PRUNE` en `packaging/sonoteca.spec`).
+- **PyObjC en macOS**: `pyobjc-framework-MediaPlayer` arrastra otras envolturas de frameworks de Apple. Solo sirve a las teclas
+  multimedia globales.
+
+**Si el informe confirma que PySide6 es la causa:** fija la versión con la que pesaba menos en `packaging/build-constraints.txt`
+(los tres scripts la usan; viene vacío) y vuelve a compilar. Comprueba qué cambia con el informe.
+
+**Qué se recortó ya (0.14.2):** módulos QML que la app no importa (NativeStyle, Particles, Effects, LocalStorage + Qt SQL, Qt.labs),
+las bibliotecas huérfanas de los estilos de Quick Controls podados, `AppKit` como importación forzada en macOS y paquetes de
+herramientas (`setuptools`, `pip`, `numpy`, `PIL`). Es un ahorro **pequeño** (unos pocos MB); lo grande es PySide6/FFmpeg.
+
+**Cosas que se descartaron a propósito:** *UPX* (no funciona en macOS arm64 y en Windows provoca falsos positivos de antivirus),
+`strip` en macOS (invalida las firmas de las bibliotecas de Qt y el binario deja de abrir en arm64) y `optimize=2` (ahorra 1–3 MB
+pero puede romper bibliotecas que leen docstrings).
+
+**Si la poda diera problemas:** `SONOTECA_NO_PRUNE=1` la desactiva; `build/pruned.txt` lista lo que se quitó. Tras esta versión, si la
+prueba de humo falla o los diálogos de archivos/carpetas no abren, avísame con ese archivo: lo primero que se revisaría son las
+entradas nuevas de `PRUNE`.
 
 ## 7. Verificar que el binario funciona
 

@@ -26,8 +26,9 @@ Item {
     // Clic en una canción: la lista de reproducción queda con esa canción al principio y las anteriores desaparecen;
     // con Aleatorio activo se conserva la lista completa (en orden aleatorio, empezando por esa canción).
     function playFromIndex(index) {
-        if (player.shuffle) player.playFrom(sourceKey, ids, index)
-        else player.playFrom(sourceKey, ids.slice(index), 0)
+        var order = sortedView ? shownIds : ids          // con un orden elegido, desde la canción pulsada en el orden que se ve
+        if (player.shuffle) player.playFrom(sourceKey, order, index)
+        else player.playFrom(sourceKey, order.slice(index), 0)
     }
     function removeAt(i) { playlists.removeAt(playlistId, i) }
 
@@ -99,11 +100,22 @@ Item {
         font.pixelSize: 14
         text: "La lista est\u00e1 vac\u00eda. Agrega canciones con clic derecho \u25b8 Agregar a una lista\u2026, o guarda aqu\u00ed la lista actual."
     }
+    ColumnHeader {
+        id: hdr
+        nameLeft: 112
+        visible: page.items.length > 1
+        height: visible ? implicitHeight : 0
+        anchors { left: parent.left; right: parent.right; top: heroBox.bottom; topMargin: 8 }
+    }
+    // Con un orden elegido se ve la lista ordenada (el orden guardado no cambia); mientras tanto no se puede reordenar
+    readonly property bool sortedView: hdr.sortKey !== ""
+    readonly property var shown: (hdr.sortKey, hdr.sortAsc, player.statsRevision, hdr.sorted(page.items))
+    readonly property var shownIds: shown.map(function (x) { return x.id })
     ListView {
         id: list
         clip: true
-        anchors { left: parent.left; right: parent.right; bottom: parent.bottom; top: heroBox.bottom; topMargin: 8 }
-        model: page.items
+        anchors { left: parent.left; right: parent.right; bottom: parent.bottom; top: hdr.bottom }
+        model: page.shown
         delegate: ListTrackRow {
             width: list.width
             position: modelData.position
@@ -116,13 +128,13 @@ Item {
             trackId: modelData.id
             albumId: modelData.albumId
             count: page.items.length
-            onReorderRequested: (dst) => playlists.moveTrack(page.playlistId, index, dst)
+            onReorderRequested: (dst) => { if (!page.sortedView) playlists.moveTrack(page.playlistId, index, dst) }
             current: player.currentId === modelData.id
             playing: player.playing
             onActivated: page.playFromIndex(index)
             onMenuRequested: page.menuRequested([modelData.id])
             onEditRequested: page.editRequested([modelData.id])
-            onRemoveRequested: page.removeAt(index)
+            onRemoveRequested: page.removeAt(modelData.position)
         }
         ScrollBar.vertical: ScrollBar { }
     }

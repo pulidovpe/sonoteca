@@ -3,16 +3,17 @@
 <p align="center"><img src="assets/icons/sonoteca.png" width="128" alt="Icono de Sonoteca"></p>
 
 [![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-green.svg)](LICENSE)
-![Estado: alfa](https://img.shields.io/badge/estado-alfa-orange.svg)
+![Estado: beta](https://img.shields.io/badge/estado-beta-yellow.svg)
 
 Sonoteca es un reproductor y organizador de **música local** de escritorio: tu biblioteca de mp3, m4a y mp4 (video) organizada por artista, álbum y año, con edición de tags. Funciona **sin conexión por defecto**; internet es opcional y solo se usa para portadas, información de artistas y álbumes, letras y traducción.
 
-> **Versión alfa.** Pensada para usarse y probarse, pero puede tener errores. Haz copia de tu música antes de editar tags en masa (la app guarda una copia de respaldo en cada edición: `sonoteca restore`).
+> **Versión beta.** Ya tiene las funciones principales y se puede usar a diario, pero aún puede tener errores y la interfaz se ha comprobado sobre todo en **macOS**; Windows y Linux se compilan pero falta probarlos a fondo. Haz copia de tu música antes de editar tags o eliminar archivos en masa (la app guarda una copia de respaldo en cada edición: `sonoteca restore`; los archivos eliminados van a la papelera, nunca se borran de forma definitiva).
 
 ## Funciones
 - Biblioteca incremental (~miles de archivos) por **artista, álbum y década**, con búsqueda.
-- Reproducción de audio y video, lista «Reproduciendo» (arrastrar para ordenar), listas guardadas con collage de portadas, historial adelante/atrás, salida de audio seleccionable.
-- **Editor de tags** con verificación (escribe en una copia y comprueba antes de reemplazar) y sección **Por revisar** para canciones incompletas.
+- Reproducción de audio y video, lista «Reproduciendo» (arrastrar para ordenar), **mini reproductor**, historial adelante/atrás, salida de audio seleccionable y teclas multimedia.
+- **Listas guardadas** con collage de portadas, en vista de lista o **cuadrícula**; avisa si una canción ya está en la lista. En cualquier lista de canciones: **ordenar por columna** (nombre, artista, álbum, año, más escuchadas), **álbum como enlace** y **selección de canciones concretas** para agregarlas a una lista.
+- **Editor de tags** con verificación (escribe en una copia y comprueba antes de reemplazar) y sección **Por revisar** para canciones incompletas, con búsqueda de **archivos duplicados** y eliminación segura a la papelera.
 - Opcional en línea: portadas (MusicBrainz + Cover Art Archive), ficha del artista (Wikipedia; foto cambiable a mano), **letras sincronizadas** (LRCLIB) y traducción (DeepL con tu propia clave).
 - Todo se guarda en una base SQLite local; nada se envía a servidores propios.
 
@@ -29,12 +30,14 @@ sonoteca gui                     # abre la interfaz
 Otros comandos: `sonoteca stats | artists | albums --decade 1990 | search "nombre" | incomplete | harvest | export | import | paths`.
 Rutas: por defecto, las carpetas estándar del sistema; se fijan con `SONOTECA_DATA_DIR` y `SONOTECA_CACHE_DIR`.
 
-## Aplicación empaquetada (alfa)
+## Aplicación empaquetada (beta)
 Aún no hay binarios publicados. PyInstaller no compila de forma cruzada: **cada sistema se construye en ese sistema** (o en Docker, para Linux).
 
+**Tamaño del binario:** cada compilación termina con un informe de tamaño por categorías y lo compara con la anterior (`packaging/size_report.py`); si el binario crece, dice qué categoría y qué versión de PySide6 lo causó, y las versiones se pueden fijar para compilar (`packaging/build-constraints.txt`). Ver [`docs/COMPILAR.md`](docs/COMPILAR.md), «Tamaño del binario».
+
 ```bash
-./packaging/build_mac.sh            # macOS   -> dist/Sonoteca.app + dist/Sonoteca-<versión>-alpha-macos-<arq>.zip
-./packaging/build_linux_docker.sh   # Linux   -> dist/Sonoteca-<versión>-alpha-linux-<arq>.tar.gz (requiere Docker)
+./packaging/build_mac.sh            # macOS   -> dist/Sonoteca.app + dist/Sonoteca-<versión>-beta-macos-<arq>.zip
+./packaging/build_linux_docker.sh   # Linux   -> dist/Sonoteca-<versión>-beta-linux-<arq>.tar.gz (requiere Docker)
 .\packaging\build_win.ps1            # Windows -> dist\sonoteca\sonoteca.exe + .zip (en una máquina Windows)
 ```
 **Manual paso a paso para cada plataforma: [`docs/COMPILAR.md`](docs/COMPILAR.md).**
@@ -73,11 +76,12 @@ A la derecha siempre hay un panel: por defecto muestra la lista **Reproduciendo*
 
 ### Mini reproductor
 El icono de la esquina de la barra de reproducción (o Ver ▸ *Mini reproductor*, Ctrl+Shift+M) encoge la ventana a un modo
-compacto, siempre visible, con la portada del álbum (o del artista) y los botones de reproducción. El icono de la esquina de
-la portada devuelve la ventana completa. Solo está disponible mientras hay una canción cargada.
+compacto, siempre visible: la portada del álbum (o del artista) con el **título de la canción encima** (si es largo, se desplaza
+cada pocos segundos para leerlo completo), y debajo los botones de aleatorio, anterior, reproducir/pausar, siguiente y silencio.
+El icono de la esquina de la portada devuelve la ventana completa. Solo está disponible mientras hay una canción cargada.
 
 ### Reproducir desde una lista
-- **Reproducir / Detener** y **Aleatorio** en cada álbum y lista guardada. «Detener» aparece mientras suena esa lista.
+- **Reproducir / Detener** en cada álbum y lista guardada («Detener» aparece mientras suena esa lista). **Aleatorio** no reproduce ni detiene nada: **reordena la lista «Reproduciendo»** de la derecha al azar (la canción que suena queda de primera) o la devuelve a su orden original; lo que ya sonó no vuelve a aparecer. Con Aleatorio activo, *Reproducir* empieza por una canción al azar.
 - **Doble clic en una canción** de un álbum, búsqueda, artista o Inicio **conserva la lista de reproducción y pone esa canción
   de primera** (también con Aleatorio); sin lista, empieza una solo con esa canción. El menú ⋮ ofrece *Reproducir ahora (conserva
   la lista)* y *Vaciar y reproducir*.
@@ -85,7 +89,17 @@ la portada devuelve la ventana completa. Solo está disponible mientras hay una 
   añaden); con *Aleatorio* activo se conserva la lista completa, en orden aleatorio.
 
 ### Listas de canciones
-Todas las listas muestran las canciones igual: con espacio, *pista · nombre con el artista debajo · álbum · año · reproducciones*; al reducir la ventana (o abrir paneles) se ocultan primero el año y las reproducciones, y después el álbum.
+Todas las listas muestran las canciones igual, con columnas de ancho fijo y alineadas: *pista · nombre con el artista debajo · álbum · año · reproducciones · duración*. Al reducir la ventana (o abrir paneles) se ocultan primero las reproducciones, luego el álbum y, en paneles muy estrechos, el año. Los nombres largos se recortan con «…».
+- **Ordenar:** la primera fila trae los títulos de columna (*Nombre, Artista, Álbum, Año, Más escuchadas*). Un clic ordena; otro invierte el sentido; el tercero vuelve al orden original (*Más escuchadas* empieza por las que más suenan). Las canciones sin dato (sin año o sin álbum) quedan al final. En una lista guardada el orden elegido es solo una vista: el orden guardado no cambia y mientras tanto no se puede reordenar arrastrando. La lista «Reproduciendo» de la derecha no lleva cabecera (su orden es el de reproducción).
+- **Álbum como enlace:** pulsar el álbum de una fila abre su página (Inicio, búsqueda, artistas, listas…).
+- **Seleccionar canciones:** en un álbum o en los resultados de búsqueda, *Seleccionar canciones* pone una casilla en cada fila; la barra inferior permite *Seleccionar todas*, crear una *Nueva lista* o *Guardar en lista…* solo con las marcadas.
+- **Resultados de búsqueda:** botones *Nueva lista*, *Guardar en lista…*, *Portada e info* (cuando los resultados son de un único álbum) y *Editar tags*.
+
+### Listas guardadas
+La página **Listas** se ve en lista o en **cuadrícula** (botones de la derecha; se recuerda entre sesiones). Al agregar canciones a una lista —desde el selector o arrastrándolas a la barra lateral— si alguna ya está, pregunta si agregar solo las nuevas, todas (repitiendo) o cancelar.
+
+### Preferencias de interfaz
+Las preferencias de la interfaz (como la vista de Listas) se guardan en `ui_prefs.json`, en la carpeta de datos (`sonoteca paths`). Es un archivo pequeño que puedes borrar sin riesgo; «Empezar desde cero» también lo borra.
 
 ### Teclas multimedia
 Reproducir/pausa, siguiente y anterior del teclado funcionan con la ventana en primer plano en cualquier sistema. En **macOS**
@@ -117,7 +131,19 @@ En la página de un artista: *Actualizar información*, *¿Artista equivocado?* 
 Las letras tienen copyright: se guardan solo en tu base de datos local (uso personal), nunca en el repositorio.
 
 ## Por revisar
-La sección **Por revisar** (Ctrl+3) lista las canciones sin artista o con el artista/título deducidos del nombre del archivo; las que ya tienen artista y título en sus tags no aparecen, aunque les falte el álbum o la portada. **Eliminar archivos:** en esta sección el menú ⋮ de una canción tiene *Eliminar archivo (a la papelera)…* (de uno en uno, con confirmación) y el botón *Buscar duplicados…* agrupa los archivos con exactamente el mismo contenido (aunque tengan otro nombre, carpeta o tags) para mover a la papelera, por lotes, las copias sobrantes (se verifica el contenido antes). Nada se borra de forma definitiva: todo va a la papelera del sistema. *Re-escanear tags* vuelve a leer los archivos de la lista; *Vaciar lista* las oculta sin tocar archivos ni tags; *Restaurar descartadas* las devuelve.
+La sección **Por revisar** (Ctrl+3) lista las canciones sin artista o con el artista/título deducidos del nombre del archivo; las que ya tienen artista y título en sus tags no aparecen, aunque les falte el álbum o la portada. Al guardar en el editor de tags una canción de esta lista se escriben también los datos deducidos del nombre del archivo (título, artista, álbum, año, nº de pista; la vista previa lo indica), así que sale de la lista. **Eliminar archivos:** en esta sección el menú ⋮ de una canción tiene *Eliminar archivo (a la papelera)…* (de uno en uno, con confirmación) y el botón *Buscar duplicados…* tiene dos pestañas: *Archivos idénticos* (exactamente el mismo contenido, aunque tengan otro nombre, carpeta o tags; se verifica el contenido antes de eliminar) y *Misma canción, otro bitrate o formato* (mismo artista y título y duración casi igual, p. ej. un MP3 a 128 y otro a 320 kbps; por defecto se conserva la de mayor bitrate y antes de eliminar se comprueba que siga siendo la misma canción). En ambos casos se mueven a la papelera, por lotes, las copias sobrantes que elijas. Nada se borra de forma definitiva: todo va a la papelera del sistema. *Re-escanear tags* vuelve a leer los archivos de la lista; *Vaciar lista* las oculta sin tocar archivos ni tags; *Restaurar descartadas* las devuelve.
+
+## Estado de la beta
+**Hecho:** biblioteca, reproducción, editor de tags verificado, Por revisar con duplicados, listas, letras y traducción, modo en línea opcional, exportar/importar, mini reproductor, teclas multimedia en macOS y empaquetado (PyInstaller) para macOS, Windows y Linux.
+
+**Limitaciones conocidas:**
+- La interfaz se valida a mano en macOS; en Windows y Linux falta probarla a fondo (los scripts de compilación existen, ver `docs/COMPILAR.md`).
+- La app de macOS no está firmada ni notarizada (clic derecho ▸ *Abrir* la primera vez).
+- Teclas multimedia con la ventana sin foco: solo en macOS.
+- Aún no hay: importar/exportar listas M3U, listas inteligentes, reproducción sin pausas entre pistas (gapless), recordar volumen y lista de reproducción entre sesiones.
+- Capturas de pantalla en este README: pendientes.
+
+Si encuentras un error, abre una incidencia con la versión (`sonoteca --version`), el sistema operativo y, si la app no arranca, el mensaje que aparece al ejecutar `sonoteca gui` en una terminal.
 
 ## Desarrollo
 ```bash

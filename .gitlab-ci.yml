@@ -1,0 +1,96 @@
+# CI de sonoteca. Los trabajos de lint, pruebas y paquete de Linux usan los runners Linux de GitLab.com.
+# Windows y macOS usan los hosted runners en beta (macOS solo en Premium/Ultimate/programa de código
+# abierto): por eso esos paquetes son manuales y pueden fallar sin romper la tubería.
+stages: [lint, test, build]
+
+default:
+  interruptible: true
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  PYTHON_IMAGE: "python:3.12-slim-bookworm"
+  QT_QPA_PLATFORM: offscreen
+  QT_QUICK_BACKEND: software
+  QT_QUICK_CONTROLS_STYLE: Basic
+
+.linux_qt_deps: &linux_qt_deps
+  - apt-get update -qq
+  - apt-get install -y -qq --no-install-recommends ffmpeg libegl1 libgl1 libglib2.0-0 libxkbcommon0 libdbus-1-3 libfontconfig1 libpulse0
+
+lint:
+  stage: lint
+  image: $PYTHON_IMAGE
+  cache: { key: pip, paths: [.cache/pip] }
+  script:
+    - pip install ruff
+    - ruff check src tests
+
+repo-hygiene:
+  stage: lint
+  image: $PYTHON_IMAGE
+  script:
+    # Las letras tienen copyright: el repositorio público no debe contenerlas
+    - apt-get update -qq && apt-get install -y -qq --no-install-recommends git
+    - test -z "$(git ls-files '*.lrc' '*.db' '*.db-wal' '*.sqlite')" || { echo "Hay letras o bases de datos versionadas"; exit 1; }
+
+test:
+  stage: test
+  image: $PYTHON_IMAGE
+  cache: { key: pip, paths: [.cache/pip] }
+  before_script: *linux_qt_deps
+  script:
+    - pip install -e ".[ui,dev]"
+    - pytest -q
+
+build:linux:
+  stage: build
+  image: $PYTHON_IMAGE
+  cache: { key: pip, paths: [.cache/pip] }
+  rules:
+    - if: $CI_COMMIT_TAG
+    - when: manual
+      allow_failure: true
+  before_script: *linux_qt_deps
+  script:
+    - pip install -e ".[ui,build]"
+    - pyinstaller packaging/sonoteca.spec --noconfirm --clean
+    - SONOTECA_SELFTEST=1 SONOTECA_DATA_DIR=/tmp/d SONOTECA_CACHE_DIR=/tmp/c dist/sonoteca/sonoteca
+    - python packaging/check_bundle.py dist/sonoteca
+    - du -sh dist/sonoteca
+    - tar -C dist -czf sonoteca-linux-x86_64.tar.gz sonoteca
+  artifacts:
+    paths: [sonoteca-linux-x86_64.tar.gz]
+    expire_in: 30 days
+
+build:windows:
+  stage: build
+  tags: [saas-windows-medium-amd64]
+  rules:
+    - if: $CI_COMMIT_TAG
+      allow_failure: true
+    - when: manual
+      allow_failure: true
+  script:
+    - python -m pip install -e ".[ui,build]"
+    - python -m PyInstaller packaging/sonoteca.spec --noconfirm --clean
+    - Compress-Archive -Path dist\sonoteca -DestinationPath sonoteca-windows-x86_64.zip
+  artifacts:
+    paths: [sonoteca-windows-x86_64.zip]
+    expire_in: 30 days
+
+build:macos:
+  stage: build
+  tags: [saas-macos-medium-m1]
+  image: macos-14-xcode-15   # verificar la imagen vigente en la documentación de GitLab
+  rules:
+    - if: $CI_COMMIT_TAG
+      allow_failure: true
+    - when: manual
+      allow_failure: true
+  script:
+    - python3 -m pip install -e ".[ui,build]"
+    - python3 -m PyInstaller packaging/sonoteca.spec --noconfirm --clean
+    - ditto -c -k --keepParent dist/Sonoteca.app sonoteca-macos-arm64.zip
+  artifacts:
+    paths: [sonoteca-macos-arm64.zip]
+    expire_in: 30 days

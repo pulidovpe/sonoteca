@@ -51,3 +51,5 @@ DuplicatesDialog 1.0 DuplicatesDialog.qml
 DuplicateInListDialog 1.0 DuplicateInListDialog.qml
 SelectionState 1.0 SelectionState.qml
 SelectionBar 1.0 SelectionBar.qml
+SortLabel 1.0 SortLabel.qml
+ColumnHeader 1.0 ColumnHeader.qml

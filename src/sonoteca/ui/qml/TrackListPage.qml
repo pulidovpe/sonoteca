@@ -36,11 +36,17 @@ Item {
         spacing: 10
         anchors { left: parent.left; right: parent.right; top: sub.bottom; leftMargin: 24; rightMargin: 24; topMargin: 10 }
     }
+    ColumnHeader {
+        id: hdr
+        visible: page.items.length > 1
+        height: visible ? implicitHeight : 0
+        anchors { left: parent.left; right: parent.right; top: actionRow.visible ? actionRow.bottom : sub.bottom; topMargin: 12 }
+    }
     ListView {
         id: list
         clip: true
-        anchors { left: parent.left; right: parent.right; bottom: parent.bottom; top: actionRow.visible ? actionRow.bottom : sub.bottom; topMargin: 12 }
-        model: page.items
+        anchors { left: parent.left; right: parent.right; bottom: parent.bottom; top: hdr.bottom }
+        model: (hdr.sortKey, hdr.sortAsc, player.statsRevision, hdr.sorted(page.items))
         delegate: TrackRow {
             width: list.width
             title: modelData.title

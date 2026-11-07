@@ -4,6 +4,7 @@ import sqlite3
 
 from sonoteca.core import duplicates, file_delete, library
 from sonoteca.core.db import connect
+from sonoteca.core.models import UNKNOWN_ARTIST
 
 
 def _library(tmp_path):
@@ -127,3 +128,54 @@ def test_files_without_duration_are_listed_for_review_as_possibly_damaged(tmp_pa
     conn.commit()
     listed = {r["id"]: r["damaged"] for r in library.list_incomplete(conn)}
     assert broken in listed and listed[broken] == 1 and healthy not in listed
+
+
+# ---- 0.14.1: la misma canción en otro bitrate o formato ----
+def _ids(groups):
+    return [[m.track_id for m in g] for g in groups]
+
+
+def test_similar_groups_find_the_same_song_in_another_bitrate_or_format(tmp_path):
+    conn, artist, album = _library(tmp_path)
+    low = _file(conn, tmp_path, "a", "cancion.mp3", b"a" * 100, artist, album, bitrate=128)
+    high = _file(conn, tmp_path, "b", "Canción (1).m4a", b"b" * 300, artist, album, title="CANCION", duration=201.5, bitrate=320)
+    _file(conn, tmp_path, "c", "larga.mp3", b"c" * 50, artist, album, duration=206.0)            # duración fuera de ±2 s
+    _file(conn, tmp_path, "d", "otra.mp3", b"d" * 60, artist, album, title="Otra canción")      # otro título
+    conn.commit()
+    groups = duplicates.find_similar_groups(conn)
+    assert _ids(groups) == [[high, low]]                    # tildes y mayúsculas no cuentan; mayor bitrate primero
+    assert duplicates.find_groups(conn) == []              # no son idénticas
+
+
+def test_similar_groups_skip_identical_files_unknown_artists_and_missing_files(tmp_path):
+    conn, artist, album = _library(tmp_path)
+    unknown = conn.execute("INSERT INTO artists (name, sort_name) VALUES (?, 'x')", (UNKNOWN_ARTIST,)).lastrowid
+    _file(conn, tmp_path, "a", "t.mp3", b"x" * 10, artist, album, title="Igual", duration=100)
+    _file(conn, tmp_path, "b", "t2.mp3", b"x" * 10, artist, album, title="Igual", duration=100)   # idénticas: ya salen como exactas
+    _file(conn, tmp_path, "c", "u.mp3", b"u" * 20, unknown, album, title="Intro", duration=30)
+    _file(conn, tmp_path, "d", "u2.mp3", b"v" * 21, unknown, album, title="Intro", duration=30)    # artista desconocido: ambiguo
+    _file(conn, tmp_path, "e", "m.mp3", b"m" * 30, artist, album, title="Falta", duration=50)
+    gone = _file(conn, tmp_path, "f", "m2.mp3", b"n" * 31, artist, album, title="Falta", duration=50)
+    conn.commit()
+    (tmp_path / "f" / "m2.mp3").unlink()
+    assert gone and duplicates.find_similar_groups(conn) == []
+    assert len(duplicates.find_groups(conn)) == 1
+
+
+def test_similar_delete_requires_the_same_song_right_now(tmp_path):
+    conn, artist, album = _library(tmp_path)
+    keep = _file(conn, tmp_path, "a", "alta.mp3", b"a" * 300, artist, album, bitrate=320)
+    low = _file(conn, tmp_path, "b", "baja.mp3", b"b" * 100, artist, album, bitrate=128)
+    other = _file(conn, tmp_path, "c", "otra.mp3", b"c" * 90, artist, album, title="Otra cosa")
+    longer = _file(conn, tmp_path, "d", "larga.mp3", b"d" * 80, artist, album, duration=230)
+    conn.commit()
+    trash = _fake_trash(tmp_path)
+    plan = [{"keep": keep, "remove": [low, other, longer, keep]}]
+    out = file_delete.delete_duplicates(conn, plan, trash, mode="similar")
+    assert out["deleted"] == [low] and len(trash.moved) == 1 and trash.moved[0].endswith("baja.mp3")
+    reasons = dict(out["skipped"])
+    assert "artista y título" in reasons[other] and "duración" in reasons[longer] and "se conserva" in reasons[keep]
+    assert (tmp_path / "a" / "alta.mp3").exists() and (tmp_path / "c" / "otra.mp3").exists()
+    # el modo «idénticos» sigue exigiendo el mismo contenido
+    exact = file_delete.delete_duplicates(conn, [{"keep": keep, "remove": [other]}], trash)
+    assert exact["deleted"] == [] and "no es idéntico" in exact["skipped"][0][1]

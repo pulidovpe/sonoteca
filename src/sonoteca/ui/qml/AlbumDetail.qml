@@ -112,11 +112,17 @@ Item {
             }
         }
     }
+    ColumnHeader {
+        id: hdr
+        hasNumber: true
+        anchors { left: parent.left; right: parent.right; top: hero.bottom; topMargin: 8 }
+    }
+    readonly property var shown: (hdr.sortKey, hdr.sortAsc, player.statsRevision, hdr.sorted(page.tracks))
     ListView {
         id: list
         clip: true
-        anchors { left: parent.left; right: parent.right; bottom: parent.bottom; top: hero.bottom; topMargin: 8; bottomMargin: selBar.visible ? selBar.height : 0 }
-        model: page.tracks
+        anchors { left: parent.left; right: parent.right; bottom: parent.bottom; top: hdr.bottom; bottomMargin: selBar.visible ? selBar.height : 0 }
+        model: page.shown
         delegate: TrackRow {
             width: list.width
             number: modelData.number

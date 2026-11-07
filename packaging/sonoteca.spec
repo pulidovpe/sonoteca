@@ -27,6 +27,13 @@ PRUNE = [
     "qt6location", "qtdesigner", "qt6designer", "qthelp", "qt6help", "qml/qttest", "qml/qtquick/timeline",
     "qml/qt5compat", "qml/qtwebchannel", "qml/qtwebsockets", "qml/qtspatialaudio", "qml/qthttpserver",
     "qml/qtquick/pdf",
+    # (0.14.2) módulos QML que la app no importa (ver la lista de imports en el encabezado) y sus bibliotecas
+    "qml/qtquick/nativestyle", "qml/qtquick/particles", "qml/qtquick/effects", "qml/qtquick/scene2d", "qml/qtquick/scene3d",
+    "qml/qtquick/localstorage", "qml/qt/labs/", "quickparticles", "quickeffects",
+    "qt6sql", "qtsql", "sqldrivers",              # solo los usaba QtQuick.LocalStorage; la app usa el sqlite3 de Python
+    # bibliotecas de los estilos podados (los plugins ya se quitan arriba; estas quedaban huérfanas en Qt/lib)
+    "quickcontrols2material", "quickcontrols2universal", "quickcontrols2fusion", "quickcontrols2imagine",
+    "quickcontrols2fluentwinui3", "quickcontrols2macosstyle", "quickcontrols2windowsstyle",
     # estilos de Quick Controls distintos de Basic (la app fuerza Basic en ui/app.py)
     "qml/qtquick/controls/material", "qml/qtquick/controls/universal", "qml/qtquick/controls/fusion",
     "qml/qtquick/controls/imagine", "qml/qtquick/controls/fluentwinui3", "qml/qtquick/controls/ios",
@@ -43,8 +50,10 @@ a = Analysis(
         (str(ROOT / "src" / "sonoteca" / "ui" / "icon.png"), "sonoteca/ui"),   # icono de la ventana (QIcon en app.py)
     ],
     hiddenimports=collect_submodules("sonoteca") + ["keyring.backends"]
-    + (["objc", "Foundation", "AppKit", "MediaPlayer"] if sys.platform == "darwin" else []),   # teclas multimedia (PyObjC)
-    excludes=["pytest", "tkinter"],
+    # teclas multimedia (PyObjC). «MediaPlayer» se importa dinámicamente (media_keys_macos.py), por eso es obligatorio; AppKit ya
+    # no se fuerza (la app no lo usa; si MediaPlayer lo necesita, PyInstaller lo sigue por sus imports). Ver docs/COMPILAR.md §Tamaño.
+    + (["objc", "Foundation", "MediaPlayer"] if sys.platform == "darwin" else []),
+    excludes=["pytest", "tkinter", "setuptools", "pkg_resources", "pip", "wheel", "numpy", "PIL"],
 )
 
 if not os.environ.get("SONOTECA_NO_PRUNE"):

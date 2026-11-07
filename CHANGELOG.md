@@ -5,6 +5,55 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.14.2] - 2026-11-06
+### Añadido
+- **Informe de tamaño del binario** (`packaging/size_report.py`): al final de cada compilación (macOS, Windows, Linux/Docker) agrupa el
+  paquete por categoría (FFmpeg, Qt Multimedia, QML y plugins de Qt, PyObjC, Python…), lista los archivos más pesados y lo guarda en
+  `dist/size-report-<sistema>.json`; en la compilación siguiente lo compara con el anterior (MB por categoría, versiones de
+  paquetes que cambiaron —p. ej. PySide6— y archivos nuevos o que más crecieron). Opcional `--budget-mb`.
+- **`packaging/build-constraints.txt`**: versiones fijas solo para compilar (vacío por defecto; los tres scripts lo usan con
+  `pip install -c`). Sirve para fijar PySide6 si el informe confirma que sus actualizaciones inflan el binario (FFmpeg).
+### Cambiado
+- Poda de Qt ampliada con módulos QML que la app no importa (NativeStyle, Particles, Effects, LocalStorage y Qt SQL, Qt.labs) y las
+  bibliotecas huérfanas de los estilos de Quick Controls ya podados; `AppKit` deja de forzarse como importación oculta en macOS;
+  `excludes` suma `setuptools`, `pkg_resources`, `pip`, `wheel`, `numpy` y `PIL`. Nuevo `tests/test_packaging_prune.py`: la poda
+  no puede quitar nada de lo que importa el QML.
+- Documentación: `docs/COMPILAR.md` §6b «Tamaño del binario» (qué suele pesar, cómo medirlo, qué se descartó y por qué).
+*Esta versión no cambia la app. Aquí no se puede compilar ni medir el binario: el ahorro de estas podas es pequeño y está sin
+medir; si la prueba de humo falla o los diálogos de archivos no abren, compila con `SONOTECA_NO_PRUNE=1` y envía `build/pruned.txt`.*
+
+## [0.14.1] - 2026-11-06
+### Añadido
+- **Duplicados: la misma canción en otro bitrate o formato.** En *Buscar duplicados…* (Por revisar) hay dos pestañas: *Archivos
+  idénticos* (como hasta ahora) y *Misma canción, otro bitrate o formato*: mismo artista y título (sin distinguir tildes ni
+  mayúsculas) y duración casi igual (±2 s) en archivos distintos —p. ej. un MP3 a 128 kbps y otro a 320 kbps o un M4A—. Por
+  defecto se conserva la de mayor bitrate; cada fila muestra álbum, bitrate y formato para que elijas (puede ser la misma canción
+  en un disco y en un recopilatorio). Se excluyen pistas sin artista conocido, sin título o sin duración, y los grupos cuyos
+  archivos son idénticos (salen en la otra pestaña).
+- Como no se puede comparar el contenido, al eliminar se comprueba en ese momento —con los datos de la biblioteca, no con lo
+  que mostró la pantalla— que la copia siga coincidiendo con la conservada en artista, título y duración, que la conservada
+  exista y que sean archivos distintos; todo va a la papelera y la confirmación avisa de que NO son idénticas.
+  (`duplicates.find_similar_groups`, `file_delete.delete_duplicates(mode="similar")`, `library.similarGroups/deleteSimilar`.)
+  *(Lógica probada aquí con un arnés; pytest y la UI sin ejecutar.)*
+
+## [0.14.0] - 2026-11-06
+**Primera beta.** El proyecto pasa de alfa a beta (README, insignia y nombres de los paquetes: `…-beta-…`).
+### Añadido
+- **Cabeceras de columna que ordenan las listas de canciones**: *Nombre, Artista, Álbum, Año, Más escuchadas* (clic = ascendente,
+  otro = descendente, otro = orden original; «Más escuchadas» empieza por las que más suenan; las canciones sin año o sin álbum
+  quedan al final; empates estables y sin distinguir tildes ni mayúsculas). Están en álbumes, resultados de búsqueda, Inicio,
+  canciones destacadas de un artista, listas de Por revisar y listas guardadas. En una lista guardada el orden elegido es solo una
+  vista (el orden guardado no cambia; mientras tanto no se reordena arrastrando; quitar y reproducir usan la posición correcta).
+  La lista «Reproduciendo» no lleva cabecera: su orden es el de reproducción. Nuevos: `ColumnHeader`, `SortLabel`, `TrackSort.js`.
+### Corregido
+- **El enlace del álbum no funcionaba en Inicio, búsqueda, artistas ni Por revisar** (`TrackRow`): el área de clic de toda la fila
+  se dibujaba encima de las celdas y se tragaba el clic. Las celdas pasan por encima (`z: 1`). *(Las listas guardadas y la cola, con
+  `ListTrackRow`, ya funcionaban.)*
+### Documentación
+- README actualizado a la beta: funciones nuevas, columnas y orden, listas en cuadrícula, preferencias de interfaz, mini reproductor,
+  Aleatorio, Por revisar y duplicados, estado y limitaciones conocidas.
+*(Lógica de orden probada aquí con Node; la UI Qt, sin ejecutar.)*
+
 ## [0.13.0] - 2026-11-05
 Cierra la tanda 0.12.1–0.12.15 (incluye todo lo de esas versiones; ver sus entradas).
 ### Añadido

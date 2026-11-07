@@ -4,7 +4,7 @@
 #   PYTHON=python3.12 ./packaging/build_mac.sh     -> elegir el Python a usar
 #   SONOTECA_NO_PRUNE=1 ./packaging/build_mac.sh   -> sin podar módulos de Qt (si la poda diera problemas)
 # Tarda varios minutos (descarga PySide6 y PyInstaller). Todo lo que muestra se guarda también en build.log.
-# Resultado: dist/Sonoteca.app y dist/Sonoteca-<versión>-alpha-macos-<arq>.zip
+# Resultado: dist/Sonoteca.app y dist/Sonoteca-<versión>-beta-macos-<arq>.zip
 if [ -z "${BASH_VERSION:-}" ]; then exec bash "$0" "$@"; fi   # lanzado con `sh script`: se relanza con bash
 set -Eeuo pipefail
 cd "$(dirname "$0")/.."
@@ -33,7 +33,7 @@ source .venv-build/bin/activate
 
 step 3 "Instalar dependencias (PySide6, PyInstaller…; puede tardar)"
 python -m pip install --upgrade pip
-python -m pip install -e ".[ui,build]"
+python -m pip install -c packaging/build-constraints.txt -e ".[ui,build]"
 
 step 4 "Compilar con PyInstaller (varios minutos)"
 pyinstaller packaging/sonoteca.spec --noconfirm --clean
@@ -53,13 +53,14 @@ rm -rf "$TMP"
 step 6 "Comprobar que no lleva datos personales y medir el tamaño"
 python packaging/check_bundle.py "$APP" || echo "REVISA: el paquete no debe llevar datos personales." >&2
 du -sh "$APP"
-echo "Carpetas más pesadas:"
-{ du -sk "$APP"/Contents/*/* "$APP"/Contents/*/*/* 2>/dev/null | sort -nr | head -12 \
-    | awk '{printf "%8.1f MB  %s\n", $1/1024, $2}'; } || true
+echo "Informe de tamaño (por categoría; se compara con la compilación anterior si existe):"
+REPORT="dist/size-report-macos-$(uname -m).json"
+[ -f "$REPORT" ] && mv -f "$REPORT" "${REPORT%.json}.prev.json"
+python packaging/size_report.py "$APP" --top 20 --save "$REPORT" --compare "${REPORT%.json}.prev.json" || true
 
 step 7 "Crear el .zip"
 VERSION="$(python -c 'import sonoteca; print(sonoteca.__version__)')"
-OUT="dist/Sonoteca-${VERSION}-alpha-macos-$(uname -m).zip"
+OUT="dist/Sonoteca-${VERSION}-beta-macos-$(uname -m).zip"
 rm -f "$OUT"
 ditto -c -k --keepParent "$APP" "$OUT"
 

@@ -122,8 +122,15 @@ Item {
             }
 
             Text { x: 24; visible: page.results.tracks.length > 0; topPadding: 14; text: "Canciones"; color: Theme.text; font.pixelSize: 20; font.weight: Font.DemiBold }
+            ColumnHeader {
+                id: hdr
+                width: parent.width
+                hasNumber: sel.active
+                visible: page.results.tracks.length > 1
+                height: visible ? implicitHeight : 0
+            }
             Repeater {
-                model: page.results.tracks
+                model: (hdr.sortKey, hdr.sortAsc, player.statsRevision, hdr.sorted(page.results.tracks))
                 delegate: TrackRow {
                     width: col.width
                     title: modelData.title

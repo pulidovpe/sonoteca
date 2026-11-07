@@ -1,0 +1,7 @@
+# Versiones fijas SOLO para compilar el binario (los tres scripts de build las usan con `pip install -c`).
+# Por defecto vacío: se instala lo último de PySide6, que puede pesar más en cada versión (sobre todo FFmpeg dentro de Qt Multimedia).
+# Si el informe de tamaño (dist/size-report-*.json) muestra que el peso subió al actualizar PySide6, fija aquí la versión que pesaba menos:
+#   PySide6==6.x.y
+#   PySide6_Essentials==6.x.y
+#   PySide6_Addons==6.x.y
+#   shiboken6==6.x.y
