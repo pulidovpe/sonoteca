@@ -81,9 +81,11 @@ Item {
                     spacing: 2
                     Text { width: parent.width; text: modelData.name; color: Theme.text; font.pixelSize: 15; elide: Text.ElideRight }
                     Text {
+                        width: parent.width
                         text: Theme.plural(modelData.tracks, "canci\u00f3n", "canciones") + (modelData.tracks > 0 ? " \u00b7 " + Theme.fmtLong(modelData.duration) : "")
                         color: Theme.textDim
                         font.pixelSize: 12
+                        elide: Text.ElideRight
                     }
                 }
                 MouseArea {

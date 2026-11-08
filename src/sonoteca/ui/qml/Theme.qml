@@ -46,10 +46,20 @@ QtObject {
     readonly property int tierWideMin: 860
     readonly property int tierMediumMin: 560
     function tier(width) { return width >= tierWideMin ? 3 : (width >= tierMediumMin ? 2 : 1) }
-    // Reparto del ancho de una fila: el álbum se lleva el 42 % de lo que sobra tras las columnas fijas, así el nombre
-    // (que ocupa el resto) no se estira de más; los nombres largos se recortan con «…»
-    function albumColumn(width) { return Math.max(130, Math.min(480, Math.round((width - 300) * 0.42))) }
+    // Reparto del ancho de una fila. Desde `artistMin` el artista tiene su propia columna; si no, va debajo del nombre. El álbum y el
+    // artista se llevan una parte de lo que sobra tras las columnas fijas, así el nombre no se estira de más; los nombres largos se
+    // recortan con «…». Umbrales (ancho de la fila): año 360 · álbum 560 · «En lista» 760 · reproducciones 940 · artista 1180.
+    readonly property int artistMin: 1180
+    readonly property int inListMin: 760
+    readonly property int playsMin: 940
+    function albumColumn(width) {
+        var wide = width >= artistMin
+        return Math.max(130, Math.min(wide ? 360 : 480, Math.round((width - 300) * (wide ? 0.30 : 0.42))))
+    }
+    function artistColumn(width) { return Math.max(120, Math.min(300, Math.round((width - 300) * 0.22))) }
     readonly property int yearMin: 360          // desde este ancho de fila (también en el panel derecho) se muestra el año
+    readonly property int inListColumn: 64      // «En lista»: ✓ si la canción ya está en alguna lista guardada
+    readonly property int reviewColumn: 92      // «Tags» y «Tipo» de la lista Por revisar
     readonly property int yearColumn: 52
     readonly property int yearColumnCompact: 40
     readonly property int durationColumn: 60          // ancho fijo (alineada a la derecha): así las columnas no se desplazan de una canción a otra

@@ -103,6 +103,7 @@ Item {
     ColumnHeader {
         id: hdr
         nameLeft: 112
+        hasInList: false
         visible: page.items.length > 1
         height: visible ? implicitHeight : 0
         anchors { left: parent.left; right: parent.right; top: heroBox.bottom; topMargin: 8 }
@@ -121,6 +122,7 @@ Item {
             position: modelData.position
             title: modelData.title
             artist: modelData.artist
+            inListColumn: false          // aquí todas las canciones están en la lista: la columna no informaría
             album: modelData.album
             year: modelData.year
             duration: modelData.duration

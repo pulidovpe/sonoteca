@@ -380,6 +380,9 @@ class LibraryController(QObject):
                 "title": f"{r['artist']} - {r['title']}",
                 "subtitle": f"{', '.join(reasons)}  ·  {r['path']}",
                 "badge": "",
-                "duration": 0,
+                "duration": r["duration"] or 0,
+                # «tags»: el artista y el título salen de los tags (no se deducen del nombre del archivo)
+                "hasTags": not (r["inferred"] or r["no_artist"]),
+                "isVideo": r["kind"] == "video",
             })
         return out

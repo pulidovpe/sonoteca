@@ -148,6 +148,18 @@ def already_in(conn: sqlite3.Connection, playlist_id: int, ids: list[int]) -> li
     return out
 
 
+def member_track_ids(conn: sqlite3.Connection) -> set[int]:
+    """Pistas que están en alguna lista guardada (para la columna «En lista»)."""
+    return {r[0] for r in conn.execute("SELECT DISTINCT track_id FROM playlist_tracks")}
+
+
+def lists_with_track(conn: sqlite3.Connection, track_id: int) -> list[str]:
+    """Nombres de las listas guardadas que contienen la pista, por orden alfabético."""
+    return [r[0] for r in conn.execute(
+        "SELECT DISTINCT p.name FROM playlists p JOIN playlist_tracks pt ON pt.playlist_id = p.id"
+        " WHERE pt.track_id = ? ORDER BY p.name COLLATE NOCASE", (int(track_id),))]
+
+
 def add_tracks(conn: sqlite3.Connection, playlist_id: int, ids: list[int], skip_existing: bool = False) -> int:
     """Agrega al final. Devuelve cuántas pistas se agregaron (las que no existen se ignoran).
     Con `skip_existing` no agrega las que ya están en la lista ni repite una pista pedida dos veces."""

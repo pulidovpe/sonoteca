@@ -14,10 +14,11 @@ def test_album_column_is_a_link_through_the_navigation_bus():
     for name, ref in (("TrackRow.qml", "root"), ("ListTrackRow.qml", "row")):
         row = _read(name)
         assert "NavBus.albumRequested(info.albumId)" in row and f"onClicked: {ref}.openAlbum()" in row, name
-        assert "font.underline: albumLink.containsMouse" in row, name
-        assert "acceptedButtons: Qt.LeftButton" in row, name                  # el clic derecho sigue abriendo el menú de la fila
+        assert "LinkText {" in row, name
+    link = _read("LinkText.qml")                                              # subrayado al pasar el ratón; el clic derecho sigue abriendo el menú de la fila
+    assert "font.underline: area.containsMouse && root.linkEnabled" in link and "acceptedButtons: Qt.LeftButton" in link
     main = _read("Main.qml")
-    assert "target: NavBus; function onAlbumRequested(albumId) { win.openAlbum(albumId) }" in main
+    assert "target: NavBus" in main and "function onAlbumRequested(albumId) { win.openAlbum(albumId) }" in main
 
 
 def test_selection_components_are_registered_and_complete():

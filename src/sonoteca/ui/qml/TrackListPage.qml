@@ -38,6 +38,7 @@ Item {
     }
     ColumnHeader {
         id: hdr
+        review: true
         visible: page.items.length > 1
         height: visible ? implicitHeight : 0
         anchors { left: parent.left; right: parent.right; top: actionRow.visible ? actionRow.bottom : sub.bottom; topMargin: 12 }
@@ -51,10 +52,10 @@ Item {
             width: list.width
             title: modelData.title
             subtitle: modelData.subtitle
-            artist: modelData.artist || ""
-            album: modelData.album || ""
-            year: modelData.year || ""
             badge: modelData.badge
+            hasTags: modelData.hasTags              // columnas «Tags» y «Tipo»; sin artista, álbum ni año: el nombre ocupa el resto
+            isVideo: modelData.isVideo
+            inListColumn: false
             duration: modelData.duration > 0 ? Theme.fmt(modelData.duration) : ""
             current: player.currentId === modelData.id
             trackId: modelData.id

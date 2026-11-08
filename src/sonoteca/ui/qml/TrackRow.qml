@@ -7,7 +7,9 @@ Item {
     id: root
     property string number: ""
     property string title
-    property string artist: ""      // segunda línea del nombre
+    // artist: si la página no lo da (undefined) no hay artista; con ancho amplio tiene su propia columna y si no va debajo del
+    // nombre (en ambos casos es un enlace a la página del artista)
+    property var artist: undefined
     // album y year: si la página no los da (undefined) no hay columna; si los da, la columna existe en TODAS las filas
     // (aunque una canción no tenga el dato), para que las columnas queden alineadas entre canciones
     property var album: undefined
@@ -18,6 +20,10 @@ Item {
     property int plays: -1          // < 0: no se muestra
     property int trackId: 0         // > 0: se puede arrastrar a una lista de la barra lateral
     property bool current: false
+    property bool inListColumn: true    // columna «En lista» (ancho medio o mayor)
+    // Lista «Por revisar»: si la página los da, hay columnas «Tags» (¿ya tiene tags?) y «Tipo» (video o música)
+    property var hasTags: undefined
+    property var isVideo: undefined
     // modo «seleccionar canciones»: casilla a la izquierda; un clic marca/desmarca
     property bool selectable: false
     property bool selected: false
@@ -26,13 +32,22 @@ Item {
         var info = library.trackInfo(trackId)
         if (info && info.hasAlbum && info.albumId > 0) NavBus.albumRequested(info.albumId)
     }
+    function openArtist() {
+        var info = library.trackInfo(trackId)
+        if (info && info.hasArtist && info.artistId > 0) NavBus.artistRequested(info.artistId, info.artist)
+    }
     signal activated()
     signal contextRequested()
     readonly property int tier: Theme.tier(width)
     readonly property bool showAlbum: tier >= 2 && album !== undefined
     readonly property bool showYear: width >= Theme.yearMin && year !== undefined
-    readonly property bool showPlays: tier >= 3 && plays >= 0
-    readonly property string line2: artist !== "" ? artist : subtitle
+    readonly property bool showPlays: width >= Theme.playsMin && plays >= 0
+    readonly property bool showArtistColumn: artist !== undefined && width >= Theme.artistMin
+    readonly property bool showInList: inListColumn && trackId >= 0 && width >= Theme.inListMin
+    readonly property bool showReview: hasTags !== undefined
+    readonly property bool inList: (playlists.revision, trackId > 0 && playlists.inLists(trackId))
+    readonly property bool line2IsArtist: !showArtistColumn && artist !== undefined && artist !== ""
+    readonly property string line2: line2IsArtist ? artist : subtitle
     height: 52
     opacity: dragHandler.active ? 0.45 : 1
 
@@ -107,40 +122,37 @@ Item {
                 }
             }
         }
-        Text {
+        LinkText {   // segunda línea: el artista (enlace) o, si no hay, el texto libre
             width: parent.width
             visible: root.line2 !== ""
             text: root.line2
-            color: Theme.textDim
             font.pixelSize: 12
-            elide: Text.ElideRight
+            linkEnabled: root.line2IsArtist && root.trackId > 0 && !root.selectable
+            onClicked: root.openArtist()
         }
     }
-    // Columnas de la derecha, en este orden: álbum, año, reproducciones y duración (todas de ancho fijo)
+    // Columnas de la derecha, en este orden: artista (solo ancho amplio), álbum, año, reproducciones, «En lista», [Tags y Tipo en Por
+    // revisar] y duración (todas de ancho fijo)
     Row {
         id: cells
         z: 1                                  // por encima del MouseArea de toda la fila: si no, tapa el enlace del álbum
         anchors { right: parent.right; rightMargin: 28; verticalCenter: parent.verticalCenter }
         spacing: 16
-        Text {   // el álbum es un enlace a su página
-            id: albumText
+        LinkText {   // el artista, en su propia columna cuando la ventana es ancha (si no, va debajo del nombre)
+            visible: root.showArtistColumn
+            width: Theme.artistColumn(root.width)
+            text: root.artist ? root.artist : ""
+            font.pixelSize: 13
+            linkEnabled: root.trackId > 0 && !root.selectable
+            onClicked: root.openArtist()
+        }
+        LinkText {   // el álbum es un enlace a su página
             visible: root.showAlbum
             width: Theme.albumColumn(root.width)
             text: root.album ? root.album : ""
-            color: albumLink.containsMouse ? Theme.accent : Theme.textDim
             font.pixelSize: 13
-            font.underline: albumLink.containsMouse
-            elide: Text.ElideRight
-            MouseArea {
-                id: albumLink
-                enabled: !DragState.inputBlocked && !root.selectable && root.trackId > 0 && albumText.text !== ""
-                width: Math.min(parent.width, parent.implicitWidth)
-                height: parent.height
-                hoverEnabled: true
-                acceptedButtons: Qt.LeftButton
-                cursorShape: Qt.PointingHandCursor
-                onClicked: root.openAlbum()
-            }
+            linkEnabled: root.trackId > 0 && !root.selectable
+            onClicked: root.openAlbum()
         }
         Text {
             visible: root.showYear
@@ -155,6 +167,28 @@ Item {
             text: "\u25b6 " + root.plays
             color: Theme.textDim
             font.pixelSize: 12
+        }
+        Item {   // «En lista»: ✓ si la canción ya está en alguna lista guardada (el tooltip dice en cuáles)
+            visible: root.showInList
+            width: Theme.inListColumn
+            height: 20
+            Text { anchors.centerIn: parent; text: root.inList ? "\u2713" : ""; color: Theme.accent; font.pixelSize: 15; font.weight: Font.Bold }
+            HoverHandler { id: inListHover }
+            AppToolTip { visible: inListHover.hovered && root.inList; text: "Est\u00e1 en: " + playlists.listNames(root.trackId).join(", ") }
+        }
+        Text {   // Por revisar: ¿ya tiene tags?
+            visible: root.showReview
+            width: Theme.reviewColumn
+            text: root.hasTags ? "Con tags" : "Sin tags"
+            color: root.hasTags ? Theme.accent : Theme.warn
+            font.pixelSize: 13
+        }
+        Text {   // Por revisar: video o música
+            visible: root.showReview
+            width: Theme.reviewColumn
+            text: root.isVideo ? "Video" : "M\u00fasica"
+            color: Theme.textDim
+            font.pixelSize: 13
         }
         Text {
             id: dur

@@ -5,6 +5,28 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.14.5] - 2026-11-07
+### Añadido
+- **El artista es un enlace en todas las listas** (como ya lo era el álbum): pulsarlo abre la página del artista. Vale para el
+  artista debajo del nombre (también en la lista «Reproduciendo» de la derecha) y para la columna propia. Componente nuevo
+  `LinkText` (el álbum también lo usa); `NavBus.artistRequested`.
+- **Columna «En lista»** (✓): indica si la canción ya está en alguna lista guardada; el tooltip dice en cuáles. Aparece desde
+  filas de 760 px y no en las listas guardadas (allí todas lo están). `playlists.inLists/listNames`, `member_track_ids`,
+  `lists_with_track` (el conjunto se guarda hasta el próximo cambio de listas).
+### Cambiado
+- **Artista en columna propia solo si la ventana es ancha** (filas desde 1180 px). Con menos ancho el artista va debajo del nombre
+  y no hay columna «Artista»; en la cabecera esa columna se llama «Nombre · Artista» (cada palabra ordena por lo suyo).
+  Umbrales de las filas: año 360 · álbum 560 · «En lista» 760 · reproducciones 940 (antes 860) · artista 1180. El álbum se lleva el
+  30 % del ancho libre cuando hay columna de artista (42 % si no).
+- **Por revisar: solo Nombre · Tags · Tipo · Duración.** Sin las columnas de artista, álbum ni año, el nombre ya no se recorta por
+  ellas. «Tags» dice *Con tags* / *Sin tags* (sin tags = artista y título deducidos del nombre; con tags y en la lista = posible
+  archivo dañado, sin duración) y «Tipo», *Video* / *Música*. Las cuatro cabeceras ordenan (`tags`, `kind`, `duration` en
+  `TrackSort.js`). `list_incomplete` devuelve `kind` y `duration`.
+### Corregido
+- En la página Listas (vista de lista), el texto «N canciones · duración» ahora se recorta con «…» si no cabe.
+*(Lógica de datos probada aquí con el esquema real; la UI Qt, sin ejecutar. El orden de los nombres de lista en el tooltip sigue el
+de la página Listas: sin distinguir mayúsculas pero con las tildes después de la Z.)*
+
 ## [0.14.4] - 2026-11-06
 ### Añadido
 - **El editor de tags muestra dónde está guardado el archivo.** Bajo el título aparece «Ruta:» con la **ruta completa** de la canción

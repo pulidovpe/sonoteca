@@ -99,7 +99,7 @@ def list_incomplete(conn: sqlite3.Connection) -> list[sqlite3.Row]:
     Una pista con tags de artista y título NO se lista, aunque aún no tenga álbum ni portada."""
     return conn.execute(
         """
-        SELECT t.id, t.title, t.inferred, ar.name AS artist, al.title AS album, f.path,
+        SELECT t.id, t.title, t.inferred, t.duration, ar.name AS artist, al.title AS album, f.path, f.kind AS kind,
                (ar.name = ?) AS no_artist, (al.title = ?) AS no_album,
                (t.duration IS NULL OR t.duration <= 0) AS damaged
         FROM tracks t

@@ -53,3 +53,4 @@ SelectionState 1.0 SelectionState.qml
 SelectionBar 1.0 SelectionBar.qml
 SortLabel 1.0 SortLabel.qml
 ColumnHeader 1.0 ColumnHeader.qml
+LinkText 1.0 LinkText.qml

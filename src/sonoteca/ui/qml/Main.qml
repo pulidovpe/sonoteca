@@ -932,7 +932,11 @@ ApplicationWindow {
         onRestoreRequested: win.exitMini()
     }
 
-    Connections { target: NavBus; function onAlbumRequested(albumId) { win.openAlbum(albumId) } }      // enlaces de álbum en las filas
+    Connections {
+        target: NavBus
+        function onAlbumRequested(albumId) { win.openAlbum(albumId) }
+        function onArtistRequested(artistId, name) { win.openArtist(artistId, name) }
+    }      // enlaces de álbum en las filas
     TagEditor { id: tagEditor }
     Binding { target: DragState; property: "inputBlocked"; value: tagEditor.visible || tagEditor.opened }   // también aquí, por si el aviso del propio editor no llega
     TrackMenu { id: trackMenu; onDeleteRequested: (id) => win.confirmDeleteFile(id); onArtistRequested: (id, name) => win.openArtist(id, name); onAlbumRequested: (id) => win.openAlbum(id); onLyricsRequested: (id) => win.showLyrics(id); onEditRequested: (ids) => win.editTags(ids); onListPickerRequested: (ids) => win.showPlaylistPicker(ids) }

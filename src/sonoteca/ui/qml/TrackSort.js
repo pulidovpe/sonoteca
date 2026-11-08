@@ -1,7 +1,7 @@
 .pragma library
 
 // Orden de las listas de canciones (cabeceras de columna). Sin estado: recibe la lista y devuelve una copia ordenada.
-// Claves: name (título), artist, album, year, plays. `playsOf(t)` da las reproducciones de una pista.
+// Claves: name (título), artist, album, year, plays y, en Por revisar, tags, kind y duration. `playsOf(t)` da las reproducciones de una pista.
 
 function fold(value) {
     var s = (value === undefined || value === null) ? "" : String(value)
@@ -28,6 +28,9 @@ function compare(key, a, b, playsOf) {
     if (key === "album")
         return cmpText(a.album, b.album) || cmpNum(num(a.number), num(b.number)) || cmpText(a.title, b.title)
     if (key === "year") return cmpNum(num(a.year), num(b.year)) || cmpText(a.title, b.title)
+    if (key === "tags") return cmpNum(a.hasTags ? 1 : 0, b.hasTags ? 1 : 0) || cmpText(a.title, b.title)      // sin tags primero
+    if (key === "kind") return cmpNum(a.isVideo ? 1 : 0, b.isVideo ? 1 : 0) || cmpText(a.title, b.title)     // música antes que video
+    if (key === "duration") return cmpNum(Number(a.duration) || 0, Number(b.duration) || 0) || cmpText(a.title, b.title)
     if (key === "plays") {
         var pa = playsOf ? num(playsOf(a)) : num(a.plays)
         var pb = playsOf ? num(playsOf(b)) : num(b.plays)

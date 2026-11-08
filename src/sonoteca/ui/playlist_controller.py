@@ -24,6 +24,7 @@ class PlaylistController(QObject):
         super().__init__(parent)
         self._conn = connect(db_path)
         self._revision = 0
+        self._members: set[int] | None = None      # pistas que están en alguna lista (se recalcula tras cada cambio)
 
     @Property(int, notify=changed)
     def revision(self) -> int:
@@ -35,6 +36,7 @@ class PlaylistController(QObject):
 
     def _bump(self) -> None:
         self._revision += 1
+        self._members = None
         self.changed.emit()
 
     @staticmethod
@@ -112,6 +114,18 @@ class PlaylistController(QObject):
         if info:
             self.message.emit(f"Lista \u00ab{info['name']}\u00bb eliminada")
         return self._result()
+
+    @Slot(int, result=bool)
+    def inLists(self, track_id: int) -> bool:
+        """¿Está la pista en alguna lista guardada? (columna «En lista»; el conjunto se guarda hasta el próximo cambio)"""
+        if self._members is None:
+            self._members = store.member_track_ids(self._conn)
+        return track_id in self._members
+
+    @Slot(int, result="QVariantList")
+    def listNames(self, track_id: int) -> list:
+        """Nombres de las listas que contienen la pista (tooltip de la columna «En lista»)."""
+        return store.lists_with_track(self._conn, track_id)
 
     @Slot(int, "QVariantList", result=int)
     def existingCount(self, playlist_id: int, ids: list) -> int:

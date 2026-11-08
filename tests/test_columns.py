@@ -24,15 +24,15 @@ def test_both_row_types_show_columns_by_tier_in_the_requested_order():
     for name in ("TrackRow.qml", "ListTrackRow.qml"):
         row = (QML / name).read_text(encoding="utf-8")
         assert "readonly property int tier: Theme.tier(width)" in row, name
-        assert "tier >= 2 && album" in row and "width >= Theme.yearMin && year" in row and "tier >= 3 && plays" in row, name
+        assert "tier >= 2 && album" in row and "width >= Theme.yearMin && year" in row and "width >= Theme.playsMin && plays" in row, name
         cells = row[row.index("Row {\n        id: cells") if "Row {\n        id: cells" in row else row.index("id: cells"):]
-        order = [cells.index(k) for k in ("showAlbum", "showYear", "showPlays")]
-        assert order == sorted(order), f"{name}: orden álbum, año, reproducciones"
-        assert "line2" in row and "artist !== \"\" ? artist : subtitle" in row     # el artista va debajo del nombre
+        order = [cells.index(k) for k in ("showArtistColumn", "showAlbum", "showYear", "showPlays", "showInList")]
+        assert order == sorted(order), f"{name}: orden artista, álbum, año, reproducciones, en lista"
+        assert "line2" in row and "line2IsArtist ? artist : subtitle" in row           # sin columna propia, el artista va debajo del nombre
 
 
 def test_every_list_passes_artist_album_and_year():
-    for name in ("AlbumDetail", "AlbumsPage", "HomePage", "SearchPage", "TrackListPage", "PlaylistDetail", "QueuePage"):
+    for name in ("AlbumDetail", "AlbumsPage", "HomePage", "SearchPage", "PlaylistDetail", "QueuePage"):     # Por revisar: ver test_artist_link_and_columns
         page = (QML / f"{name}.qml").read_text(encoding="utf-8")
         for field in ("artist:", "album:", "year:"):
             assert re.search(r"\n\s+" + field + r"\s", page), f"{name}: falta {field}"
@@ -68,7 +68,7 @@ def test_every_data_source_provides_a_year_falling_back_to_the_album_year(tmp_pa
 
 def test_year_column_also_in_narrow_lists_and_album_takes_a_share_of_the_free_width():
     theme = (QML / "Theme.qml").read_text(encoding="utf-8")
-    assert "readonly property int yearMin: 360" in theme and "Math.round((width - 300) * 0.42)" in theme
+    assert "readonly property int yearMin: 360" in theme and "Math.round((width - 300) * (wide ? 0.30 : 0.42))" in theme
     compact = (QML / "ListTrackRow.qml").read_text(encoding="utf-8")
     assert "width: row.compact ? Theme.yearColumnCompact : Theme.yearColumn" in compact
 

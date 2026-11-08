@@ -18,18 +18,27 @@ Item {
     property bool upNextTop: false
     property bool upNextBottom: false
     // Columnas según el ancho (Theme.tier): pista · nombre con artista debajo · álbum · año · reproducciones
-    property string artist: ""
+    property var artist: undefined      // undefined: sin artista; ancho amplio: columna propia; si no, debajo del nombre (enlace)
+    property bool inListColumn: true
     // album y year: si la página no los da (undefined) no hay columna; si los da, existe en TODAS las filas
     property var album: undefined
     property var year: undefined
     readonly property int tier: Theme.tier(width)
     readonly property bool showAlbum: tier >= 2 && album !== undefined
     readonly property bool showYear: width >= Theme.yearMin && year !== undefined
-    readonly property bool showPlays: tier >= 3 && plays >= 0
-    readonly property string line2: artist !== "" ? artist : subtitle
+    readonly property bool showPlays: width >= Theme.playsMin && plays >= 0
+    readonly property bool showArtistColumn: !compact && artist !== undefined && width >= Theme.artistMin
+    readonly property bool showInList: !compact && inListColumn && width >= Theme.inListMin
+    readonly property bool inList: (playlists.revision, trackId > 0 && playlists.inLists(trackId))
+    readonly property bool line2IsArtist: !showArtistColumn && artist !== undefined && artist !== ""
+    readonly property string line2: line2IsArtist ? artist : subtitle
     property bool compact: false   // true: panel estrecho (sin contador de reproducciones; acciones sobre la duración al pasar el ratón)
     signal reorderRequested(int dst)
     property bool current: false
+    function openArtist() {
+        var info = library.trackInfo(trackId)
+        if (info && info.hasArtist && info.artistId > 0) NavBus.artistRequested(info.artistId, info.artist)
+    }
     function openAlbum() {
         var info = library.trackInfo(trackId)
         if (info && info.hasAlbum && info.albumId > 0) NavBus.albumRequested(info.albumId)
@@ -119,7 +128,7 @@ Item {
         anchors { left: thumb.right; leftMargin: row.compact ? 8 : 10; right: row.compact ? cells.left : actions.left; rightMargin: row.compact ? 8 : 12; verticalCenter: parent.verticalCenter }
         spacing: 2
         Text { width: parent.width; text: row.title; color: row.current ? Theme.accent : Theme.text; font.pixelSize: 15; elide: Text.ElideRight }
-        Text { width: parent.width; text: row.line2; color: Theme.textDim; font.pixelSize: 12; elide: Text.ElideRight }
+        LinkText { width: parent.width; text: row.line2; font.pixelSize: 12; linkEnabled: row.line2IsArtist && row.trackId > 0; onClicked: row.openArtist() }
     }
     Rectangle {   // en el modo compacto las acciones tapan la duración: fondo para que se lean
         visible: row.compact && hover.hovered
@@ -136,33 +145,37 @@ Item {
         IconButton { width: 30; height: 30; iconSize: 16; svg: Theme.iconMore; onClicked: row.menuRequested() }
         IconButton { width: 30; height: 30; iconSize: 12; svg: Theme.iconClose; onClicked: row.removeRequested() }
     }
-    // Columnas de la derecha, en este orden: álbum, año, reproducciones y duración
+    // Columnas de la derecha, en este orden: artista (solo ancho amplio), álbum, año, reproducciones, «En lista» y duración
     Row {
         id: cells
         anchors { right: parent.right; rightMargin: row.compact ? 14 : 28; verticalCenter: parent.verticalCenter }
         spacing: row.compact ? 10 : 16
-        Text {   // el álbum es un enlace a su página
-            id: albumText
+        LinkText {   // el artista, en su propia columna cuando la ventana es ancha (si no, va debajo del nombre)
+            visible: row.showArtistColumn
+            width: Theme.artistColumn(row.width)
+            text: row.artist ? row.artist : ""
+            font.pixelSize: 13
+            linkEnabled: row.trackId > 0
+            onClicked: row.openArtist()
+        }
+        LinkText {   // el álbum es un enlace a su página
             visible: row.showAlbum
             width: Theme.albumColumn(row.width)
             text: row.album ? row.album : ""
-            color: albumLink.containsMouse ? Theme.accent : Theme.textDim
             font.pixelSize: 13
-            font.underline: albumLink.containsMouse
-            elide: Text.ElideRight
-            MouseArea {
-                id: albumLink
-                enabled: !DragState.inputBlocked && row.trackId > 0 && albumText.text !== ""
-                width: Math.min(parent.width, parent.implicitWidth)
-                height: parent.height
-                hoverEnabled: true
-                acceptedButtons: Qt.LeftButton
-                cursorShape: Qt.PointingHandCursor
-                onClicked: row.openAlbum()
-            }
+            linkEnabled: row.trackId > 0
+            onClicked: row.openAlbum()
         }
         Text { visible: row.showYear; width: row.compact ? Theme.yearColumnCompact : Theme.yearColumn; text: row.year ? row.year : ""; color: Theme.textDim; font.pixelSize: 13 }
         Text { visible: row.showPlays; width: Theme.playsColumn; text: "▶ " + row.plays; color: Theme.textDim; font.pixelSize: 12 }
+        Item {   // «En lista»: ✓ si la canción ya está en alguna lista guardada (el tooltip dice en cuáles)
+            visible: row.showInList
+            width: Theme.inListColumn
+            height: 20
+            Text { anchors.centerIn: parent; text: row.inList ? "\u2713" : ""; color: Theme.accent; font.pixelSize: 15; font.weight: Font.Bold }
+            HoverHandler { id: inListHover }
+            AppToolTip { visible: inListHover.hovered && row.inList; text: "Est\u00e1 en: " + playlists.listNames(row.trackId).join(", ") }
+        }
         Text {
             id: dur
             width: row.compact ? Theme.durationColumnCompact : Theme.durationColumn
