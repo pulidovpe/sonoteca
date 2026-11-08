@@ -5,6 +5,14 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.14.4] - 2026-11-06
+### Añadido
+- **El editor de tags muestra dónde está guardado el archivo.** Bajo el título aparece «Ruta:» con la **ruta completa** de la canción
+  (texto seleccionable, para copiarla); con varias pistas, «Ubicación:» con cuántos archivos son y su carpeta (o, si están en
+  varias, cuántas carpetas y la carpeta común). Vale para todos los sitios desde los que se editan tags (menú de una canción,
+  álbumes, artistas, búsqueda, Por revisar…), porque todos usan el mismo editor, y se ve en todos los pasos (formulario, revisión,
+  guardado). `tag_edit.describe_location`; `common_values` devuelve `location`. *(UI sin ejecutar.)*
+
 ## [0.14.3] - 2026-11-06
 Medido en macOS con PySide6 6.12.0: el binario pesa **161,9 MB** (179,2 MB en la 0.12).
 ### Cambiado

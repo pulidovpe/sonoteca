@@ -1,6 +1,7 @@
 """Edición de tags sobre pistas de la biblioteca: valores comunes, vista previa y aplicación."""
 from __future__ import annotations
 
+import os
 import sqlite3
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -29,8 +30,9 @@ def _rows(conn: sqlite3.Connection, track_ids: list[int]) -> list[sqlite3.Row]:
     return conn.execute(
         f"""
         SELECT t.id, t.title, t.track_no, t.disc_no, t.year, t.genre, t.inferred,
-               ar.name AS artist, aa.name AS album_artist, al.title AS album
+               ar.name AS artist, aa.name AS album_artist, al.title AS album, f.path AS path
         FROM tracks t
+        JOIN files   f  ON f.id  = t.file_id
         JOIN artists ar ON ar.id = t.artist_id
         JOIN albums  al ON al.id = t.album_id
         JOIN artists aa ON aa.id = al.album_artist_id
@@ -69,10 +71,28 @@ def _derived(row: sqlite3.Row) -> dict:
     return out
 
 
+def describe_location(paths: list[str]) -> str:
+    """Dónde está guardado lo que se edita: la ruta completa si es un archivo; si son varios, cuántos y en qué carpeta."""
+    unique = sorted({str(p) for p in paths if p})
+    if not unique:
+        return ""
+    if len(unique) == 1:
+        return unique[0]
+    folders = sorted({os.path.dirname(p) for p in unique})
+    if len(folders) == 1:
+        return f"{len(unique)} archivos en {folders[0]}"
+    try:
+        common = os.path.commonpath(folders)
+    except ValueError:                        # unidades distintas (Windows)
+        common = ""
+    useful = bool(common) and common != os.path.dirname(common)       # una raíz sola («/») no informa
+    return f"{len(unique)} archivos en {len(folders)} carpetas" + (f"; carpeta común: {common}" if useful else "")
+
+
 def common_values(conn: sqlite3.Connection, track_ids: list[int]) -> dict:
     """Valor de cada campo si es el mismo en todas las pistas; si no, vacío y `mixed=True`."""
     rows = _rows(conn, _unique(track_ids))
-    out: dict = {"count": len(rows), "single": len(rows) == 1}
+    out: dict = {"count": len(rows), "single": len(rows) == 1, "location": describe_location([r["path"] for r in rows])}
     for f in FIELDS:
         values = {_clean(r[f]) for r in rows}
         out[f] = {"value": next(iter(values)) if len(values) == 1 else "", "mixed": len(values) > 1}

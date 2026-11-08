@@ -13,7 +13,7 @@ Sonoteca es un reproductor y organizador de **música local** de escritorio: tu 
 - Biblioteca incremental (~miles de archivos) por **artista, álbum y década**, con búsqueda.
 - Reproducción de audio y video, lista «Reproduciendo» (arrastrar para ordenar), **mini reproductor**, historial adelante/atrás, salida de audio seleccionable y teclas multimedia.
 - **Listas guardadas** con collage de portadas, en vista de lista o **cuadrícula**; avisa si una canción ya está en la lista. En cualquier lista de canciones: **ordenar por columna** (nombre, artista, álbum, año, más escuchadas), **álbum como enlace** y **selección de canciones concretas** para agregarlas a una lista.
-- **Editor de tags** con verificación (escribe en una copia y comprueba antes de reemplazar) y sección **Por revisar** para canciones incompletas, con búsqueda de **archivos duplicados** y eliminación segura a la papelera.
+- **Editor de tags** que muestra la ruta completa del archivo, con verificación (escribe en una copia y comprueba antes de reemplazar) y sección **Por revisar** para canciones incompletas, con búsqueda de **archivos duplicados** y eliminación segura a la papelera.
 - Opcional en línea: portadas (MusicBrainz + Cover Art Archive), ficha del artista (Wikipedia; foto cambiable a mano), **letras sincronizadas** (LRCLIB) y traducción (DeepL con tu propia clave).
 - Todo se guarda en una base SQLite local; nada se envía a servidores propios.
 

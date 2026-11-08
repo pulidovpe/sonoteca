@@ -130,6 +130,25 @@ Popup {
                                   : (root.artistId > 0 && root.artistName !== "" ? root.artistName + " \u00b7 " : "")
                                     + Theme.plural(root.ids.length, "pista", "pistas") + " seleccionadas"
             }
+            Row {   // d\u00f3nde est\u00e1 guardado el archivo (ruta completa; se puede seleccionar y copiar)
+                id: locationRow
+                width: parent.width
+                spacing: 6
+                visible: locationText.text !== ""
+                Text { id: locationLabel; text: root.single ? "Ruta:" : "Ubicaci\u00f3n:"; color: Theme.textDim; font.pixelSize: 12; font.weight: Font.DemiBold }
+                TextEdit {
+                    id: locationText
+                    width: parent.width - locationLabel.width - parent.spacing
+                    readOnly: true
+                    selectByMouse: true
+                    wrapMode: TextEdit.WrapAtWordBoundaryOrAnywhere
+                    color: Theme.textDim
+                    selectionColor: Theme.accent
+                    selectedTextColor: Theme.textOnAccent
+                    font.pixelSize: 12
+                    text: root.info.location ? root.info.location : ""
+                }
+            }
         }
 
         // ---- Paso 0: formulario ----
