@@ -2,6 +2,8 @@ __pycache__/
 *.pyc
 .venv/
 .venv*/
+.venv*/
+venv*/
 venv/
 build/
 build.log
