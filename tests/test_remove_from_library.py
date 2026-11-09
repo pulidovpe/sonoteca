@@ -16,7 +16,7 @@ def test_menu_item_and_confirmation_are_wired():
     menu, main = _read(QML / "TrackMenu.qml"), _read(QML / "Main.qml")
     assert "signal removeRequested(var ids)" in menu and "Quitar de la biblioteca" in menu
     assert "onRemoveRequested: (ids) => win.confirmRemoveFromLibrary(ids)" in main
-    body = main[main.index("function confirmRemoveFromLibrary(ids)"):][:1800]
+    body = main[main.index("function confirmRemoveFromLibrary("):][:2600]
     assert "confirmDialog.ask(" in body and "NO se borran" in body                      # siempre con confirmación y aviso
     assert body.index("player.forgetTracks(ids)") < body.index("library.removeFromLibrary(ids)")   # sale de «Reproduciendo»
     # la opción está en el único menú de canciones, sin condición (disponible en todo el programa)

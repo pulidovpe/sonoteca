@@ -11,6 +11,7 @@ Item {
     signal menuRequested(var ids)
     signal listRequested(var ids)
     signal newListRequested(var ids)
+    signal removeRequested(var ids, string label, bool whole)   // quitar de la biblioteca (no toca los archivos)
     signal playOneRequested(int trackId)   // con una lista ya en marcha, Main pregunta qué hacer
     function addAllToQueue() { player.addToQueue(page.tracks.map(function (x) { return x.id })) }
     signal lookupRequested(int albumId, var ids, bool unknownAlbum)
@@ -28,6 +29,14 @@ Item {
         else player.playFrom(sourceKey, trackIds(), 0)
     }
     function shuffleList() { player.toggleShuffle() }
+    // «Quitar de la biblioteca»: con selección activa, solo las marcadas; si no, todo el álbum
+    function requestRemove() {
+        var ids = sel.active ? sel.ordered(trackIds()) : trackIds()
+        if (ids.length === 0) return
+        var whole = ids.length === page.tracks.length
+        if (sel.active) sel.stop()
+        removeRequested(ids, whole ? "El \u00e1lbum \u00ab" + (page.info.title || "") + "\u00bb (" + ids.length + " canciones)" : "", whole)
+    }
     SelectionState { id: sel }          // «Seleccionar canciones»: elegir algunas para agregarlas a una lista
 
     Rectangle {
@@ -103,6 +112,13 @@ Item {
             PillButton { height: 44; label: "Agregar a la lista"; onClicked: page.addAllToQueue() }
             PillButton { height: 44; label: "Guardar en lista\u2026"; onClicked: page.listRequested(page.tracks.map(function (x) { return x.id })) }
             PillButton { height: 44; label: sel.active ? "Terminar selecci\u00f3n" : "Seleccionar canciones"; primary: sel.active; onClicked: sel.active ? sel.stop() : sel.start() }
+            PillButton {
+                id: removeButton
+                height: 44
+                label: sel.active ? "Quitar seleccionadas (" + sel.count + ") de la biblioteca\u2026" : "Quitar \u00e1lbum de la biblioteca\u2026"
+                enabled: sel.active ? sel.count > 0 : page.tracks.length > 0
+                onClicked: page.requestRemove()
+            }
             PillButton {
                 height: 44
                 label: "Portada e info"

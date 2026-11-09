@@ -5,6 +5,22 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.14.9] - 2026-11-08
+### Añadido
+- **Botón «Quitar de la biblioteca…» junto a «Seleccionar canciones»** en la página del álbum y en los resultados de búsqueda.
+  - Con el modo selección activo actúa **solo sobre las canciones marcadas** («Quitar seleccionadas (N) de la biblioteca…»; sin
+    ninguna marcada está desactivado, para no quitar de más por accidente).
+  - Sin selección: en el álbum quita **todo el álbum** que se está viendo («Quitar álbum de la biblioteca…»); en la búsqueda,
+    las canciones encontradas («Quitar resultados de la biblioteca…»; si el resultado es un solo álbum o artista, las suyas).
+  - Siempre con confirmación (nombra el álbum o cuenta las canciones), igual que el menú ⋮ de 0.14.8: sale de «Reproduciendo» y
+    de las listas, el archivo no se toca y queda excluido de «Buscar música».
+  - Si se quitó el álbum completo, la página vuelve atrás (o a Álbumes) porque ya no hay nada que mostrar.
+- **Carpetas:** se quitan desde Archivo ▸ Carpetas de la biblioteca… (0.14.7); no hay botón aparte junto a «Seleccionar» (decisión de Pablo).
+### Cambiado
+- `confirmRemoveFromLibrary(ids, label, whole)` en `Main.qml` acepta una descripción y la marca de «álbum completo»; el texto de
+  la confirmación ya no dice «seleccionadas» cuando no hubo selección.
+*(Pruebas estáticas de cableado en `tests/test_remove_buttons.py`; la UI Qt, sin ejecutar.)*
+
 ## [0.14.8] - 2026-11-08
 ### Añadido
 - **«Quitar de la biblioteca…» en el menú ⋮ de canciones** (el menú único de todo el programa: álbumes, artistas, búsqueda, Inicio,

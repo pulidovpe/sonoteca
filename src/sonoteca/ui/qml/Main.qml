@@ -378,11 +378,13 @@ ApplicationWindow {
     }
     // Quitar canciones de la biblioteca (NO toca los archivos; se excluyen de «Buscar música»), con confirmación.
     // También salen de la lista «Reproduciendo» y de las listas de reproducción.
-    function confirmRemoveFromLibrary(ids) {
+    // `label` (opcional) describe lo que se quita (p. ej. el álbum); `whole` = era todo el álbum que se estaba viendo
+    function confirmRemoveFromLibrary(ids, label, whole) {
         if (!ids || ids.length === 0) return
         var many = ids.length > 1
         var what
-        if (many) what = ids.length + " canciones seleccionadas"
+        if (label) what = label
+        else if (many) what = ids.length + " canciones"
         else {
             var info = library.trackInfo(ids[0])
             if (!info.id) return
@@ -396,7 +398,13 @@ ApplicationWindow {
                 var r = library.removeFromLibrary(ids)
                 Theme.dataRevision++
                 toast(r.message, 4000)
+                if (whole) leaveRemovedAlbum()
             })
+    }
+    // Tras quitar un álbum completo la página ya no tiene nada que mostrar: volver atrás (o a Álbumes)
+    function leaveRemovedAlbum() {
+        if (canBack) back()
+        else showSection("albums")
     }
     // Eliminar el archivo de UNA canción (a la papelera del sistema), con confirmación
     function confirmDeleteFile(id) {
@@ -438,7 +446,7 @@ ApplicationWindow {
 
     Component { id: homeComp; HomePage { onPlayOneRequested: (id) => win.playOne(id); onAlbumClicked: (id) => win.openAlbum(id); onArtistClicked: (id, name) => win.openArtist(id, name); onPlaylistClicked: (id) => win.openPlaylist(id); onMenuRequested: (ids) => win.showTrackMenu(ids) } }
     Component { id: albumsComp; AlbumsPage { onPlayOneRequested: (id) => win.playOne(id); onMenuRequested: (ids) => win.showTrackMenu(ids); onAlbumClicked: (id) => win.openAlbum(id); onNeedInternet: win.openInternetSettings(); onEditArtistRequested: (id, name) => win.editArtistTags(id, name) } }
-    Component { id: albumComp; AlbumDetail { onEditRequested: (ids) => win.editTags(ids); onMenuRequested: (ids) => win.showTrackMenu(ids); onListRequested: (ids) => win.showPlaylistPicker(ids); onNewListRequested: (ids) => win.pickerNewList(ids); onLookupRequested: (id, ids, unknown) => win.lookupAlbum(id, ids, unknown); onPlayOneRequested: (id) => win.playOne(id); onArtistRequested: (id, name) => win.openArtist(id, name) } }
+    Component { id: albumComp; AlbumDetail { onEditRequested: (ids) => win.editTags(ids); onMenuRequested: (ids) => win.showTrackMenu(ids); onListRequested: (ids) => win.showPlaylistPicker(ids); onNewListRequested: (ids) => win.pickerNewList(ids); onRemoveRequested: (ids, label, whole) => win.confirmRemoveFromLibrary(ids, label, whole); onLookupRequested: (id, ids, unknown) => win.lookupAlbum(id, ids, unknown); onPlayOneRequested: (id) => win.playOne(id); onArtistRequested: (id, name) => win.openArtist(id, name) } }
     Component { id: artistsComp; ArtistsPage { onArtistClicked: (id, name) => win.openArtist(id, name) } }
     Component {
         id: reviewComp
@@ -485,6 +493,7 @@ ApplicationWindow {
             onMenuRequested: (ids) => win.showTrackMenu(ids)
             onListRequested: (ids) => win.showPlaylistPicker(ids)
             onNewListRequested: (ids) => win.pickerNewList(ids)
+            onRemoveRequested: (ids, label, whole) => win.confirmRemoveFromLibrary(ids, label, whole)
             onLookupRequested: (id, ids, unknown) => win.lookupAlbum(id, ids, unknown)
         }
     }

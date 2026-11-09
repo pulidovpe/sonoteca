@@ -33,6 +33,14 @@ Item {
     signal playOneRequested(int trackId)
     signal artistClicked(int artistId, string name)
     signal editRequested(var ids)
+    signal removeRequested(var ids, string label, bool whole)   // quitar de la biblioteca (no toca los archivos)
+    // Con selección activa, solo las marcadas; si no, las canciones sobre las que actúan los botones
+    function requestRemove() {
+        var ids = sel.active ? sel.ordered(trackIds()) : page.actionIds
+        if (ids.length === 0) return
+        if (sel.active) sel.stop()
+        removeRequested(ids, "", false)
+    }
     signal menuRequested(var ids)
     SelectionState { id: sel }          // «Seleccionar canciones» entre las canciones encontradas
     function trackIds() { return results.tracks.map(function (x) { return x.id }) }
@@ -74,6 +82,12 @@ Item {
                 PillButton { label: "Portada e info"; enabled: page.lookupAlbumId > 0; onClicked: page.lookupAlbum() }
                 PillButton { label: "Editar tags"; enabled: page.actionIds.length > 0; onClicked: page.editRequested(page.actionIds) }
                 PillButton { label: sel.active ? "Terminar selecci\u00f3n" : "Seleccionar canciones"; primary: sel.active; enabled: page.results.tracks.length > 0; onClicked: sel.active ? sel.stop() : sel.start() }
+                PillButton {
+                    id: removeButton
+                    label: sel.active ? "Quitar seleccionadas (" + sel.count + ") de la biblioteca\u2026" : "Quitar resultados de la biblioteca\u2026"
+                    enabled: sel.active ? sel.count > 0 : page.actionIds.length > 0
+                    onClicked: page.requestRemove()
+                }
             }
             Text {
                 x: 24
