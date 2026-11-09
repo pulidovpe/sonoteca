@@ -68,6 +68,15 @@ if not os.environ.get("SONOTECA_NO_PRUNE"):
     Path("build/pruned.txt").write_text("\n".join(sorted(removed)) + "\n", encoding="utf-8")
     print(f"[sonoteca.spec] podados {len(removed)} archivos (lista en build/pruned.txt)")
 
+# Linux: NO empaquetar libstdc++. PyInstaller copia la del equipo de compilación (Debian 12 en Docker: GLIBCXX_3.4.30) y,
+# al ir antes en el cargador, los controladores Mesa del sistema (p. ej. libSPIRV-Tools en Fedora 42, que pide
+# GLIBCXX_3.4.32) no pueden cargarse: «EGL not available / Failed to create RHI» y abort. Se usa la del sistema, que es
+# retrocompatible (requisito: libstdc++ de GCC >= 12, es decir GLIBCXX_3.4.30). Ver docs/COMPILAR.md §Linux.
+if sys.platform.startswith("linux"):
+    _cxx = [e[0] for e in a.binaries if os.path.basename(e[0]).startswith("libstdc++.so")]
+    a.binaries = [e for e in a.binaries if not os.path.basename(e[0]).startswith("libstdc++.so")]
+    print(f"[sonoteca.spec] libstdc++ excluida del paquete Linux: {_cxx or 'no estaba'}")
+
 # Iconos del archivo ejecutable (se generan con packaging/make_icons.py). Windows incrusta el .ico en el .exe;
 # macOS usa el .icns en el .app; Linux no incrusta iconos en el binario (ver packaging/linux/sonoteca.desktop).
 ICON_DIR = ROOT / "assets" / "icons"

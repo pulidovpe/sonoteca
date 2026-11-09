@@ -5,6 +5,22 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.14.13] - 2026-11-09
+### Corregido
+- **Linux: la ventana no abría en Fedora/Wayland** («EGL not available», «Failed to create RHI», `core dumped`). Causa: el
+  paquete incluía la `libstdc++` de Debian 12 (GLIBCXX_3.4.30) y los controladores Mesa del sistema necesitan una más nueva
+  (3.4.32 en Fedora 42). `sonoteca.spec` ya no empaqueta `libstdc++` en Linux; se usa la del sistema (requisito GCC 12+).
+- Evidencia: informe del usuario (equipo físico, Intel Ice Lake): con `libstdc++` del sistema por delante arrancan las
+  pruebas 2 y 3; también con render por software. No había bibliotecas EGL/GL en el paquete (descartada esa parte de la hipótesis).
+*(Probado aquí: sintaxis del spec. La compilación y el arranque en Fedora, sin ejecutar.)*
+
+## [0.14.12] - 2026-11-09
+### Cambiado
+- `diagnose.sh` acepta la carpeta del paquete como argumento y avisa (y se detiene) si en la carpeta no hay `sonoteca` ni
+  `_internal`; antes, lanzado desde el código fuente, producía un informe sin datos del paquete. El informe se escribe en la
+  carpeta actual.
+*(Probado aquí contra un paquete simulado, carpeta inexistente y carpeta equivocada.)*
+
 ## [0.14.11] - 2026-11-09
 ### Añadido
 - **`packaging/linux/diagnose.sh`** (se copia dentro del `.tar.gz` de Linux): informe de arranque para el fallo «EGL not available /

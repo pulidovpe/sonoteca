@@ -321,14 +321,20 @@ esos *runners*, compila localmente con los pasos de este manual.
 Síntoma (Fedora + Wayland, paquete `.tar.gz` compilado en Docker/Debian 12): el programa se cae con `core dumped` y solo arranca
 con `QPA_PLATFORM=xcb QT_QUICK_BACKEND=software`. Qt no puede crear el contexto OpenGL y no tiene alternativa automática.
 
-Hipótesis (sin confirmar todavía): el paquete lleva las bibliotecas EGL/GL y `libstdc++` de Debian 12; al cargarse antes que
-las del sistema, el Mesa de la distribución (más nuevo) no puede inicializar EGL. Otra causa posible es un equipo sin
-aceleración 3D (máquina virtual). Para distinguirlas, dentro de la carpeta descomprimida:
+Causa (confirmada con el informe de un Fedora 42 físico, Intel Iris Plus): el paquete llevaba la `libstdc++` de Debian 12
+(`GLIBCXX_3.4.30`). Cargada antes que la del sistema, impedía abrir los controladores Mesa de Fedora (`libSPIRV-Tools` pide
+`GLIBCXX_3.4.32`), así que EGL/GLX fallaban. Con la `libstdc++` del sistema por delante el arranque fue normal. Desde 0.14.13
+`sonoteca.spec` **no empaqueta `libstdc++` en Linux** (requisito: la del sistema con `GLIBCXX_3.4.30` o superior, GCC 12+).
+No se descartó nada más hasta verificar en la Mac/Fedora con un paquete nuevo. Si aun así falla, el diagnóstico sigue valiendo:
 
 ```bash
-./diagnose.sh            # informe + pruebas de arranque (abre y cierra ventanas); escribe sonoteca-diagnostico.txt
-./diagnose.sh --no-run   # solo información
+./diagnose.sh ~/Descargas/sonoteca            # informe + pruebas de arranque (abre y cierra ventanas)
+./diagnose.sh ~/Descargas/sonoteca --no-run   # solo información
 ```
+
+El argumento es la carpeta descomprimida del `.tar.gz` (la que contiene `sonoteca` y `_internal`); sin argumento se usa la
+carpeta del propio script. El informe queda en `sonoteca-diagnostico.txt`, en la carpeta desde la que lo lances. Si el
+tarball es anterior a 0.14.11 no incluye el script: se copia desde `packaging/linux/diagnose.sh` del zip del proyecto.
 
 El informe compara `libstdc++` del paquete con la del sistema, lista dependencias que faltan y prueba el arranque con
 `LD_PRELOAD` de las bibliotecas del sistema, con `xcb`, con render por software y con las combinaciones.

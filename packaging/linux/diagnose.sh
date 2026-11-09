@@ -1,13 +1,25 @@
 #!/usr/bin/env bash
 # Diagnóstico de arranque de Sonoteca en Linux (gráficos / Wayland / EGL).
-# Uso, dentro de la carpeta descomprimida:   ./diagnose.sh            (con pruebas de arranque, abre y cierra ventanas)
-#                                            ./diagnose.sh --no-run   (solo información, sin abrir la aplicación)
-# Escribe el informe en sonoteca-diagnostico.txt (junto al ejecutable) y también lo muestra. No modifica nada.
+# Uso:  ./diagnose.sh /ruta/a/la/carpeta/sonoteca      (la que contiene el ejecutable «sonoteca» y la carpeta «_internal»)
+#       ./diagnose.sh                                   (si el script está dentro de esa carpeta)
+#       añade --no-run para solo recoger información, sin abrir la aplicación (por defecto abre y cierra ventanas unos segundos)
+# Escribe sonoteca-diagnostico.txt en la carpeta desde la que lo lances y también lo muestra. No modifica nada.
 DIR="$(cd "$(dirname "$0")" && pwd)"
-OUT="$DIR/sonoteca-diagnostico.txt"
-RUN=1; [ "${1:-}" = "--no-run" ] && RUN=0
+RUN=1
+for arg in "$@"; do
+  if [ "$arg" = "--no-run" ]; then RUN=0
+  elif [ -d "$arg" ]; then DIR="$(cd "$arg" && pwd)"
+  else echo "Argumento no reconocido o carpeta inexistente: $arg" >&2; exit 2
+  fi
+done
+OUT="$PWD/sonoteca-diagnostico.txt"
 BIN="$DIR/sonoteca"; INT="$DIR/_internal"
 EGLPLUGIN="$INT/PySide6/Qt/plugins/wayland-graphics-integration-client/libqt-plugin-wayland-egl.so"
+if [ ! -x "$BIN" ] || [ ! -d "$INT" ]; then
+  echo "ATENCION: en $DIR no hay ejecutable 'sonoteca' ni carpeta '_internal'." >&2
+  echo "Pasa como argumento la carpeta descomprimida del .tar.gz, p. ej.: ./diagnose.sh ~/Descargas/sonoteca" >&2
+  exit 2
+fi
 
 sec() { printf '\n===== %s =====\n' "$1"; }
 glibcxx() { grep -a -o 'GLIBCXX_3\.4\.[0-9]*' "$1" 2>/dev/null | sort -V | tail -1; }
@@ -29,7 +41,7 @@ report() {
     ls "$INT" | grep -Ei '^lib(EGL|GL|GLX|GLdispatch|OpenGL|gbm|drm|wayland|stdc|gcc_s|xcb|X11)' || echo "(ninguna de esa lista)"
     echo "libstdc++ del paquete: $(glibcxx "$INT"/libstdc++.so.6) | del sistema: $(glibcxx "$(ldconfig -p 2>/dev/null | awk '/libstdc\+\+\.so\.6 /{print $NF; exit}')")"
   else
-    echo "No existe $INT: ejecuta el script dentro de la carpeta 'sonoteca' descomprimida."
+    echo "No existe $INT"
   fi
 
   sec "Dependencias que faltan o chocan (plugin Wayland-EGL)"
