@@ -238,25 +238,56 @@ ApplicationWindow {
     property var fullGeometry: null
     readonly property int miniWidth: 264
     readonly property int miniHeight: 236          // 72 % de los 328 originales: portada cuadrada (con el título encima) + fila de botones
-    function enterMini() {
-        if (miniMode) return
-        fullGeometry = { x: win.x, y: win.y, w: win.width, h: win.height, visibility: win.visibility,
-                         minW: win.minimumWidth, minH: win.minimumHeight }
-        if (win.visibility !== Window.Windowed) win.visibility = Window.Windowed
-        miniMode = true
+    // En Wayland la app no puede fijar posición ni «siempre encima», y cambiar `flags` recrea la ventana: el compositor
+    // decide su tamaño y ignora el que se fijó justo antes (0.14.15, Fedora/GNOME: quedaba grande hasta hacer doble clic en la
+    // barra). Por eso allí no se tocan los flags y el tamaño se aplica cuando la ventana ya está en estado normal, y se repite
+    // una vez más poco después.
+    readonly property bool isWayland: String(Qt.platform.pluginName).indexOf("wayland") === 0
+    function applyMiniSize() {
         win.minimumWidth = miniWidth
         win.minimumHeight = miniHeight
         win.maximumWidth = miniWidth
         win.maximumHeight = miniHeight
         win.width = miniWidth
         win.height = miniHeight
-        win.flags = Qt.Window | Qt.WindowStaysOnTopHint
+    }
+    function enterMini() {
+        if (miniMode) return
+        fullGeometry = { x: win.x, y: win.y, w: win.width, h: win.height, visibility: win.visibility,
+                         minW: win.minimumWidth, minH: win.minimumHeight }
+        miniMode = true
+        if (!isWayland) win.flags = Qt.Window | Qt.WindowStaysOnTopHint
+        if (win.visibility !== Window.Windowed) {
+            miniPending = true                 // se encoge al terminar de salir de maximizada/pantalla completa
+            win.visibility = Window.Windowed
+            miniFallback.restart()
+        } else {
+            applyMiniSize()
+            miniSettle.restart()
+        }
+    }
+    property bool miniPending: false
+    function finishPendingMini() {
+        if (!miniPending || !miniMode) { miniPending = false; return }
+        miniPending = false
+        miniFallback.stop()
+        applyMiniSize()
+        miniSettle.restart()
+    }
+    Timer { id: miniFallback; interval: 400; onTriggered: win.finishPendingMini() }   // por si no llega el cambio de estado
+    Timer { id: miniSettle; interval: 150; onTriggered: { if (win.miniMode) win.applyMiniSize() } }
+    Connections {
+        target: win
+        function onVisibilityChanged() { if (win.visibility === Window.Windowed) win.finishPendingMini() }
     }
     function exitMini() {
         if (!miniMode) return
         var g = fullGeometry
         miniMode = false
-        win.flags = Qt.Window
+        miniPending = false
+        miniFallback.stop()
+        miniSettle.stop()
+        if (!isWayland) win.flags = Qt.Window
         win.maximumWidth = 16777215
         win.maximumHeight = 16777215
         win.minimumWidth = g ? g.minW : 900

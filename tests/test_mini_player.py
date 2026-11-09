@@ -83,3 +83,11 @@ def test_toast_appears_at_the_top_of_the_window():
     main = (QML / "Main.qml").read_text(encoding="utf-8")
     box = main[main.index("id: toastBox"):main.index("Timer { id: toastTimer")]
     assert "top: parent.top; topMargin: 20" in box and "bottom: parent.bottom" not in box
+
+
+def test_mini_mode_on_wayland_does_not_change_flags_and_resizes_after_the_state_change():
+    main = (QML / "Main.qml").read_text(encoding="utf-8")
+    assert "readonly property bool isWayland" in main and "onWayland" not in main      # «on»+Mayúscula rompe QML
+    assert main.count("if (!isWayland) win.flags") == 2                                  # entrar y salir
+    assert "function applyMiniSize()" in main and "id: miniFallback" in main and "id: miniSettle" in main
+    assert "function onVisibilityChanged()" in main and "finishPendingMini" in main

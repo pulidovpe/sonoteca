@@ -5,6 +5,19 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.14.15] - 2026-11-09
+### Corregido (hipótesis, sin verificar en Linux)
+- **Mini reproductor en Linux/Wayland**: quedaba más grande que la pantalla (antes) o casi del tamaño normal y en posición
+  arbitraria, y solo se encogía al hacer doble clic en la barra o en «restaurar». Hipótesis: en Wayland cambiar `flags` recrea la
+  ventana y el compositor ignora el tamaño fijado justo antes. Ahora, en Wayland, no se cambian los `flags` (no hay «siempre
+  encima» ni posición fija en ese protocolo); si la ventana estaba maximizada se espera a que pase a normal antes de encogerla, y
+  el tamaño se aplica de nuevo a los 150 ms. En macOS/Windows/X11 el comportamiento es el mismo de antes.
+### Diagnosticado, sin cambios
+- **Vídeos AV1 en Linux se oyen pero no se ven**: el registro de FFmpeg muestra que solo hay decodificación por hardware
+  (`av1_vaapi`) y la GPU (Intel Ice Lake) no la soporta; el FFmpeg de Qt no parece traer decodificador por software.
+  Pendiente de decidir un aviso «códec no soportado» u «Abrir con otro programa».
+*(Probado aquí: aserciones de texto del test nuevo y de `test_mini_player`. La UI, sin ejecutar; no hay pytest ni Qt en mi entorno.)*
+
 ## [0.14.14] - 2026-11-09
 ### Corregido
 - `packaging/build_linux_docker.sh` en Linux con SELinux (Fedora): el contenedor fallaba con «tar: /src: Cannot open: Permission
