@@ -7,7 +7,8 @@ from pathlib import Path
 from PySide6.QtCore import QFile, QObject, QUrl, Signal, Slot
 
 from sonoteca import __version__
-from sonoteca.core import cleanup, covers, duplicates, file_delete, library, paths, review, stats, tag_edit
+from sonoteca.core import (cleanup, covers, duplicates, file_delete, library, library_folders, paths, review, stats,
+                           tag_edit)
 from sonoteca.core.db import connect, default_db_path
 from sonoteca.core.models import UNKNOWN_ALBUM, UNKNOWN_ARTIST
 from sonoteca.core.search import SearchIndex, normalize
@@ -304,6 +305,15 @@ class LibraryController(QObject):
         ok, message = file_delete.delete_track(self._conn, track_id, self._trash)
         self._index = None
         return {"ok": ok, "message": message}
+
+    @Slot("QVariantList", result="QVariantMap")
+    def removeFromLibrary(self, ids: list) -> dict:
+        """Quita pistas de la biblioteca SIN tocar sus archivos y las excluye de los escaneos siguientes."""
+        result = library_folders.exclude_files(self._conn, [int(i) for i in ids])
+        self._index = None
+        n = result["removed"]
+        text = ("1 canción quitada" if n == 1 else f"{n} canciones quitadas") + " de la biblioteca (los archivos siguen en el disco)"
+        return {"ok": True, "message": text, **result}
 
     @staticmethod
     def _group_dicts(groups: list) -> list:

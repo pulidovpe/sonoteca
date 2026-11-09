@@ -11,6 +11,7 @@ AppMenu {
     signal lyricsRequested(int id)
     signal artistRequested(int artistId, string name)
     signal albumRequested(int albumId)
+    signal removeRequested(var ids)      // quitar de la biblioteca (no toca los archivos)
     signal deleteRequested(int id)       // eliminar el archivo (solo en «Por revisar», de uno en uno)
     property bool allowDelete: false
     // Datos de la canción (solo con una seleccionada) para los enlaces al artista y al álbum
@@ -25,6 +26,7 @@ AppMenu {
     function edit() { editRequested(ids) }
     property alias artistItem: artistItem   // para las pruebas
     property alias albumItem: albumItem
+    property alias removeItem: removeItem
 
     AppMenuItem {
         text: root.ids.length > 1 ? "Reproducir ahora (" + root.ids.length + " pistas \u00b7 conserva la lista)" : "Reproducir ahora (conserva la lista)"
@@ -60,6 +62,12 @@ AppMenu {
     AppMenuSeparator { }
     AppMenuItem { text: "Ver letra"; enabled: root.ids.length === 1; onTriggered: root.lyricsRequested(root.ids[0]) }
     AppMenuItem { text: "Editar tags\u2026"; onTriggered: root.edit() }
+    AppMenuSeparator { }
+    AppMenuItem {
+        id: removeItem
+        text: root.ids.length > 1 ? "Quitar de la biblioteca (" + root.ids.length + " pistas)\u2026" : "Quitar de la biblioteca\u2026"
+        onTriggered: root.removeRequested(root.ids)
+    }
     // Las opciones ocultas no deben ocupar espacio: alto 0 segun `allowDelete` (no segun `visible`, que es falso con el menu cerrado)
     AppMenuSeparator { visible: root.allowDelete; height: root.allowDelete ? implicitHeight : 0 }
     AppMenuItem {

@@ -376,6 +376,28 @@ ApplicationWindow {
             toast("Lista vaciada (" + Theme.plural(removed, "pista", "pistas") + ")", 3500)
         })
     }
+    // Quitar canciones de la biblioteca (NO toca los archivos; se excluyen de «Buscar música»), con confirmación.
+    // También salen de la lista «Reproduciendo» y de las listas de reproducción.
+    function confirmRemoveFromLibrary(ids) {
+        if (!ids || ids.length === 0) return
+        var many = ids.length > 1
+        var what
+        if (many) what = ids.length + " canciones seleccionadas"
+        else {
+            var info = library.trackInfo(ids[0])
+            if (!info.id) return
+            what = info.artist + " \u2014 " + info.title + "\n" + info.path
+        }
+        confirmDialog.ask("Quitar de la biblioteca",
+            (many ? "Se quitar\u00e1n" : "Se quitar\u00e1") + " de la biblioteca, de la lista \u00abReproduciendo\u00bb y de las listas de reproducci\u00f3n donde est\u00e9n:\n\n" + what
+            + "\n\nLos archivos NO se borran: siguen en el disco. No volver\u00e1n a aparecer al buscar m\u00fasica, salvo que los vuelvas a incluir en Archivo \u25b8 Carpetas de la biblioteca.",
+            "Quitar de la biblioteca", function () {
+                player.forgetTracks(ids)
+                var r = library.removeFromLibrary(ids)
+                Theme.dataRevision++
+                toast(r.message, 4000)
+            })
+    }
     // Eliminar el archivo de UNA canción (a la papelera del sistema), con confirmación
     function confirmDeleteFile(id) {
         var info = library.trackInfo(id)
@@ -941,7 +963,7 @@ ApplicationWindow {
     }      // enlaces de álbum en las filas
     TagEditor { id: tagEditor }
     Binding { target: DragState; property: "inputBlocked"; value: tagEditor.visible || tagEditor.opened }   // también aquí, por si el aviso del propio editor no llega
-    TrackMenu { id: trackMenu; onDeleteRequested: (id) => win.confirmDeleteFile(id); onArtistRequested: (id, name) => win.openArtist(id, name); onAlbumRequested: (id) => win.openAlbum(id); onLyricsRequested: (id) => win.showLyrics(id); onEditRequested: (ids) => win.editTags(ids); onListPickerRequested: (ids) => win.showPlaylistPicker(ids) }
+    TrackMenu { id: trackMenu; onRemoveRequested: (ids) => win.confirmRemoveFromLibrary(ids); onDeleteRequested: (id) => win.confirmDeleteFile(id); onArtistRequested: (id, name) => win.openArtist(id, name); onAlbumRequested: (id) => win.openAlbum(id); onLyricsRequested: (id) => win.showLyrics(id); onEditRequested: (ids) => win.editTags(ids); onListPickerRequested: (ids) => win.showPlaylistPicker(ids) }
     NamePrompt { id: namePrompt }
     ConfirmDialog { id: confirmDialog }
     PlaylistPicker { id: playlistPicker; onNewRequested: (ids) => win.pickerNewList(ids); onDuplicatesFound: (listId, ids, count) => duplicateDialog.openFor(listId, ids, count) }

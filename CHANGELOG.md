@@ -5,6 +5,19 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.14.8] - 2026-11-08
+### Añadido
+- **«Quitar de la biblioteca…» en el menú ⋮ de canciones** (el menú único de todo el programa: álbumes, artistas, búsqueda, Inicio,
+  listas, Por revisar y la lista «Reproduciendo»). Funciona con una o varias canciones seleccionadas y siempre pide confirmación.
+  La canción sale de la biblioteca, de las listas de reproducción y de **«Reproduciendo»** (si sonaba, se pasa a la siguiente o se
+  detiene), y su archivo queda **excluido** de «Buscar música». **No se toca el archivo del disco.** Para volver a tenerla:
+  Archivo ▸ Carpetas de la biblioteca… ▸ «Volver a incluir» (aparece como «Canción: ruta») y repetir «Buscar música».
+- `LibraryController.removeFromLibrary(ids)` (usa `library_folders.exclude_files`, sin ninguna operación sobre archivos).
+### Distinto de «Eliminar archivo (a la papelera)»
+- Esa opción de «Por revisar» sigue igual: mueve el archivo a la papelera. «Quitar de la biblioteca» nunca lo hace.
+*(Comprobado aquí: la lógica de exclusión (0.14.7) y las pruebas estáticas de cableado. La UI Qt y la prueba con controladores
+`test_remove_from_library_keeps_files_leaves_the_queue_and_survives_rescan`, sin ejecutar.)*
+
 ## [0.14.7] - 2026-11-08
 ### Añadido
 - **Registro de carpetas con música.** «Buscar música» guarda las carpetas y subcarpetas donde encuentra música
