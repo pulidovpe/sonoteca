@@ -957,7 +957,7 @@ ApplicationWindow {
             win.cleanup()
             win.toast(added > 0 ? added + " canciones a\u00f1adidas" : "No hay canciones nuevas")
             if (added > 0) {
-                win.showSection("home")
+                win.showSection("artists")   // tras «Buscar música» se muestra la sección Artistas
                 harvestDialog.offer(false)   // portadas y fotos de lo bien identificado, avisando cuánto tardará
             }
         }

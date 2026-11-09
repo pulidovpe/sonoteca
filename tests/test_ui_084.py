@@ -131,3 +131,10 @@ def test_home_list_cards_use_collage_component(qml_env):
     env.act("showSection('home')", 500)
     assert env.js("stack.currentItem.homeData.lists.length") == 1
     assert env.warnings == []
+
+
+def test_scan_finished_goes_to_artists():
+    from pathlib import Path
+    qml = (Path(__file__).resolve().parents[1] / "src/sonoteca/ui/qml/Main.qml").read_text(encoding="utf-8")
+    block = qml.split("id: scanDialog", 1)[1].split("ServersDialog", 1)[0]
+    assert 'win.showSection("artists")' in block and 'showSection("home")' not in block

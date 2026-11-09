@@ -5,6 +5,12 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.14.6] - 2026-11-08
+### Cambiado
+- **Al terminar «Buscar música» se abre la sección Artistas** (antes, Inicio). Solo si el escaneo añadió canciones; si no hay
+  nada nuevo, la vista actual no cambia. `Main.qml`, manejador `ScanDialog.onFinished`.
+*(UI Qt sin ejecutar; cambio de una línea.)*
+
 ## [0.14.5] - 2026-11-07
 ### Añadido
 - **El artista es un enlace en todas las listas** (como ya lo era el álbum): pulsarlo abre la página del artista. Vale para el
