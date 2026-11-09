@@ -315,3 +315,20 @@ esos *runners*, compila localmente con los pasos de este manual.
 - [ ] El nombre del zip lleva versión, plataforma y arquitectura.
 - [ ] Informas a quien lo reciba de que no está firmado (avisos de Gatekeeper / SmartScreen).
 - [ ] Hay un archivo `LICENSE` (MIT) y el `CHANGELOG.md` está al día.
+
+## Linux: la ventana no abre («EGL not available», «Failed to create RHI»)
+
+Síntoma (Fedora + Wayland, paquete `.tar.gz` compilado en Docker/Debian 12): el programa se cae con `core dumped` y solo arranca
+con `QPA_PLATFORM=xcb QT_QUICK_BACKEND=software`. Qt no puede crear el contexto OpenGL y no tiene alternativa automática.
+
+Hipótesis (sin confirmar todavía): el paquete lleva las bibliotecas EGL/GL y `libstdc++` de Debian 12; al cargarse antes que
+las del sistema, el Mesa de la distribución (más nuevo) no puede inicializar EGL. Otra causa posible es un equipo sin
+aceleración 3D (máquina virtual). Para distinguirlas, dentro de la carpeta descomprimida:
+
+```bash
+./diagnose.sh            # informe + pruebas de arranque (abre y cierra ventanas); escribe sonoteca-diagnostico.txt
+./diagnose.sh --no-run   # solo información
+```
+
+El informe compara `libstdc++` del paquete con la del sistema, lista dependencias que faltan y prueba el arranque con
+`LD_PRELOAD` de las bibliotecas del sistema, con `xcb`, con render por software y con las combinaciones.

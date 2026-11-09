@@ -5,6 +5,18 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.14.11] - 2026-11-09
+### Añadido
+- **`packaging/linux/diagnose.sh`** (se copia dentro del `.tar.gz` de Linux): informe de arranque para el fallo «EGL not available /
+  Failed to create RHI» en Wayland (sistema, virtualización, bibliotecas del paquete que pueden chocar con el sistema,
+  dependencias que faltan y 7 pruebas de arranque con `LD_PRELOAD`, `xcb` y render por software). No modifica nada y no usa tus datos
+  (carpeta temporal). Documentado en `docs/COMPILAR.md`.
+### Sin cambios de comportamiento
+- Todavía **no** se corrige el arranque en Linux: la causa no está confirmada (ver hipótesis en `docs/COMPILAR.md`). El arreglo
+  (excluir del paquete las bibliotecas de gráficos y `libstdc++`, o un sondeo de OpenGL con retroceso automático a software) se
+  decidirá con el resultado del informe.
+*(Probado aquí: sintaxis y ejecución del script contra un paquete simulado. En Fedora, sin ejecutar.)*
+
 ## [0.14.10] - 2026-11-08
 ### Añadido
 - **Crear listas a partir de carpetas** (página Listas ▸ «Crear desde carpetas…»). Solo con carpetas que «Buscar música» ya
