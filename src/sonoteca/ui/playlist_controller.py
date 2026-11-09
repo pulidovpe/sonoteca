@@ -6,6 +6,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Property, QObject, Signal, Slot
 
+from sonoteca.core import folder_lists, library_folders
 from sonoteca.core import playlists as store
 from sonoteca.core.db import connect
 
@@ -96,6 +97,36 @@ class PlaylistController(QObject):
         n = len(store.track_ids(self._conn, playlist_id))
         self.message.emit(f"Lista \u00ab{store.clean_name(name)}\u00bb creada con {_songs(n)}")
         return self._result(id=playlist_id, added=n)
+
+    # ---- listas a partir de carpetas de la biblioteca ----
+    @Slot(result="QVariantList")
+    def folderCandidates(self) -> list:
+        """Carpetas desde las que se puede crear una lista (las que registró «Buscar música» y sus carpetas madre)."""
+        return library_folders.list_candidates(self._conn)
+
+    @Slot("QVariantList", result="QVariantList")
+    def planFolderLists(self, items: list) -> list:
+        """Qué listas saldrían de [{path, sub}], y cuáles chocan de nombre con otra lista."""
+        return folder_lists.plan(self._conn, [{"path": str(i["path"]), "sub": bool(i.get("sub"))} for i in items])
+
+    @Slot("QVariantList", result="QVariantMap")
+    def createFromFolders(self, decisions: list) -> dict:
+        """Crea las listas con la decisión del usuario para cada una (create, rename, append o skip)."""
+        clean = [{"path": str(d["path"]), "sub": bool(d.get("sub")), "name": str(d["name"]), "mode": str(d.get("mode", "create"))}
+                 for d in decisions]
+        result = folder_lists.apply(self._conn, clean)
+        if result["created"] or result["appended"]:
+            self._bump()
+        tracks = sum(c["added"] for c in result["created"]) + sum(a["added"] for a in result["appended"])
+        parts = []
+        if result["created"]:
+            parts.append(f"{len(result['created'])} " + ("lista creada" if len(result["created"]) == 1 else "listas creadas"))
+        if result["appended"]:
+            parts.append(f"{len(result['appended'])} " + ("lista ampliada" if len(result["appended"]) == 1 else "listas ampliadas"))
+        text = (" y ".join(parts) + f" ({_songs(tracks)})") if parts else "No se creó ninguna lista"
+        if result["errors"]:
+            text += " \u00b7 " + str(len(result["errors"])) + " con problemas: " + result["errors"][0]
+        return {"ok": not result["errors"], "message": text, **result}
 
     @Slot(int, str, result="QVariantMap")
     def rename(self, playlist_id: int, name: str) -> dict:

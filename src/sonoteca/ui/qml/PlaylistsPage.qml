@@ -9,6 +9,7 @@ Item {
     function setGrid(on) { gridMode = on; prefs.setBool("playlists.grid", on) }
     signal openPlaylist(int playlistId)
     signal newRequested()
+    signal foldersRequested()    // crear listas a partir de carpetas de la biblioteca
 
     Text {
         id: title
@@ -31,6 +32,12 @@ Item {
         primary: true
         anchors { left: parent.left; top: sub.bottom; leftMargin: 24; topMargin: 12 }
         onClicked: page.newRequested()
+    }
+    PillButton {
+        id: foldersButton
+        label: "Crear desde carpetas\u2026"
+        anchors { left: newButton.right; leftMargin: 10; verticalCenter: newButton.verticalCenter }
+        onClicked: page.foldersRequested()
     }
     Row {
         spacing: 4

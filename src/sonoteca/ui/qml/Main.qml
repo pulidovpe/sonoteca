@@ -507,7 +507,7 @@ ApplicationWindow {
         }
     }
     Component { id: lyricsComp; LyricsPage { onSettingsRequested: lyricsSettings.openDialog(); onNeedInternet: win.openInternetSettings() } }
-    Component { id: playlistsComp; PlaylistsPage { onOpenPlaylist: (id) => win.openPlaylist(id); onNewRequested: win.newPlaylist() } }
+    Component { id: playlistsComp; PlaylistsPage { onOpenPlaylist: (id) => win.openPlaylist(id); onNewRequested: win.newPlaylist(); onFoldersRequested: folderListsDialog.openDialog() } }
     Component {
         id: playlistComp
         PlaylistDetail {
@@ -994,6 +994,10 @@ ApplicationWindow {
                 harvestDialog.offer(false)   // portadas y fotos de lo bien identificado, avisando cuánto tardará
             }
         }
+    }
+    FolderListsDialog {
+        id: folderListsDialog
+        onToastRequested: (text) => win.toast(text, 5000)
     }
     LibraryFoldersDialog {
         id: foldersDialog

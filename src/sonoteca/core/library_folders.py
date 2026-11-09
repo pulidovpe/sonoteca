@@ -84,6 +84,52 @@ def list_folders(conn: sqlite3.Connection) -> list[dict]:
     return out
 
 
+def _natural_key(text: str) -> list:
+    """Orden «natural»: «Disco 2» antes que «Disco 10», sin distinguir mayúsculas."""
+    import re
+
+    return [int(part) if part.isdigit() else part.casefold() for part in re.split(r"(\d+)", text)]
+
+
+def path_key(path: str) -> list:
+    return [_natural_key(part) for part in path.split(os.sep)]
+
+
+def list_candidates(conn: sqlite3.Connection) -> list[dict]:
+    """Carpetas desde las que se puede crear una lista (página Listas).
+
+    Son las carpetas con música (`list_folders`) más las carpetas «madre» donde se bifurcan: una carpeta sin música propia
+    que contiene al menos dos ramas con música (p. ej. «Beatles» con «Abbey Road» y «Revolver»). Las carpetas que solo
+    llevan a una única rama se omiten (darían la misma lista que esa rama). Cada una: path, name, tracks (directas),
+    total (con subcarpetas), depth y hasChildren (tiene subcarpetas con música).
+    """
+    base = list_folders(conn)
+    have = {b["path"] for b in base}
+    branches: dict[str, set[str]] = {}
+    for folder in have:
+        cur = folder
+        while True:
+            parent = os.path.dirname(cur)
+            if parent == cur:
+                break
+            branches.setdefault(parent, set()).add(cur)
+            cur = parent
+    paths = [r["path"] for r in conn.execute("SELECT path FROM files")]
+    items = [dict(b) for b in base]
+    for ancestor, kids in branches.items():
+        if ancestor not in have and len(kids) >= 2:
+            total = sum(1 for p in paths if is_within(p, ancestor))
+            if total > 0:
+                items.append({"path": ancestor, "name": ancestor, "tracks": 0, "total": total, "depth": 0})
+    items.sort(key=lambda i: path_key(i["path"]))
+    shown = [i["path"] for i in items]
+    for item in items:
+        item["depth"] = sum(1 for other in shown if other != item["path"] and is_within(item["path"], other))
+        item["name"] = os.path.basename(item["path"].rstrip(os.sep)) or item["path"] if item["depth"] > 0 else item["path"]
+        item["hasChildren"] = item["total"] > item["tracks"]
+    return items
+
+
 def list_excluded(conn: sqlite3.Connection) -> list[dict]:
     rows = conn.execute("SELECT path, kind FROM excluded_paths").fetchall()
     items = [{"path": r["path"], "kind": r["kind"],

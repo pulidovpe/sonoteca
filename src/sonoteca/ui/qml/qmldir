@@ -38,6 +38,7 @@ ArtistLookup 1.0 ArtistLookup.qml
 AudioOutputPopup 1.0 AudioOutputPopup.qml
 ScanDialog 1.0 ScanDialog.qml
 LibraryFoldersDialog 1.0 LibraryFoldersDialog.qml
+FolderListsDialog 1.0 FolderListsDialog.qml
 HomePage 1.0 HomePage.qml
 PlaylistCover 1.0 PlaylistCover.qml
 LyricsPage 1.0 LyricsPage.qml

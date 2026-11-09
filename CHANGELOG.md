@@ -5,6 +5,25 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.14.10] - 2026-11-08
+### Añadido
+- **Crear listas a partir de carpetas** (página Listas ▸ «Crear desde carpetas…»). Solo con carpetas que «Buscar música» ya
+  registró. Cada carpeta marcada da una lista con el nombre de la carpeta.
+  - **Subcarpetas:** cada carpeta que las tenga ofrece «con subcarpetas»; con eso la lista incluye también toda la música de sus
+    subcarpetas. Además aparecen las carpetas «madre» donde se bifurca la música (p. ej. «Beatles» con «Abbey Road» y
+    «Revolver») aunque no tengan música propia; esas siempre incluyen sus subcarpetas. Las carpetas que solo llevan a una única
+    rama no se repiten.
+  - **Nombre repetido:** si ya existe una lista con ese nombre (sin distinguir mayúsculas), o dos carpetas elegidas se llaman
+    igual, el diálogo **pregunta** por cada caso: «Crear con otro nombre» (por defecto: «Nombre (2)»), «Agregar a esa lista» (sin
+    repetir canciones que ya estén) u «Omitir». Si no hay conflictos, crea las listas directamente.
+  - **Orden dentro de la lista:** por carpeta (orden natural: «Disco 2» antes que «Disco 10»); en cada carpeta, por disco y número
+    de pista y después por nombre de archivo.
+  - No se toca ningún archivo.
+- `core/folder_lists.py` (`plan`, `apply`, `folder_track_ids`, `unique_name`), `library_folders.list_candidates`, y en
+  `PlaylistController`: `folderCandidates`, `planFolderLists`, `createFromFolders`.
+*(Lógica probada aquí con SQLite real y tags simulados: 9 pruebas en `tests/test_folder_lists.py`. El diálogo Qt y su prueba
+`tests/test_folder_lists_ui.py` (salvo las comprobaciones estáticas), sin ejecutar.)*
+
 ## [0.14.9] - 2026-11-08
 ### Añadido
 - **Botón «Quitar de la biblioteca…» junto a «Seleccionar canciones»** en la página del álbum y en los resultados de búsqueda.
