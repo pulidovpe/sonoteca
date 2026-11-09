@@ -42,6 +42,7 @@ def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int
     from .playlist_controller import PlaylistController
     from .prefs_controller import PrefsController
     from .scan_controller import ScanController
+    from .folders_controller import FoldersController
 
     mark("imports de Qt y de la aplicación")
     if db_path is None:   # arranque normal: traer los datos de la versión anterior («musicapp») si los hay
@@ -82,6 +83,8 @@ def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int
     engine.rootContext().setContextProperty("lyrics", lyrics)
     scan = ScanController(db_path)
     engine.rootContext().setContextProperty("scanner", scan)
+    library_folders = FoldersController(db_path)
+    engine.rootContext().setContextProperty("libraryFolders", library_folders)
     harvester = HarvestController(db_path)
     engine.rootContext().setContextProperty("harvest", harvester)
     portable_io = PortableController(db_path)

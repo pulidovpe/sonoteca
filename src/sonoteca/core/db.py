@@ -6,7 +6,7 @@ from pathlib import Path
 
 from . import paths
 
-SCHEMA_VERSION = 8
+SCHEMA_VERSION = 9
 
 SCHEMA_V1 = """
 CREATE TABLE artists (
@@ -172,3 +172,22 @@ def migrate(conn: sqlite3.Connection) -> None:
             conn.execute("ALTER TABLE albums ADD COLUMN cover_checked_at TEXT")
             conn.execute("ALTER TABLE artists ADD COLUMN info_checked_at TEXT")
             conn.execute("PRAGMA user_version = 8")
+    if version < 9:
+        with conn:
+            # v9: registro de carpetas con música (las que encuentra «Buscar música») y rutas excluidas por el usuario
+            # (el escáner las salta, así lo que se quita de la biblioteca no vuelve en el siguiente escaneo)
+            conn.execute("CREATE TABLE IF NOT EXISTS library_folders (path TEXT PRIMARY KEY)")
+            conn.execute(
+                "CREATE TABLE IF NOT EXISTS excluded_paths ("
+                " path TEXT PRIMARY KEY,"
+                " kind TEXT NOT NULL CHECK (kind IN ('file', 'folder')))")
+            _backfill_library_folders(conn)
+            conn.execute("PRAGMA user_version = 9")
+
+
+def _backfill_library_folders(conn: sqlite3.Connection) -> None:
+    """Bibliotecas anteriores a v9: registra las carpetas donde ya hay pistas."""
+    import os
+
+    dirs = {os.path.dirname(row[0]) for row in conn.execute("SELECT path FROM files")}
+    conn.executemany("INSERT OR IGNORE INTO library_folders (path) VALUES (?)", [(d,) for d in sorted(dirs)])

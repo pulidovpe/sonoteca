@@ -5,6 +5,25 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.14.7] - 2026-11-08
+### Añadido
+- **Registro de carpetas con música.** «Buscar música» guarda las carpetas y subcarpetas donde encuentra música
+  (`library_folders`); en bibliotecas existentes se rellena sola al actualizar (migración **v9**, a partir de las pistas ya
+  indexadas). Tras cada escaneo el registro bajo la carpeta escaneada queda exactamente igual a lo que se vio.
+- **Archivo ▸ Carpetas de la biblioteca…**: lista las carpetas con su número de canciones (subcarpetas con sangría) y permite
+  **quitarlas de la biblioteca**, con confirmación. Quitar una carpeta saca de la biblioteca todo lo que contiene (subcarpetas
+  incluidas), también de las listas de reproducción, y la **excluye** de los escaneos siguientes (`excluded_paths`).
+  **No se toca ningún archivo del disco** (ni papelera ni borrado). Las excluidas aparecen debajo con «Volver a incluir»; para
+  traer la música de vuelta hay que repetir «Buscar música».
+- El escáner salta las carpetas y archivos excluidos (`Exclusions`, `iter_media_files(root, exclusions)`). Si la carpeta que se
+  pide buscar está excluida, no se escanea ni se quita nada y el resumen lo dice.
+- `core/library_folders.py` (`exclude_folder`, `exclude_files`, `include_again`, `list_folders`, `list_excluded`) y
+  `FoldersController` (`libraryFolders`). `exclude_files` queda listo para 0.14.8 (quitar canciones sueltas) y no tiene
+  interfaz todavía.
+*(Lógica probada aquí con el esquema real y las lecturas de tags simuladas: 10 pruebas en `tests/test_library_folders.py`.
+La UI Qt, el diálogo y su prueba `tests/test_library_folders_ui.py`, sin ejecutar.)*
+*(Pendiente conocido: si una canción quitada estaba en la lista «Reproduciendo», sigue ahí hasta que se vacíe.)*
+
 ## [0.14.6] - 2026-11-08
 ### Cambiado
 - **Al terminar «Buscar música» se abre la sección Artistas** (antes, Inicio). Solo si el escaneo añadió canciones; si no hay

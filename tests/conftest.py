@@ -126,8 +126,11 @@ def qml_env(qapp, db_file, tmp_path):
     engine.rootContext().setContextProperty("lyrics", lyrics)
     scan = ScanController(db_file)
     engine.rootContext().setContextProperty("scanner", scan)
+    from sonoteca.ui.folders_controller import FoldersController
     from sonoteca.ui.harvest_controller import HarvestController
     from sonoteca.ui.portable_controller import PortableController
+    library_folders = FoldersController(db_file)
+    engine.rootContext().setContextProperty("libraryFolders", library_folders)
     harvester = HarvestController(db_file)
     engine.rootContext().setContextProperty("harvest", harvester)
     portable_io = PortableController(db_file)
@@ -164,12 +167,12 @@ def qml_env(qapp, db_file, tmp_path):
         wait(settle)
 
     yield SimpleNamespace(engine=engine, win=win, controller=controller, player=player, online=online, playlists=playlists,
-                          lyrics=lyrics, scan=scan, prefs=ui_prefs, warnings=warnings, wait=wait, js=js, act=act)
+                          lyrics=lyrics, scan=scan, folders=library_folders, prefs=ui_prefs, warnings=warnings, wait=wait, js=js, act=act)
 
     wait(500)  # deja terminar las cargas de imágenes pendientes antes de destruir el motor
     engine.deleteLater()
     for _ in range(10):
         qapp.processEvents()
         QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
-    del provider, controller, player, online, playlists, lyrics, scan
+    del provider, controller, player, online, playlists, lyrics, scan, library_folders
     gc.collect()

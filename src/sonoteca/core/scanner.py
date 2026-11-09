@@ -7,6 +7,8 @@ import sqlite3
 from collections.abc import Callable, Iterator
 from pathlib import Path
 
+from . import library_folders
+from .library_folders import Exclusions
 from .models import SUPPORTED_EXTENSIONS, ScanResult, TrackMeta
 from .tags import TagReadError, read_tags
 
@@ -21,14 +23,19 @@ def sort_name(name: str) -> str:
     return name.strip()
 
 
-def iter_media_files(root: Path) -> Iterator[Path]:
+def iter_media_files(root: Path, exclusions: Exclusions | None = None) -> Iterator[Path]:
+    """Archivos de música/video bajo `root`. Salta lo oculto y, si se indican, las carpetas y archivos excluidos."""
     for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = sorted(d for d in dirnames if not d.startswith("."))
+        dirnames[:] = sorted(
+            d for d in dirnames
+            if not d.startswith(".") and not (exclusions and exclusions.folder_excluded(os.path.join(dirpath, d))))
         for name in sorted(filenames):
             if name.startswith("."):  # incluye los '._*' de macOS en discos externos
                 continue
             p = Path(dirpath) / name
             if p.suffix.lower() in SUPPORTED_EXTENSIONS:
+                if exclusions and exclusions.file_excluded(str(p)):
+                    continue
                 yield p
 
 
@@ -137,22 +144,29 @@ def scan(conn: sqlite3.Connection, root: Path | str, progress: ProgressCb | None
 
     Con `force=True` relee todos los archivos aunque no hayan cambiado.
     Los archivos bajo `root` que ya no existen se eliminan de la base. Los de otras
-    carpetas raíz no se tocan.
+    carpetas raíz no se tocan. Las rutas excluidas por el usuario (`library_folders`) se saltan; si el propio `root`
+    está excluido no se escanea nada (`result.root_excluded`) y no se quita nada de la base.
     """
     root = Path(root).expanduser().resolve()
     if not root.is_dir():
         raise NotADirectoryError(root)
 
     result = ScanResult()
+    exclusions = library_folders.load_exclusions(conn)
+    if exclusions.folder_excluded(str(root)):
+        result.root_excluded = True
+        return result
     known = {
         row["path"]: (row["size"], row["mtime_ns"])
         for row in conn.execute("SELECT path, size, mtime_ns FROM files")
     }
     seen: set[str] = set()
+    seen_dirs: set[str] = set()
 
-    for i, path in enumerate(iter_media_files(root), start=1):
+    for i, path in enumerate(iter_media_files(root, exclusions), start=1):
         path_str = str(path)
         seen.add(path_str)
+        seen_dirs.add(str(path.parent))
         if progress:
             progress(i, path)
         try:
@@ -183,4 +197,5 @@ def scan(conn: sqlite3.Connection, root: Path | str, progress: ProgressCb | None
                 result.removed += 1
         _refresh_album_years(conn)
         _prune_orphans(conn)
+    library_folders.record_folders(conn, str(root), seen_dirs)
     return result

@@ -69,6 +69,8 @@ Popup {
             root.summary = result.added + " canciones nuevas, " + result.updated + " actualizadas"
                            + (result.removed > 0 ? ", " + result.removed + " quitadas" : "")
                            + (result.errors > 0 ? " (" + result.errors + " archivos con problemas)" : "") + "."
+            if (result.excluded > 0)
+                root.summary += " " + result.excluded + (result.excluded === 1 ? " carpeta no se busc\u00f3 porque la quitaste de la biblioteca" : " carpetas no se buscaron porque las quitaste de la biblioteca") + " (puedes volver a incluirla en Archivo \u25b8 Carpetas de la biblioteca)."
             root.finished(result.added)
         }
         function onScanError(message) { root.error = message }

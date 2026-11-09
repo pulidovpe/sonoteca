@@ -39,6 +39,7 @@ class ScanResult:
     updated: int = 0
     unchanged: int = 0
     removed: int = 0
+    root_excluded: bool = False   # la carpeta pedida está excluida de la biblioteca: no se escaneó
     errors: list[tuple[Path, str]] = field(default_factory=list)
 
     @property

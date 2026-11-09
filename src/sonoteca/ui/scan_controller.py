@@ -52,7 +52,7 @@ def suggested_folders() -> list[dict]:
 class ScanController(QObject):
     busyChanged = Signal()
     progress = Signal(int, str)           # archivos revisados, carpeta que se está recorriendo
-    scanFinished = Signal("QVariantMap")  # resumen: added, updated, removed, errors, folders
+    scanFinished = Signal("QVariantMap")  # resumen: added, updated, removed, errors, folders, excluded
     scanError = Signal(str)
 
     def __init__(self, db_path: Path | str | None = None, parent: QObject | None = None) -> None:
@@ -82,7 +82,7 @@ class ScanController(QObject):
         self.busyChanged.emit()
 
         def run() -> None:
-            totals = {"added": 0, "updated": 0, "removed": 0, "errors": 0, "folders": 0}
+            totals = {"added": 0, "updated": 0, "removed": 0, "errors": 0, "folders": 0, "excluded": 0}
             seen_before = 0
             try:
                 conn = connect(self._db_arg)
@@ -100,6 +100,9 @@ class ScanController(QObject):
                             result = scanner.scan(conn, folder, progress=report)
                         except NotADirectoryError:
                             self.scanError.emit(f"«{folder}» no es una carpeta")
+                            continue
+                        if result.root_excluded:   # la carpeta pedida fue quitada de la biblioteca: no se escanea
+                            totals["excluded"] += 1
                             continue
                         seen_before += result.total_seen
                         totals["folders"] += 1

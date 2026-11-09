@@ -20,6 +20,7 @@ ApplicationWindow {
         AppMenu {
             title: "Archivo"
             AppMenuItem { action: actScan }
+            AppMenuItem { action: actFolders }
             AppMenuItem { action: actNewPlaylist }
             AppMenuItem { action: actEditCurrent }
             AppMenuItem { action: actInternet }
@@ -79,6 +80,7 @@ ApplicationWindow {
     Action { id: actInternet; text: "Internet\u2026"; onTriggered: win.openInternetSettings() }
     Action { id: actQuit; text: "Salir"; shortcut: "Ctrl+Q"; onTriggered: Qt.quit() }
     Action { id: actScan; text: "Buscar m\u00fasica\u2026"; shortcut: "Ctrl+Shift+O"; onTriggered: scanDialog.openDialog(false) }
+    Action { id: actFolders; text: "Carpetas de la biblioteca\u2026"; onTriggered: foldersDialog.openDialog() }
     Action { id: actHome; text: "Inicio"; shortcut: "Ctrl+0"; onTriggered: win.showSection("home") }
     Action { id: actBack; text: "Atr\u00e1s"; shortcut: "Alt+Left"; enabled: win.canBack; onTriggered: win.back() }
     Shortcut { sequence: "Ctrl+["; enabled: win.canBack; onActivated: win.back() }
@@ -961,6 +963,14 @@ ApplicationWindow {
                 harvestDialog.offer(false)   // portadas y fotos de lo bien identificado, avisando cuánto tardará
             }
         }
+    }
+    LibraryFoldersDialog {
+        id: foldersDialog
+        onToastRequested: (text) => win.toast(text, 5000)
+    }
+    Connections {
+        target: libraryFolders
+        function onChanged() { Theme.dataRevision++ }   // se quitó o se volvió a incluir algo: refrescar las páginas
     }
     ServersDialog {
         id: serversDialog
