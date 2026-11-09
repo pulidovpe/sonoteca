@@ -7,7 +7,12 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p dist
 
-docker run --rm --platform "${PLATFORM:-linux/amd64}" -v "$PWD":/src python:3.12-bookworm bash -euc '
+# En Linux con SELinux (Fedora, RHEL...) el contenedor no puede leer la carpeta montada sin la etiqueta ":z"
+# («tar: /src: Cannot open: Permission denied»). En macOS/Windows (Docker Desktop) no se usa.
+VOL_OPTS=""
+[ "$(uname -s)" = "Linux" ] && VOL_OPTS=":z"
+
+docker run --rm --platform "${PLATFORM:-linux/amd64}" -v "$PWD":/src"$VOL_OPTS" python:3.12-bookworm bash -euc '
   apt-get update -qq
   apt-get install -y -qq --no-install-recommends libegl1 libgl1 libglib2.0-0 libxkbcommon0 \
       libxkbcommon-x11-0 libdbus-1-3 libfontconfig1 libpulse0 libxcb-cursor0

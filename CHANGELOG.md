@@ -5,6 +5,14 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.14.14] - 2026-11-09
+### Corregido
+- `packaging/build_linux_docker.sh` en Linux con SELinux (Fedora): el contenedor fallaba con «tar: /src: Cannot open: Permission
+  denied». Ahora monta la carpeta con `:z` (solo en Linux; en macOS/Windows no cambia).
+### Confirmado
+- Con el paquete 0.14.5, quitar `libstdc++.so.6` de `_internal` hace que abra con la ventana normal (causa de 0.14.13).
+*(Probado aquí: `bash -n` del script. La compilación en Fedora, sin ejecutar.)*
+
 ## [0.14.13] - 2026-11-09
 ### Corregido
 - **Linux: la ventana no abría en Fedora/Wayland** («EGL not available», «Failed to create RHI», `core dumped`). Causa: el
