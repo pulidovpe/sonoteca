@@ -91,3 +91,9 @@ def test_mini_mode_on_wayland_does_not_change_flags_and_resizes_after_the_state_
     assert main.count("if (!isWayland) win.flags") == 2                                  # entrar y salir
     assert "function applyMiniSize()" in main and "id: miniFallback" in main and "id: miniSettle" in main
     assert "function onVisibilityChanged()" in main and "finishPendingMini" in main
+
+
+def test_exit_mini_restores_size_limits_before_changing_flags():
+    main = (QML / "Main.qml").read_text(encoding="utf-8")
+    body = main[main.index("function exitMini()"):]
+    assert body.index("win.maximumWidth = 16777215") < body.index("win.flags = normalFlags") < body.index("win.width = g.w")

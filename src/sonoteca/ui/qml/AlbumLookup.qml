@@ -17,6 +17,7 @@ Popup {
     property alias updateTagsItem: updateTags
 
     modal: true
+    onVisibleChanged: DragState.inputBlocked = visible      // mientras está abierta, nada de lo que hay detrás recibe el ratón (0.14.18)
     focus: true
     anchors.centerIn: Overlay.overlay
     width: 640

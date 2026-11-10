@@ -5,6 +5,20 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.14.18] - 2026-11-09
+### Corregido
+- **Todas las plataformas: «Buscar portada e información» dejaba actuar a lo que hay detrás.** Marcar una opción del diálogo
+  afectaba a las canciones de la página (como pasó antes con el editor de tags). `AlbumLookup` ahora bloquea la entrada de las
+  filas mientras está visible (`DragState.inputBlocked`, igual que `TagEditor`; el `Binding` de `Main.qml` también lo cubre).
+  No se tocó `ArtistLookup` (vive dentro de una página que se desactivaría): sin verificar si tiene el mismo fallo.
+- **Windows: al volver del mini el botón maximizar quedaba deshabilitado.** Hipótesis: se cambiaban los flags con el tamaño aún
+  fijo (mínimo = máximo) y Windows quitaba el botón. `exitMini()` restaura primero los límites y luego los flags.
+### Confirmado / pendiente
+- 0.14.17 en Windows: el mini ya tiene barra de título (antes era muy delgada) y la ventana normal la conserva.
+- **Pendiente (siguiente entrega)**: al editar los tags de la pista que suena en Windows se oye un corte brusco antes de seguir
+  (inherente a soltar el archivo; se estudia un fundido de salida/entrada del volumen).
+*(Probado aquí: aserciones de texto de los tests de QML; los tests y toda la UI, sin ejecutar.)*
+
 ## [0.14.17] - 2026-11-09
 ### Corregido (Windows)
 - **No se podían editar los tags de la canción que suena** («PermissionError: [WinError 5] Acceso denegado» al reemplazar el

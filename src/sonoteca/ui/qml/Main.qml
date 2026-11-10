@@ -291,11 +291,13 @@ ApplicationWindow {
         miniPending = false
         miniFallback.stop()
         miniSettle.stop()
-        if (!isWayland) win.flags = normalFlags
+        // Primero se quitan los límites del mini y después se cambian los flags: Windows decide si el botón maximizar existe
+        // al aplicar los flags, y con el tamaño aún fijo (mínimo = máximo) lo dejaba deshabilitado (0.14.18).
         win.maximumWidth = 16777215
         win.maximumHeight = 16777215
         win.minimumWidth = g ? g.minW : 900
         win.minimumHeight = g ? g.minH : 560
+        if (!isWayland) win.flags = normalFlags
         if (g) {
             win.width = g.w
             win.height = g.h
@@ -1006,7 +1008,7 @@ ApplicationWindow {
         function onArtistRequested(artistId, name) { win.openArtist(artistId, name) }
     }      // enlaces de álbum en las filas
     TagEditor { id: tagEditor }
-    Binding { target: DragState; property: "inputBlocked"; value: tagEditor.visible || tagEditor.opened }   // también aquí, por si el aviso del propio editor no llega
+    Binding { target: DragState; property: "inputBlocked"; value: tagEditor.visible || tagEditor.opened || albumLookup.visible || albumLookup.opened }   // también aquí, por si el aviso del propio editor no llega
     TrackMenu { id: trackMenu; onRemoveRequested: (ids) => win.confirmRemoveFromLibrary(ids); onDeleteRequested: (id) => win.confirmDeleteFile(id); onArtistRequested: (id, name) => win.openArtist(id, name); onAlbumRequested: (id) => win.openAlbum(id); onLyricsRequested: (id) => win.showLyrics(id); onEditRequested: (ids) => win.editTags(ids); onListPickerRequested: (ids) => win.showPlaylistPicker(ids) }
     NamePrompt { id: namePrompt }
     ConfirmDialog { id: confirmDialog }
