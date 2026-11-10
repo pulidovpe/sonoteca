@@ -5,6 +5,17 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.14.19] - 2026-11-09
+### Mejorado (Windows)
+- **Editar los tags de la pista que suena ya no corta el sonido en seco.** Antes de soltar el archivo el volumen baja a 0 en
+  ~150 ms (`PlayerBackend.fade_out`; bloquea la interfaz ese instante) y, al recargar la pista, entra en silencio y sube en
+  ~250 ms (`fade_in`, con QTimer). Si estaba en pausa, no hay fundido. La pausa mientras se escribe sigue existiendo (es
+  inherente a soltar el archivo). `fade_in` por defecto fija el volumen de golpe en backends sin soporte.
+### Confirmado
+- 0.14.18 (Pablo): arreglados el bloqueo de la ventana de portadas y el mini reproductor (botón maximizar incluido).
+*(Probado aquí: sintaxis; el test nuevo no se ejecutó (sin pytest ni PySide6). Que el fundido se oiga como se espera con Qt en
+Windows, sin verificar.)*
+
 ## [0.14.18] - 2026-11-09
 ### Corregido
 - **Todas las plataformas: «Buscar portada e información» dejaba actuar a lo que hay detrás.** Marcar una opción del diálogo

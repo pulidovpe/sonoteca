@@ -1,6 +1,7 @@
 """Backend con QtMultimedia (FFmpeg en escritorio)."""
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 from PySide6.QtCore import QTimer, QUrl
@@ -79,6 +80,33 @@ class QtPlayerBackend(PlayerBackend):
 
     def video_frames(self) -> int:
         return self._frames
+
+    def fade_out(self, ms: int = 150) -> None:
+        if self._audio is None:
+            return
+        start, steps = self._audio.volume(), 6
+        for i in range(1, steps + 1):
+            self._audio.setVolume(start * (1 - i / steps))
+            time.sleep(ms / 1000 / steps)
+
+    def fade_in(self, volume: float, ms: int = 250) -> None:
+        if self._audio is None:
+            return
+        steps = 10
+        if getattr(self, "_fade_timer", None) is not None:
+            self._fade_timer.stop()
+        timer = self._fade_timer = QTimer(self)
+        timer.setInterval(max(1, ms // steps))
+        count = [0]
+
+        def tick() -> None:
+            count[0] += 1
+            self.set_volume(volume * min(1.0, count[0] / steps))
+            if count[0] >= steps:
+                timer.stop()
+
+        timer.timeout.connect(tick)
+        timer.start()
 
     def release(self) -> None:
         self._frames = 0

@@ -417,3 +417,21 @@ def test_release_does_nothing_outside_windows(env, monkeypatch):
     monkeypatch.setattr("sonoteca.ui.player_controller.sys.platform", "darwin")
     ctrl.releaseFiles([ctrl.currentId])
     assert released == []
+
+
+def test_release_fades_out_only_when_playing_and_restore_starts_silent(env, monkeypatch):
+    ctrl, be, album, *_ = env
+    calls = []
+    be.release = lambda: calls.append("release")
+    be.fade_out = lambda ms=150: calls.append("fade_out")
+    monkeypatch.setattr("sonoteca.ui.player_controller.sys.platform", "win32")
+    ctrl.playAlbum(album, 0)
+    ctrl.releaseFiles([ctrl.currentId])
+    assert calls == ["fade_out", "release"]            # primero el fundido, luego se suelta el archivo
+    ctrl.restoreAfterEdit()
+    assert be.volume == 0.0                              # entra en silencio; el fundido de entrada corre en settle()
+
+    calls.clear()
+    ctrl.toggle()                                         # en pausa: no hay sonido que atenuar
+    ctrl.releaseFiles([ctrl.currentId])
+    assert calls == ["release"]

@@ -390,6 +390,8 @@ class PlayerController(QObject):
         if sys.platform != "win32" or not self._current or self.currentId not in {int(i) for i in ids}:
             return
         self._resume = {"position": self._position, "playing": self._playing}
+        if self._playing:
+            self._backend.fade_out()       # unos 150 ms: evita el chasquido de cortar el sonido en seco
         self._backend.release()
 
     @Slot()
@@ -400,7 +402,9 @@ class PlayerController(QObject):
             return
         row = library.get_track(self._conn, self.currentId)
         if row is None:
+            self._backend.set_volume(self._volume)
             return
+        self._backend.set_volume(0.0)      # entra en silencio y sube con un fundido (el fundido de salida dejó el volumen en 0)
         self._backend.load(Path(row["path"]))
         self._backend.play()
         position, playing = resume["position"], resume["playing"]
@@ -408,8 +412,11 @@ class PlayerController(QObject):
         def settle() -> None:
             if position > 0:
                 self._backend.seek(position)
-            if not playing:
+            if playing:
+                self._backend.fade_in(self._volume)
+            else:
                 self._backend.pause()
+                self._backend.set_volume(self._volume)
 
         QTimer.singleShot(300, settle)     # el motor necesita un instante para tener el archivo listo
 
