@@ -37,12 +37,20 @@ class PlayerBackend(QObject):
     def set_video_sink(self, sink) -> None:
         raise NotImplementedError
 
-    def fade_out(self, ms: int = 150) -> None:
-        """Baja el volumen a 0 en unos `ms` (puede bloquear ese tiempo) para no cortar el sonido en seco."""
+    def fade_out(self, ms: int, done) -> None:
+        """Baja el volumen a 0 en unos `ms` SIN bloquear y llama a `done()` al terminar (por defecto, de inmediato)."""
+        done()
 
-    def fade_in(self, volume: float, ms: int = 250) -> None:
-        """Sube el volumen de 0 a `volume` (posición del control, 0..1) sin bloquear; por defecto lo fija de golpe."""
+    def resume(self, path: Path, position_ms: int, playing: bool, volume: float) -> None:
+        """Vuelve a cargar `path` en `position_ms`; suena (con fundido de entrada) si `playing`, y si no queda en pausa."""
+        self.load(path)
         self.set_volume(volume)
+        if playing:
+            self.play()
+        if position_ms > 0:
+            self.seek(position_ms)
+        if not playing:
+            self.pause()
 
     def release(self) -> None:
         """Suelta el archivo actual (lo cierra) sin cambiar la lista; necesario en Windows para poder reescribirlo."""

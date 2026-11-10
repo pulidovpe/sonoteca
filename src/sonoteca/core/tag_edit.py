@@ -152,7 +152,9 @@ class EditResult:
 
 def apply_edit(conn: sqlite3.Connection, track_ids: list[int], raw_changes: dict,
                cover_path: str = "", backup: bool = True, id3_version: int = 3,
-               progress: Callable[[int, int], None] | None = None) -> EditResult:
+               progress: Callable[[int, int], None] | None = None,
+               before_replace: Callable[[Path], None] | None = None,
+               after_replace: Callable[[Path], None] | None = None) -> EditResult:
     """Escribe los cambios en los archivos y actualiza la base conservando los ids de pista.
     Un archivo que falla no detiene a los demás. Lanza ValueError si los datos son inválidos."""
     ids = _unique(track_ids)
@@ -180,7 +182,8 @@ def apply_edit(conn: sqlite3.Connection, track_ids: list[int], raw_changes: dict
                     cover_store.archive_embedded(path)  # si no se puede archivar, no se toca el archivo
                 per_file = {**{k: v for k, v in _derived(_rows(conn, [track_id])[0]).items()
                                if k not in changes}, **changes}
-                write_tags(path, per_file, cover, id3_version=id3_version, backup_dir=backup_dir)
+                write_tags(path, per_file, cover, id3_version=id3_version, backup_dir=backup_dir,
+                           before_replace=before_replace, after_replace=after_replace)
                 reindex_file(conn, path)
                 result.updated += 1
             except (TagWriteError, OSError) as exc:

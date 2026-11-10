@@ -5,6 +5,23 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.14.20] - 2026-11-09
+### Corregido (Windows)
+- **Editar los tags de la pista que suena dejaba la reproducción parada durante toda la escritura** y el fundido de 0.14.19 no
+  se notaba (bloqueaba el hilo principal con `sleep`, y Qt aplica el volumen desde el bucle de eventos). Rediseño:
+  - `write_tags` acepta `before_replace(ruta)` / `after_replace(ruta)`; la copia temporal se escribe y verifica **con la pista
+    sonando** y solo se suelta el archivo en el instante del reemplazo (`apply_edit` los reenvía).
+  - `LibraryController` pide al reproductor soltarla (`releaseRequested` con un `threading.Event`, espera máx. 3 s) y avisa al
+    terminar (`fileReplaced`, también si el reemplazo falla). `PlayerController.releasePath/restorePath` sustituyen a
+    `releaseFiles/restoreAfterEdit` y `beforeEdit`.
+  - Fundido de salida (120 ms) y de entrada (200 ms) con QTimer, sin bloquear. `PlayerBackend.resume()` recarga la pista y,
+    al estar cargada (no a los 300 ms fijos), salta al mismo punto; vuelve a sonar o queda en pausa como estaba. Si no llega a
+    cargar, el volumen se restituye a los 4 s.
+  - La pausa que queda (fundido + reemplazo + recarga) debería ser de una fracción de segundo.
+*(Probado aquí: orden `copia → escribe → verifica → SOLTAR → reemplazo → RECARGAR` y que `RECARGAR` corre si el reemplazo falla,
+con mutagen simulado. Los tests nuevos y toda la UI/Qt, sin ejecutar. Que Qt cierre el archivo a tiempo y que el fundido se oiga:
+sin verificar en Windows.)*
+
 ## [0.14.19] - 2026-11-09
 ### Mejorado (Windows)
 - **Editar los tags de la pista que suena ya no corta el sonido en seco.** Antes de soltar el archivo el volumen baja a 0 en

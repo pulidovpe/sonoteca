@@ -29,7 +29,10 @@ class LibraryController(QObject):
     # los manejadores QML corren desde el bucle de eventos (sin tener tomado el GIL de Python).
     editProgress = Signal(int, int)
     editFinished = Signal("QVariantMap")
-    beforeEdit = Signal("QVariantList")      # ids a escribir; se emite en el hilo principal antes de empezar
+    # Windows: el reproductor suelta el archivo que suena solo en el instante de reemplazarlo (ver tag_writer.write_tags).
+    # `releaseRequested(ruta, evento)`: el reproductor hace el fundido, suelta el archivo y activa el `threading.Event`.
+    releaseRequested = Signal(str, object)
+    fileReplaced = Signal(str)               # ya se reemplazó (o falló): el reproductor vuelve a cargar la pista
     rescanProgress = Signal(int, int)
     duplicatesProgress = Signal(int, int)
     duplicatesDeleted = Signal("QVariantMap")
@@ -201,9 +204,17 @@ class LibraryController(QObject):
                 {"path": "", "message": "Ya hay una edición en curso"}]})
             return
         self._editing = True
-        self.beforeEdit.emit([int(i) for i in ids])     # el reproductor suelta el archivo si es el que suena (Windows)
         args = ([int(i) for i in ids], dict(changes), cover_path, backup)
         threading.Thread(target=self._edit_worker, args=args, daemon=True).start()
+
+    def _before_replace(self, path) -> None:
+        """Hilo de trabajo: pide al reproductor que suelte el archivo y espera (máx. 3 s) a que lo haya hecho."""
+        released = threading.Event()
+        self.releaseRequested.emit(str(path), released)
+        released.wait(3.0)
+
+    def _after_replace(self, path) -> None:
+        self.fileReplaced.emit(str(path))
 
     def _edit_worker(self, ids: list, changes: dict, cover_path: str, backup: bool) -> None:
         try:
@@ -211,7 +222,8 @@ class LibraryController(QObject):
             try:
                 result = tag_edit.apply_edit(
                     conn, ids, changes, cover_path, backup,
-                    progress=lambda done, total: self.editProgress.emit(done, total))
+                    progress=lambda done, total: self.editProgress.emit(done, total),
+                    before_replace=self._before_replace, after_replace=self._after_replace)
             finally:
                 conn.close()
             payload = result.to_dict()

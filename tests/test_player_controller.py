@@ -393,45 +393,65 @@ def test_audio_track_never_warns_about_video(env):
     assert msgs == []
 
 
-def test_release_and_restore_current_file_when_editing_its_tags_on_windows(env, monkeypatch):
+def _track_path(ctrl):
+    from sonoteca.core import library
+    return library.get_track(ctrl._conn, ctrl.currentId)["path"]
+
+
+def test_release_only_at_replace_time_and_resume_same_point_on_windows(env, monkeypatch):
+    import threading
     ctrl, be, album, _, paths = env
-    released = []
-    be.release = lambda: released.append(True)
+    calls = []
+    be.release = lambda: calls.append("release")
+    ctrl.playAlbum(album, 0)
+    ctrl._position = 42_000
+    monkeypatch.setattr("sonoteca.ui.player_controller.sys.platform", "win32")
+
+    other = threading.Event()
+    ctrl.releasePath(paths["Pista 2"], other)               # otro archivo: no se toca
+    assert other.is_set() and calls == []
+
+    done = threading.Event()
+    ctrl.releasePath(_track_path(ctrl), done)               # el que suena: fundido (el falso termina al instante) y se suelta
+    assert calls == ["release"] and done.is_set()
+
+    resumed = []
+    be.resume = lambda path, pos, playing, vol: resumed.append((str(path), pos, playing, vol))
+    ctrl.restorePath(_track_path(ctrl))
+    assert resumed == [(paths["Pista 1"], 42_000, True, ctrl.volume)]
+    ctrl.restorePath(_track_path(ctrl))                     # sin nada pendiente no hace nada más
+    assert len(resumed) == 1
+
+
+def test_release_waits_for_fade_and_keeps_paused_state(env, monkeypatch):
+    import threading
+    ctrl, be, album, *_ = env
+    pending, calls = [], []
+    be.fade_out = lambda ms, done: pending.append(done)     # fundido en curso
+    be.release = lambda: calls.append("release")
     ctrl.playAlbum(album, 0)
     monkeypatch.setattr("sonoteca.ui.player_controller.sys.platform", "win32")
-    ctrl.releaseFiles([ctrl.currentId + 999])         # otra pista: no se toca
-    assert released == []
-    ctrl.releaseFiles([ctrl.currentId])
-    assert released == [True]
-    be.loaded = None
-    ctrl.restoreAfterEdit()
-    assert str(be.loaded) == paths["Pista 1"] and be.state == "playing"
-    ctrl.restoreAfterEdit()                            # sin nada pendiente no hace nada más
+    done = threading.Event()
+    ctrl.releasePath(_track_path(ctrl), done)
+    assert not done.is_set() and calls == []                 # aún atenuando: el archivo sigue abierto
+    pending[0]()                                             # termina el fundido
+    assert calls == ["release"] and done.is_set()
+
+    ctrl.restorePath(_track_path(ctrl))
+    ctrl.toggle()                                            # en pausa: sin fundido, se suelta de inmediato
+    pending.clear(); calls.clear()
+    done2 = threading.Event()
+    ctrl.releasePath(_track_path(ctrl), done2)
+    assert pending == [] and calls == ["release"] and done2.is_set()
 
 
 def test_release_does_nothing_outside_windows(env, monkeypatch):
-    ctrl, be, album, *_ = env
-    released = []
-    be.release = lambda: released.append(True)
-    ctrl.playAlbum(album, 0)
-    monkeypatch.setattr("sonoteca.ui.player_controller.sys.platform", "darwin")
-    ctrl.releaseFiles([ctrl.currentId])
-    assert released == []
-
-
-def test_release_fades_out_only_when_playing_and_restore_starts_silent(env, monkeypatch):
+    import threading
     ctrl, be, album, *_ = env
     calls = []
     be.release = lambda: calls.append("release")
-    be.fade_out = lambda ms=150: calls.append("fade_out")
-    monkeypatch.setattr("sonoteca.ui.player_controller.sys.platform", "win32")
     ctrl.playAlbum(album, 0)
-    ctrl.releaseFiles([ctrl.currentId])
-    assert calls == ["fade_out", "release"]            # primero el fundido, luego se suelta el archivo
-    ctrl.restoreAfterEdit()
-    assert be.volume == 0.0                              # entra en silencio; el fundido de entrada corre en settle()
-
-    calls.clear()
-    ctrl.toggle()                                         # en pausa: no hay sonido que atenuar
-    ctrl.releaseFiles([ctrl.currentId])
-    assert calls == ["release"]
+    monkeypatch.setattr("sonoteca.ui.player_controller.sys.platform", "darwin")
+    done = threading.Event()
+    ctrl.releasePath(_track_path(ctrl), done)
+    assert calls == [] and done.is_set()

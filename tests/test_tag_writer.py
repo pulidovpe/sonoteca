@@ -172,3 +172,29 @@ def test_replace_gives_up_after_attempts_and_does_not_retry_other_errors(monkeyp
     with pytest.raises(FileNotFoundError):
         tag_writer._replace_with_retry(tmp_path / "a", tmp_path / "b")
     assert len(calls) == 1
+
+
+def test_write_tags_hooks_surround_the_replace(tmp_path, monkeypatch):
+    p = make_mp3(tmp_path / "h.mp3", title="Viejo")
+    order = []
+    real = tag_writer.os.replace
+    monkeypatch.setattr(tag_writer.os, "replace", lambda s, d: (order.append("replace"), real(s, d))[1])
+    write_tags(p, {"title": "Nuevo"}, before_replace=lambda q: order.append("before"),
+               after_replace=lambda q: order.append("after"))
+    assert order == ["before", "replace", "after"]
+    assert read_tags(p).title == "Nuevo"
+
+
+def test_after_replace_runs_even_if_the_replace_fails(tmp_path, monkeypatch):
+    p = make_mp3(tmp_path / "f.mp3", title="Viejo")
+    order = []
+
+    def boom(s, d):
+        raise OSError("disco lleno")
+
+    monkeypatch.setattr(tag_writer.os, "replace", boom)
+    with pytest.raises(TagWriteError):
+        write_tags(p, {"title": "Nuevo"}, before_replace=lambda q: order.append("before"),
+                   after_replace=lambda q: order.append("after"))
+    assert order == ["before", "after"]
+    assert read_tags(p).title == "Viejo"                       # el original no se tocó

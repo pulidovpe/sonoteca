@@ -192,9 +192,14 @@ def _replace_with_retry(tmp: Path, path: Path, attempts: int = 12, delay: float 
 
 
 def write_tags(path: Path | str, changes: dict, cover: bytes | None = None, *,
-               id3_version: int = 3, backup_dir: Path | None = None) -> None:
+               id3_version: int = 3, backup_dir: Path | None = None,
+               before_replace=None, after_replace=None) -> None:
     """Aplica `changes` (ya normalizados o crudos) a un archivo. Ver garantías en el docstring
-    del módulo. Lanza TagWriteError si algo falla (el original no se modifica)."""
+    del módulo. Lanza TagWriteError si algo falla (el original no se modifica).
+
+    `before_replace(path)` se llama justo antes del reemplazo atómico, cuando la copia temporal ya está escrita y verificada,
+    y `after_replace(path)` justo después (también si el reemplazo falla, siempre que `before_replace` haya corrido). Permiten
+    soltar el archivo solo ese instante (Windows no deja reemplazar un archivo que el reproductor tiene abierto)."""
     path = Path(path)
     if path.suffix.lower() not in {".mp3", ".m4a", ".mp4"}:
         raise TagWriteError(f"{path.name}: formato no soportado")
@@ -213,7 +218,15 @@ def write_tags(path: Path | str, changes: dict, cover: bytes | None = None, *,
         _verify(tmp, changes, cover is not None, original_length)
         if backup_dir is not None:
             _backup(path, backup_dir)
-        _replace_with_retry(tmp, path)
+        if before_replace is not None:
+            before_replace(path)
+            try:
+                _replace_with_retry(tmp, path)
+            finally:
+                if after_replace is not None:
+                    after_replace(path)
+        else:
+            _replace_with_retry(tmp, path)
     except TagWriteError:
         raise
     except Exception as exc:

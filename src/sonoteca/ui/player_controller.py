@@ -383,42 +383,40 @@ class PlayerController(QObject):
         self.durationChanged.emit()
         self.queueChanged.emit()
 
-    @Slot("QVariantList")
-    def releaseFiles(self, ids: list) -> None:
-        """Windows: la pista que suena mantiene el archivo abierto y no se puede reescribir al editar sus tags
-        (PermissionError [WinError 5]). Se suelta antes de escribir y `restoreAfterEdit` la vuelve a cargar."""
-        if sys.platform != "win32" or not self._current or self.currentId not in {int(i) for i in ids}:
-            return
-        self._resume = {"position": self._position, "playing": self._playing}
-        if self._playing:
-            self._backend.fade_out()       # unos 150 ms: evita el chasquido de cortar el sonido en seco
-        self._backend.release()
+    @Slot(str, object)
+    def releasePath(self, path: str, released) -> None:
+        """Windows: la pista que suena mantiene su archivo abierto y no se puede reemplazar al editar sus tags (PermissionError
+        [WinError 5]). Se suelta solo en el instante del reemplazo (la copia ya está escrita y verificada): fundido de salida
+        sin bloquear, se suelta y se avisa con `released.set()`. `restorePath` la vuelve a cargar en el mismo punto."""
+        self._resume = None
+        try:
+            if sys.platform == "win32" and self._current:
+                row = library.get_track(self._conn, self.currentId)
+                if row is not None and Path(row["path"]) == Path(path):
+                    self._resume = {"position": self._position, "playing": self._playing}
+                    if self._playing:
+                        self._backend.fade_out(120, lambda: self._finish_release(released))
+                        return
+                    self._backend.release()
+        finally:
+            if self._resume is None or not self._resume["playing"]:
+                released.set()
 
-    @Slot()
-    def restoreAfterEdit(self) -> None:
-        """Tras escribir los tags: vuelve a cargar la pista soltada, en el mismo punto y con el mismo estado."""
+    def _finish_release(self, released) -> None:
+        self._backend.release()
+        released.set()
+
+    @Slot(str)
+    def restorePath(self, path: str) -> None:
+        """Tras reemplazar el archivo: vuelve a cargar la pista soltada, en el mismo punto y con el mismo estado."""
         resume, self._resume = self._resume, None
         if resume is None or not self._current:
             return
         row = library.get_track(self._conn, self.currentId)
-        if row is None:
+        if row is None or Path(row["path"]) != Path(path):
             self._backend.set_volume(self._volume)
             return
-        self._backend.set_volume(0.0)      # entra en silencio y sube con un fundido (el fundido de salida dejó el volumen en 0)
-        self._backend.load(Path(row["path"]))
-        self._backend.play()
-        position, playing = resume["position"], resume["playing"]
-
-        def settle() -> None:
-            if position > 0:
-                self._backend.seek(position)
-            if playing:
-                self._backend.fade_in(self._volume)
-            else:
-                self._backend.pause()
-                self._backend.set_volume(self._volume)
-
-        QTimer.singleShot(300, settle)     # el motor necesita un instante para tener el archivo listo
+        self._backend.resume(Path(row["path"]), resume["position"], resume["playing"], self._volume)
 
     @Slot("QVariantList")
     def forgetTracks(self, ids: list) -> None:
