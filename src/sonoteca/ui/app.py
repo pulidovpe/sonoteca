@@ -106,6 +106,8 @@ def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int
         media.publish(track.get("title", ""), track.get("artist", ""), track.get("album", ""), player.duration,
                       player.position, player.playing, player.hasTrack)
 
+    controller.beforeEdit.connect(player.releaseFiles)         # Windows: soltar el archivo que suena antes de editar sus tags
+    controller.editFinished.connect(player.restoreAfterEdit)   # (receptor QObject: se ejecuta en el hilo principal)
     player.playingChanged.connect(publish_now_playing)
     player.currentChanged.connect(publish_now_playing)
     player.durationChanged.connect(publish_now_playing)

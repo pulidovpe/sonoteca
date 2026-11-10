@@ -391,3 +391,29 @@ def test_audio_track_never_warns_about_video(env):
     ctrl._current["kind"] = "audio"
     ctrl._check_video()
     assert msgs == []
+
+
+def test_release_and_restore_current_file_when_editing_its_tags_on_windows(env, monkeypatch):
+    ctrl, be, album, _, paths = env
+    released = []
+    be.release = lambda: released.append(True)
+    ctrl.playAlbum(album, 0)
+    monkeypatch.setattr("sonoteca.ui.player_controller.sys.platform", "win32")
+    ctrl.releaseFiles([ctrl.currentId + 999])         # otra pista: no se toca
+    assert released == []
+    ctrl.releaseFiles([ctrl.currentId])
+    assert released == [True]
+    be.loaded = None
+    ctrl.restoreAfterEdit()
+    assert str(be.loaded) == paths["Pista 1"] and be.state == "playing"
+    ctrl.restoreAfterEdit()                            # sin nada pendiente no hace nada más
+
+
+def test_release_does_nothing_outside_windows(env, monkeypatch):
+    ctrl, be, album, *_ = env
+    released = []
+    be.release = lambda: released.append(True)
+    ctrl.playAlbum(album, 0)
+    monkeypatch.setattr("sonoteca.ui.player_controller.sys.platform", "darwin")
+    ctrl.releaseFiles([ctrl.currentId])
+    assert released == []

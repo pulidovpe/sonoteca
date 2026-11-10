@@ -5,6 +5,21 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.14.17] - 2026-11-09
+### Corregido (Windows)
+- **No se podían editar los tags de la canción que suena** («PermissionError: [WinError 5] Acceso denegado» al reemplazar el
+  archivo): el reproductor la mantiene abierta. Ahora, al empezar la edición, el reproductor suelta el archivo si es el que
+  suena (`LibraryController.beforeEdit` → `PlayerController.releaseFiles`, solo en Windows) y al terminar la vuelve a cargar en
+  el mismo punto y con el mismo estado (`restoreAfterEdit`). Además `tag_writer.write_tags` reintenta `os.replace` hasta
+  12 veces cada 0,15 s si recibe PermissionError (el motor tarda en cerrar el archivo; también cubre antivirus/indexador).
+- **Mini reproductor sin barra de título en Windows** (tamaño correcto, pero no se podía mover). Hipótesis sin verificar: al
+  reasignar `flags` a `Qt.Window` a secas se perdían los botones/título. Ahora `normalFlags` y `miniFlags` piden explícitamente
+  título, menú del sistema y botones; el mini solo añade «siempre encima». Sin cambios en Wayland (no se tocan los flags).
+### Confirmado
+- El aviso de video sin imagen aparece en Linux y en Windows (Pablo).
+*(Probado aquí: la lógica del reintento con mutagen simulado (3 intentos y éxito; se rinde tras 4) y aserciones de texto del
+mini. Los tests nuevos de `test_tag_writer` y `test_player_controller` y toda la UI: sin ejecutar.)*
+
 ## [0.14.16] - 2026-11-09
 ### Añadido
 - **Aviso cuando un video suena pero no se ve** (p. ej. AV1 en un equipo sin decodificación por hardware: el FFmpeg de Qt no trae

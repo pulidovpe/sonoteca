@@ -29,6 +29,7 @@ class LibraryController(QObject):
     # los manejadores QML corren desde el bucle de eventos (sin tener tomado el GIL de Python).
     editProgress = Signal(int, int)
     editFinished = Signal("QVariantMap")
+    beforeEdit = Signal("QVariantList")      # ids a escribir; se emite en el hilo principal antes de empezar
     rescanProgress = Signal(int, int)
     duplicatesProgress = Signal(int, int)
     duplicatesDeleted = Signal("QVariantMap")
@@ -200,6 +201,7 @@ class LibraryController(QObject):
                 {"path": "", "message": "Ya hay una edición en curso"}]})
             return
         self._editing = True
+        self.beforeEdit.emit([int(i) for i in ids])     # el reproductor suelta el archivo si es el que suena (Windows)
         args = ([int(i) for i in ids], dict(changes), cover_path, backup)
         threading.Thread(target=self._edit_worker, args=args, daemon=True).start()
 

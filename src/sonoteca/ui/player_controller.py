@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import random
+import sys
 from pathlib import Path
 
 from PySide6.QtCore import Property, QObject, QTimer, Signal, Slot
@@ -54,6 +55,7 @@ class PlayerController(QObject):
         # Aviso si un video suena pero no llega ninguna imagen (códec sin decodificador en este equipo, p. ej. AV1 sin
         # hardware compatible en Linux): se revisa unos segundos después de empezar a sonar.
         self._video_warned: int | None = None
+        self._resume: dict | None = None     # punto de la pista soltada para poder editar sus tags (Windows)
         self._video_check = QTimer(self)
         self._video_check.setSingleShot(True)
         self._video_check.setInterval(3000)
@@ -380,6 +382,36 @@ class PlayerController(QObject):
         self.positionChanged.emit()
         self.durationChanged.emit()
         self.queueChanged.emit()
+
+    @Slot("QVariantList")
+    def releaseFiles(self, ids: list) -> None:
+        """Windows: la pista que suena mantiene el archivo abierto y no se puede reescribir al editar sus tags
+        (PermissionError [WinError 5]). Se suelta antes de escribir y `restoreAfterEdit` la vuelve a cargar."""
+        if sys.platform != "win32" or not self._current or self.currentId not in {int(i) for i in ids}:
+            return
+        self._resume = {"position": self._position, "playing": self._playing}
+        self._backend.release()
+
+    @Slot()
+    def restoreAfterEdit(self) -> None:
+        """Tras escribir los tags: vuelve a cargar la pista soltada, en el mismo punto y con el mismo estado."""
+        resume, self._resume = self._resume, None
+        if resume is None or not self._current:
+            return
+        row = library.get_track(self._conn, self.currentId)
+        if row is None:
+            return
+        self._backend.load(Path(row["path"]))
+        self._backend.play()
+        position, playing = resume["position"], resume["playing"]
+
+        def settle() -> None:
+            if position > 0:
+                self._backend.seek(position)
+            if not playing:
+                self._backend.pause()
+
+        QTimer.singleShot(300, settle)     # el motor necesita un instante para tener el archivo listo
 
     @Slot("QVariantList")
     def forgetTracks(self, ids: list) -> None:

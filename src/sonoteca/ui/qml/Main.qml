@@ -242,6 +242,10 @@ ApplicationWindow {
     // decide su tamaño y ignora el que se fijó justo antes (0.14.15, Fedora/GNOME: quedaba grande hasta hacer doble clic en la
     // barra). Por eso allí no se tocan los flags y el tamaño se aplica cuando la ventana ya está en estado normal, y se repite
     // una vez más poco después.
+    // Windows (0.14.17): con `flags` reasignado a Qt.Window a secas el mini salió sin barra de título (no se podía mover). Se piden
+    // explícitamente los mismos botones que tiene una ventana normal; el mini solo se diferencia por «siempre encima».
+    readonly property int normalFlags: Qt.Window | Qt.WindowTitleHint | Qt.WindowSystemMenuHint | Qt.WindowMinMaxButtonsHint | Qt.WindowCloseButtonHint
+    readonly property int miniFlags: Qt.Window | Qt.WindowTitleHint | Qt.WindowSystemMenuHint | Qt.WindowMinimizeButtonHint | Qt.WindowCloseButtonHint | Qt.WindowStaysOnTopHint
     readonly property bool isWayland: String(Qt.platform.pluginName).indexOf("wayland") === 0
     function applyMiniSize() {
         win.minimumWidth = miniWidth
@@ -256,7 +260,7 @@ ApplicationWindow {
         fullGeometry = { x: win.x, y: win.y, w: win.width, h: win.height, visibility: win.visibility,
                          minW: win.minimumWidth, minH: win.minimumHeight }
         miniMode = true
-        if (!isWayland) win.flags = Qt.Window | Qt.WindowStaysOnTopHint
+        if (!isWayland) win.flags = miniFlags
         if (win.visibility !== Window.Windowed) {
             miniPending = true                 // se encoge al terminar de salir de maximizada/pantalla completa
             win.visibility = Window.Windowed
@@ -287,7 +291,7 @@ ApplicationWindow {
         miniPending = false
         miniFallback.stop()
         miniSettle.stop()
-        if (!isWayland) win.flags = Qt.Window
+        if (!isWayland) win.flags = normalFlags
         win.maximumWidth = 16777215
         win.maximumHeight = 16777215
         win.minimumWidth = g ? g.minW : 900

@@ -80,6 +80,11 @@ class QtPlayerBackend(PlayerBackend):
     def video_frames(self) -> int:
         return self._frames
 
+    def release(self) -> None:
+        self._frames = 0
+        self._player.stop()
+        self._player.setSource(QUrl())
+
     # ---- salida de audio ----
     @staticmethod
     def _id(device) -> str:

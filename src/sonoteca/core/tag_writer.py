@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 import os
 import shutil
+import time
 from pathlib import Path
 
 from mutagen.id3 import APIC, ID3, TALB, TCON, TDRC, TIT2, TPE1, TPE2, TPOS, TRCK, ID3NoHeaderError
@@ -176,6 +177,20 @@ def _backup(path: Path, backup_dir: Path) -> None:
         f.write(f"{name}\t{path}\n")
 
 
+def _replace_with_retry(tmp: Path, path: Path, attempts: int = 12, delay: float = 0.15) -> None:
+    """os.replace con reintentos. En Windows el reemplazo falla con PermissionError [WinError 5/32] mientras algo tiene el
+    archivo abierto (el propio reproductor al soltarlo, el antivirus o el indexador); suele liberarse en menos de un
+    segundo. Solo reintenta PermissionError; cualquier otro error sale de inmediato."""
+    for attempt in range(attempts):
+        try:
+            os.replace(tmp, path)
+            return
+        except PermissionError:
+            if attempt == attempts - 1:
+                raise
+            time.sleep(delay)
+
+
 def write_tags(path: Path | str, changes: dict, cover: bytes | None = None, *,
                id3_version: int = 3, backup_dir: Path | None = None) -> None:
     """Aplica `changes` (ya normalizados o crudos) a un archivo. Ver garantías en el docstring
@@ -198,7 +213,7 @@ def write_tags(path: Path | str, changes: dict, cover: bytes | None = None, *,
         _verify(tmp, changes, cover is not None, original_length)
         if backup_dir is not None:
             _backup(path, backup_dir)
-        os.replace(tmp, path)
+        _replace_with_retry(tmp, path)
     except TagWriteError:
         raise
     except Exception as exc:

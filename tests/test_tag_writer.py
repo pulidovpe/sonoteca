@@ -135,3 +135,40 @@ def test_backup_and_restore(tmp_path):
     assert sha(p) == before and read_tags(p).title == "Original"
     with pytest.raises(FileNotFoundError):
         restore_backups(tmp_path / "otro")
+
+
+def test_replace_retries_permission_error_then_succeeds(monkeypatch, tmp_path):
+    from sonoteca.core import tag_writer
+    calls = []
+
+    def flaky(src, dst):
+        calls.append(1)
+        if len(calls) < 3:
+            raise PermissionError(13, "Acceso denegado")
+
+    monkeypatch.setattr(tag_writer.os, "replace", flaky)
+    monkeypatch.setattr(tag_writer.time, "sleep", lambda _s: None)
+    tag_writer._replace_with_retry(tmp_path / "a", tmp_path / "b")
+    assert len(calls) == 3
+
+
+def test_replace_gives_up_after_attempts_and_does_not_retry_other_errors(monkeypatch, tmp_path):
+    import pytest
+    from sonoteca.core import tag_writer
+    calls = []
+
+    def locked(src, dst):
+        calls.append(1)
+        raise PermissionError(13, "Acceso denegado")
+
+    monkeypatch.setattr(tag_writer.os, "replace", locked)
+    monkeypatch.setattr(tag_writer.time, "sleep", lambda _s: None)
+    with pytest.raises(PermissionError):
+        tag_writer._replace_with_retry(tmp_path / "a", tmp_path / "b", attempts=4)
+    assert len(calls) == 4
+
+    calls.clear()
+    monkeypatch.setattr(tag_writer.os, "replace", lambda s, d: (calls.append(1), (_ for _ in ()).throw(FileNotFoundError()))[1])
+    with pytest.raises(FileNotFoundError):
+        tag_writer._replace_with_retry(tmp_path / "a", tmp_path / "b")
+    assert len(calls) == 1

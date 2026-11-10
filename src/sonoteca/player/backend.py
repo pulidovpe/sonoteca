@@ -37,6 +37,9 @@ class PlayerBackend(QObject):
     def set_video_sink(self, sink) -> None:
         raise NotImplementedError
 
+    def release(self) -> None:
+        """Suelta el archivo actual (lo cierra) sin cambiar la lista; necesario en Windows para poder reescribirlo."""
+
     def video_frames(self) -> int:
         """Fotogramas de video válidos recibidos desde el último `load`; -1 si el backend no lo sabe."""
         return -1
