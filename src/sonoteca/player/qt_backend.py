@@ -23,6 +23,7 @@ class QtPlayerBackend(PlayerBackend):
         self._audio: QAudioOutput | None = None
         self._device_id = ""  # "" = automática: sigue la salida predeterminada del sistema
         self._applied_default = ""
+        self._frames = 0       # fotogramas de video válidos desde el último load (para avisar si el códec no se decodifica)
         if with_audio:
             self._audio = QAudioOutput(self)
             self._player.setAudioOutput(self._audio)
@@ -48,6 +49,7 @@ class QtPlayerBackend(PlayerBackend):
             self.ended.emit()
 
     def load(self, path: Path) -> None:
+        self._frames = 0
         self._player.setSource(QUrl.fromLocalFile(str(path)))
 
     def play(self) -> None:
@@ -69,6 +71,14 @@ class QtPlayerBackend(PlayerBackend):
 
     def set_video_sink(self, sink) -> None:
         self._player.setVideoSink(sink)
+        sink.videoFrameChanged.connect(self._on_video_frame)
+
+    def _on_video_frame(self, frame) -> None:
+        if frame.isValid():
+            self._frames += 1
+
+    def video_frames(self) -> int:
+        return self._frames
 
     # ---- salida de audio ----
     @staticmethod

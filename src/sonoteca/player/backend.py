@@ -37,6 +37,10 @@ class PlayerBackend(QObject):
     def set_video_sink(self, sink) -> None:
         raise NotImplementedError
 
+    def video_frames(self) -> int:
+        """Fotogramas de video válidos recibidos desde el último `load`; -1 si el backend no lo sabe."""
+        return -1
+
     # ---- salida de audio (los backends sin soporte dejan estos valores) ----
     def audio_devices(self) -> list[dict]:
         """[{"id": str, "name": str, "isDefault": bool}] de las salidas disponibles."""

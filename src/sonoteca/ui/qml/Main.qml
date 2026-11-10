@@ -1096,7 +1096,7 @@ ApplicationWindow {
         target: player
         function onCurrentChanged() { win.videoOpen = player.isVideo }
         function onQueueMessage(message) { win.toast(message, 3500) }
-        function onErrorMessage(message) { win.toast(message) }
+        function onErrorMessage(message) { win.toast(message, 5000) }
     }
 
     Connections {

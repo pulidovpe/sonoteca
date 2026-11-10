@@ -5,6 +5,17 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.14.16] - 2026-11-09
+### Añadido
+- **Aviso cuando un video suena pero no se ve** (p. ej. AV1 en un equipo sin decodificación por hardware: el FFmpeg de Qt no trae
+  decodificador por software). A los 3 s de empezar a sonar un video, si el motor no ha recibido ningún fotograma
+  (`PlayerBackend.video_frames()`, contado en `QtPlayerBackend` con `videoFrameChanged`), sale un aviso una vez por pista:
+  «No se puede mostrar el video de «…» en este equipo (códec sin soporte); se reproduce solo el audio». Sin botón de abrir otro
+  programa (decisión de Pablo). Los avisos de reproducción duran 5 s.
+### Confirmado
+- Mini reproductor en Linux/Wayland: con 0.14.15 se comporta bien (Pablo).
+*(Probado aquí: sintaxis y lógica por lectura; los tests nuevos de `test_player_controller` no se ejecutaron (sin pytest ni PySide6). UI y detección en Qt, sin ejecutar.)*
+
 ## [0.14.15] - 2026-11-09
 ### Corregido (hipótesis, sin verificar en Linux)
 - **Mini reproductor en Linux/Wayland**: quedaba más grande que la pantalla (antes) o casi del tamaño normal y en posición

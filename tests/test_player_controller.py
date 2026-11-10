@@ -354,3 +354,40 @@ def test_play_first_keeps_the_list_and_inserts_the_songs_first_even_with_shuffle
     ctrl.clearQueue()
     ctrl.playFirst([ids[1]])
     assert ctrl.currentTrack["title"] == "Pista 2"
+
+
+def _as_playing_video(ctrl, frames, position=2000, track_id=7):
+    ctrl._current = {"id": track_id, "title": "Clip", "kind": "video"}
+    ctrl._playing = True
+    ctrl._position = position
+    ctrl._backend.video_frames = lambda: frames
+
+
+def test_video_without_frames_warns_once(env):
+    ctrl, be, *_ = env
+    msgs = []
+    ctrl.errorMessage.connect(msgs.append)
+    _as_playing_video(ctrl, frames=0)
+    ctrl._check_video()
+    ctrl._check_video()
+    assert len(msgs) == 1 and "Clip" in msgs[0] and "solo el audio" in msgs[0]
+
+
+def test_video_with_frames_or_unknown_engine_or_too_early_does_not_warn(env):
+    ctrl, be, *_ = env
+    msgs = []
+    ctrl.errorMessage.connect(msgs.append)
+    for frames, position in ((5, 2000), (-1, 2000), (0, 800)):    # se ve / el motor no lo sabe / aún es pronto
+        _as_playing_video(ctrl, frames, position)
+        ctrl._check_video()
+    assert msgs == []
+
+
+def test_audio_track_never_warns_about_video(env):
+    ctrl, be, *_ = env
+    msgs = []
+    ctrl.errorMessage.connect(msgs.append)
+    _as_playing_video(ctrl, frames=0)
+    ctrl._current["kind"] = "audio"
+    ctrl._check_video()
+    assert msgs == []

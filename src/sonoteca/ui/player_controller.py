@@ -4,7 +4,7 @@ from __future__ import annotations
 import random
 from pathlib import Path
 
-from PySide6.QtCore import Property, QObject, Signal, Slot
+from PySide6.QtCore import Property, QObject, QTimer, Signal, Slot
 
 from sonoteca.core import library, paths, stats
 from sonoteca.core.db import connect
@@ -50,6 +50,14 @@ class PlayerController(QObject):
         self._counted = False
         self._stats_revision = 0
         self._error_streak = 0  # fallos seguidos, para no saltar en bucle por archivos rotos
+
+        # Aviso si un video suena pero no llega ninguna imagen (códec sin decodificador en este equipo, p. ej. AV1 sin
+        # hardware compatible en Linux): se revisa unos segundos después de empezar a sonar.
+        self._video_warned: int | None = None
+        self._video_check = QTimer(self)
+        self._video_check.setSingleShot(True)
+        self._video_check.setInterval(3000)
+        self._video_check.timeout.connect(self._check_video)
 
         backend.positionChanged.connect(self._on_position)
         backend.durationChanged.connect(self._on_duration)
@@ -542,8 +550,23 @@ class PlayerController(QObject):
             self._duration = ms
             self.durationChanged.emit()
 
+    def _check_video(self) -> None:
+        if not (self._playing and self.isVideo and self._position >= 1500):
+            return
+        track_id = self._current.get("id")
+        if self._backend.video_frames() != 0 or self._video_warned == track_id:
+            return                     # -1 = el motor no lo sabe; >0 = se está viendo
+        self._video_warned = track_id
+        title = self._current.get("title", "")
+        self.errorMessage.emit(f"No se puede mostrar el video de \u00ab{title}\u00bb en este equipo (c\u00f3dec sin "
+                               f"soporte); se reproduce solo el audio")
+
     def _on_state(self, state: str) -> None:
         playing = state == "playing"
+        if playing and self.isVideo and self._video_warned != self._current.get("id"):
+            self._video_check.start()
+        elif not playing:
+            self._video_check.stop()
         if playing:
             self._error_streak = 0
         if playing != self._playing:
