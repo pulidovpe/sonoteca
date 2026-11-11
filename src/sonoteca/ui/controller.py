@@ -8,7 +8,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QFile, QObject, QUrl, Signal, Slot
 
-from sonoteca import __version__
+from sonoteca import CONTACT_EMAIL, COPYRIGHT, LICENSE_NAME, REPO_URL, __version__
 from sonoteca.core import (cleanup, covers, duplicates, file_delete, library, library_folders, paths, pending_tags,
                            review, scanner, stats, tag_edit)
 from sonoteca.core.db import connect, default_db_path
@@ -58,6 +58,10 @@ class LibraryController(QObject):
     def about(self) -> dict:
         return {
             "version": __version__,
+            "license": LICENSE_NAME,
+            "copyright": COPYRIGHT,
+            "repoUrl": REPO_URL,
+            "contactEmail": CONTACT_EMAIL,
             "dbPath": self._db_path,
             "cacheDir": str(paths.cache_dir() / "covers"),
             "backupsDir": str(paths.data_dir() / "backups"),

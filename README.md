@@ -167,5 +167,5 @@ deactivate 2>/dev/null; VENV_DIR=venv ./packaging/dev_setup.sh    # sin VENV_DIR
 
 Si un comando nuevo «no existe»: `sonoteca --version` muestra de dónde se ejecuta el código; si apunta a `site-packages`, la instalación no es editable. Reinstala con `pip install -e ".[ui,dev]"`.
 
-## Licencia
-[MIT](LICENSE). Las letras, portadas y textos descargados pertenecen a sus titulares y a las fuentes indicadas (Wikipedia: CC BY-SA).
+## Licencia y contacto
+[MIT](LICENSE). Repositorio: <https://github.com/pulidovpe/sonoteca> · Contacto: pulidovpe.dev@gmail.com (también en «Acerca de Sonoteca»). Las letras, portadas y textos descargados pertenecen a sus titulares y a las fuentes indicadas (Wikipedia: CC BY-SA).

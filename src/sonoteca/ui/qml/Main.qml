@@ -132,6 +132,33 @@ ApplicationWindow {
                 font.pixelSize: 13
                 wrapMode: Text.WordWrap
             }
+            Text {
+                width: parent.width
+                text: "Licencia " + (win.aboutInfo.license || "") + " \u00b7 " + (win.aboutInfo.copyright || "")
+                color: Theme.textDim
+                font.pixelSize: 12
+                wrapMode: Text.WordWrap
+            }
+            Row {
+                spacing: 6
+                Text { text: "Repositorio:"; color: Theme.textDim; font.pixelSize: 12 }
+                LinkText {
+                    text: win.aboutInfo.repoUrl || ""
+                    baseColor: Theme.text
+                    font.pixelSize: 12
+                    onClicked: Qt.openUrlExternally(win.aboutInfo.repoUrl)
+                }
+            }
+            Row {
+                spacing: 6
+                Text { text: "Contacto:"; color: Theme.textDim; font.pixelSize: 12 }
+                LinkText {
+                    text: win.aboutInfo.contactEmail || ""
+                    baseColor: Theme.text
+                    font.pixelSize: 12
+                    onClicked: Qt.openUrlExternally("mailto:" + win.aboutInfo.contactEmail)
+                }
+            }
             Text { width: parent.width; text: "Base de datos: " + (win.aboutInfo.dbPath || ""); color: Theme.textDim; font.pixelSize: 11; wrapMode: Text.WrapAnywhere }
             Text { width: parent.width; text: "Copias de respaldo de tags: " + (win.aboutInfo.backupsDir || ""); color: Theme.textDim; font.pixelSize: 11; wrapMode: Text.WrapAnywhere }
             Text { width: parent.width; text: "Portadas guardadas: " + (win.aboutInfo.coversDir || ""); color: Theme.textDim; font.pixelSize: 11; wrapMode: Text.WrapAnywhere }

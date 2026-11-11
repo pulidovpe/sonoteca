@@ -111,7 +111,9 @@ def test_menu_clear_button_and_actions(qml_env):
     assert player.shuffle is True
     act("actVolDown.trigger()")
     assert player.volume == pytest.approx(0.7)
-    assert env.controller.about()["version"]
+    about = env.controller.about()
+    assert about["version"] and about["license"] == "MIT"
+    assert about["repoUrl"].startswith("https://github.com/") and "@" in about["contactEmail"]
     assert env.warnings == []
 
 

@@ -16,6 +16,8 @@ datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_ver
 - Linux: arranque sin variables de entorno (sin `libstdc++` empaquetada), mini-reproductor en Wayland, aviso de vídeo sin imagen.
 - Windows: ventana mini con barra de título, escritura de tags de la pista que suena aplazada (0.14.21).
 - Sesión recordada entre ejecuciones (0.15.0). Verificada por el usuario.
+- «Acerca de Sonoteca» muestra la licencia (MIT, copyright), el repositorio y el correo de contacto (enlaces que abren el
+  navegador y el cliente de correo). Datos en `sonoteca/__init__.py`; `pyproject.toml` añade correo y `[project.urls]`.
 
 ## [0.15.0] - 2026-11-10
 Cierre de la tanda 0.14.x (beta). Incluye 0.14.6–0.14.21 y lo siguiente:
