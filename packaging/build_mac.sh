@@ -4,7 +4,7 @@
 #   PYTHON=python3.12 ./packaging/build_mac.sh     -> elegir el Python a usar
 #   SONOTECA_NO_PRUNE=1 ./packaging/build_mac.sh   -> sin podar módulos de Qt (si la poda diera problemas)
 # Tarda varios minutos (descarga PySide6 y PyInstaller). Todo lo que muestra se guarda también en build.log.
-# Resultado: dist/Sonoteca.app y dist/Sonoteca-<versión>-beta-macos-<arq>.zip
+# Resultado: dist/Sonoteca.app y dist/Sonoteca-<versión>-macos-<arq>.zip
 if [ -z "${BASH_VERSION:-}" ]; then exec bash "$0" "$@"; fi   # lanzado con `sh script`: se relanza con bash
 set -Eeuo pipefail
 cd "$(dirname "$0")/.."
@@ -60,7 +60,7 @@ python packaging/size_report.py "$APP" --top 20 --save "$REPORT" --compare "${RE
 
 step 7 "Crear el .zip"
 VERSION="$(python -c 'import sonoteca; print(sonoteca.__version__)')"
-OUT="dist/Sonoteca-${VERSION}-beta-macos-$(uname -m).zip"
+OUT="dist/Sonoteca-${VERSION}-macos-$(uname -m).zip"
 rm -f "$OUT"
 ditto -c -k --keepParent "$APP" "$OUT"
 

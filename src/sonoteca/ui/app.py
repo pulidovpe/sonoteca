@@ -28,6 +28,7 @@ def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int
     from PySide6.QtGui import QGuiApplication, QIcon
     from PySide6.QtQml import QQmlApplicationEngine
 
+    from sonoteca.core import session
     from sonoteca.player.qt_backend import QtPlayerBackend
 
     from .controller import LibraryController
@@ -72,7 +73,7 @@ def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int
     provider = CoverProvider(db_path)
     engine.addImageProvider("cover", provider)
     backend = QtPlayerBackend()
-    player = PlayerController(backend, db_path)
+    player = PlayerController(backend, db_path, state_path=session.default_path())
     engine.rootContext().setContextProperty("library", controller)
     online = OnlineController(db_path)
     engine.rootContext().setContextProperty("player", player)
@@ -111,6 +112,7 @@ def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int
     controller.set_busy_check(player.isLoaded)
     player.pendingFlush.connect(controller.flushPending)
     controller.flushPendingNow(attempts=3)       # restos de una sesión anterior (nada suena todavía)
+    player.restoreState()                        # lista, pista (en pausa), Aleatorio y volumen de la sesión anterior
     player.playingChanged.connect(publish_now_playing)
     player.currentChanged.connect(publish_now_playing)
     player.durationChanged.connect(publish_now_playing)
@@ -132,6 +134,7 @@ def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int
         except Exception as exc:  # noqa: BLE001  (solo diagnóstico: nunca debe impedir el arranque)
             print(f"[tiempos] no se pudo medir el primer fotograma: {exc}", file=sys.stderr)
     code = app.exec()
+    player.saveState()                           # lista, pista, punto, Aleatorio, volumen…
     player.releaseAll()                          # suelta el archivo que suena y vuelca los tags aplazados antes de salir
     controller.flushPendingNow()
     # Cierre ordenado: primero se destruye la interfaz QML y después los controladores. Si Python libera los

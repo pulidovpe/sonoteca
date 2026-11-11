@@ -24,6 +24,7 @@ class QtPlayerBackend(PlayerBackend):
         self._audio: QAudioOutput | None = None
         self._device_id = ""  # "" = automática: sigue la salida predeterminada del sistema
         self._applied_default = ""
+        self._open_paused: int | None = None   # posición (ms) a aplicar y pausar cuando termine de cargar (open_paused)
         self._frames = 0       # fotogramas de video válidos desde el último load (para avisar si el códec no se decodifica)
         if with_audio:
             self._audio = QAudioOutput(self)
@@ -48,12 +49,25 @@ class QtPlayerBackend(PlayerBackend):
     def _on_media_status(self, status) -> None:
         if status == QMediaPlayer.MediaStatus.EndOfMedia:
             self.ended.emit()
+        elif (self._open_paused is not None
+              and status in (QMediaPlayer.MediaStatus.LoadedMedia, QMediaPlayer.MediaStatus.BufferedMedia)):
+            position, self._open_paused = self._open_paused, None
+            if position > 0:
+                self._player.setPosition(position)
+            self._player.pause()
 
     def load(self, path: Path) -> None:
+        self._open_paused = None
         self._frames = 0
         self._player.setSource(QUrl.fromLocalFile(str(path)))
 
+    def open_paused(self, path: Path, position_ms: int) -> None:
+        """Carga sin reproducir: al terminar de cargar salta a `position_ms` y queda en pausa (restaurar la sesión)."""
+        self.load(path)
+        self._open_paused = max(0, position_ms)
+
     def play(self) -> None:
+        self._open_paused = None             # si el usuario pulsa play antes de que cargue, manda play
         self._player.play()
 
     def pause(self) -> None:
@@ -82,6 +96,7 @@ class QtPlayerBackend(PlayerBackend):
         return self._frames
 
     def release(self) -> None:
+        self._open_paused = None
         self._frames = 0
         self._player.stop()
         self._player.setSource(QUrl())

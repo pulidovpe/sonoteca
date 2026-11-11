@@ -6,7 +6,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Property, QObject, QTimer, Signal, Slot
 
-from sonoteca.core import library, paths, pending_tags, stats
+from sonoteca.core import library, paths, pending_tags, session, stats
 from sonoteca.core.db import connect
 from sonoteca.core.models import UNKNOWN_ALBUM, UNKNOWN_ARTIST
 from sonoteca.player.backend import PlayerBackend
@@ -35,8 +35,10 @@ class PlayerController(QObject):
     pendingFlush = Signal(str)
 
     def __init__(self, backend: PlayerBackend, db_path: Path | str | None = None,
-                 parent: QObject | None = None) -> None:
+                 parent: QObject | None = None, state_path: Path | str | None = None) -> None:
+        """`state_path`: archivo donde se guarda la sesión (lista, pista, Aleatorio, volumen…); None = no se guarda."""
         super().__init__(parent)
+        self._state_path = Path(state_path) if state_path else None
         self._backend = backend
         self._conn = connect(db_path)
         self._queue = PlayQueue()
@@ -63,6 +65,16 @@ class PlayerController(QObject):
         self._video_check.setSingleShot(True)
         self._video_check.setInterval(3000)
         self._video_check.timeout.connect(self._check_video)
+
+        # Sesión: se guarda poco después de cualquier cambio (y siempre al cerrar, ver saveState)
+        self._save_timer = QTimer(self)
+        self._save_timer.setSingleShot(True)
+        self._save_timer.setInterval(1500)
+        self._save_timer.timeout.connect(self.saveState)
+        if self._state_path is not None:
+            for signal in (self.queueChanged, self.volumeChanged, self.shuffleChanged, self.repeatModeChanged,
+                           self.currentChanged):
+                signal.connect(self._save_timer.start)
 
         backend.positionChanged.connect(self._on_position)
         backend.durationChanged.connect(self._on_duration)
@@ -398,10 +410,13 @@ class PlayerController(QObject):
         loaded = self._loaded
         return loaded is not None and Path(path) == loaded
 
-    def _load(self, path: Path) -> None:
+    def _load(self, path: Path, paused_at: int | None = None) -> None:
         self._loaded = path
         self._idle = False
-        self._backend.load(path)
+        if paused_at is None:
+            self._backend.load(path)
+        else:
+            self._backend.open_paused(path, paused_at)   # sin sonar (restaurar la sesión)
         self.pendingFlush.emit(str(path))        # lo que sonaba antes ya quedó libre
 
     def _release_if_pending(self) -> None:
@@ -412,6 +427,41 @@ class PlayerController(QObject):
             self._backend.release()
             self._loaded = None
         self.pendingFlush.emit("" if self._loaded is None else str(self._loaded))
+
+    # ---- sesión ----
+    def saveState(self) -> None:
+        """Guarda lista, pista actual y punto, Aleatorio, repetir, volumen y silencio (si se configuró `state_path`)."""
+        self._save_timer.stop()
+        if self._state_path is None:
+            return
+        snapshot = self._queue.snapshot()
+        names = session.paths_for_ids(self._conn, [*snapshot["items"], *snapshot["history"]])
+        state = session.build_state(snapshot, names, volume=self._volume, muted=self._muted, position_ms=self._position)
+        session.save(self._state_path, state)
+
+    def restoreState(self) -> bool:
+        """Al arrancar: recupera la sesión anterior EN PAUSA (no empieza a sonar sola). Devuelve True si había algo."""
+        if self._state_path is None:
+            return False
+        data = session.load(self._state_path)
+        restored = session.parse_state(data, session.ids_for_paths(self._conn, session.names_in(data)))
+        if restored is None:
+            return False
+        self._volume = restored["volume"]
+        self._muted = restored["muted"]
+        self._backend.set_volume(0.0 if self._muted else self._volume)
+        self._queue.restore(restored["items"], restored["order"], restored["pos"], restored["shuffle"],
+                            restored["repeat"], restored["history"])
+        self.volumeChanged.emit()
+        self.shuffleChanged.emit()
+        self.repeatModeChanged.emit()
+        self.queueChanged.emit()
+        current = self._queue.current
+        if current is not None:
+            row = library.get_track(self._conn, current)
+            if row is not None and Path(row["path"]).exists():       # si falta el archivo (disco desconectado), no se carga
+                self._play_current(autoplay=False, start_ms=restored["position_ms"])
+        return bool(restored["items"])
 
     def releaseAll(self) -> None:
         """Cierre de la app: suelta el archivo para que se vuelquen las escrituras aplazadas."""
@@ -518,7 +568,7 @@ class PlayerController(QObject):
         self.queueChanged.emit()
         self._play_current()
 
-    def _play_current(self) -> None:
+    def _play_current(self, autoplay: bool = True, start_ms: int = 0) -> None:
         track_id = self._queue.current
         if track_id is None:
             self._finish()
@@ -541,15 +591,18 @@ class PlayerController(QObject):
             "kind": row["kind"],
             "duration": row["duration"],
         }
-        self._position = 0
+        self._position = 0 if autoplay else start_ms
         self._listened, self._last_pos, self._counted = 0, -1, False
         self._duration = int(row["duration"] * 1000)
         self.currentChanged.emit()
         self.positionChanged.emit()
         self.durationChanged.emit()
         self.queueChanged.emit()
-        self._load(Path(row["path"]))
-        self._backend.play()
+        if autoplay:
+            self._load(Path(row["path"]))
+            self._backend.play()
+        else:
+            self._load(Path(row["path"]), paused_at=start_ms)
 
     def _advance(self, auto: bool) -> None:
         if self._queue.next(auto=auto) is None:

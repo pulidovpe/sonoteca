@@ -135,6 +135,7 @@ def test_reset_backs_up_and_clears_library_but_keeps_settings(tmp_path):
     data, cache = tmp_path / "d", tmp_path / "c"
     _library(data, tmp_path / "Music")
     (data / "settings.json").write_text('{"offline": false}')
+    (data / "session.json").write_text("{}")                                         # la sesión apunta a la biblioteca vieja
     cache.mkdir()
     (cache / "thumb.png").write_bytes(b"t")
     portable.stage_reset(True, data=data)
@@ -142,7 +143,7 @@ def test_reset_backs_up_and_clears_library_but_keeps_settings(tmp_path):
     report = portable.apply_pending_reset(data, cache)
     assert not portable.has_pending_reset(data)
     assert not (data / "library.db").exists() and not (data / "artists").exists() and not cache.exists()
-    assert (data / "settings.json").exists()                                         # los ajustes se conservan
+    assert (data / "settings.json").exists() and not (data / "session.json").exists()   # ajustes sí; sesión no
     backup = tmp_path / "d" / "backups"
     assert report["backup"] and (next(backup.iterdir()) / "library.db").exists()
     assert (next(backup.iterdir()) / "covers" / "chosen" / "c.jpg").exists()

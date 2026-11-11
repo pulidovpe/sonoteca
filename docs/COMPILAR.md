@@ -17,9 +17,9 @@ sistema que quieras entregar.
 
 | Plataforma | Dónde compilar | Script | Resultado |
 |---|---|---|---|
-| macOS | un Mac | `packaging/build_mac.sh` | `dist/Sonoteca.app` y `dist/Sonoteca-<versión>-beta-macos-<arq>.zip` |
-| Windows | un PC con Windows | `packaging/build_win.ps1` | `dist\sonoteca\sonoteca.exe` y `dist\Sonoteca-<versión>-beta-windows-x86_64.zip` |
-| Linux | una máquina Linux **o Docker** (también desde Mac/Windows) | `packaging/build_linux_docker.sh` (o pasos manuales, §5) | `dist/Sonoteca-<versión>-beta-linux-<arq>.tar.gz` |
+| macOS | un Mac | `packaging/build_mac.sh` | `dist/Sonoteca.app` y `dist/Sonoteca-<versión>-macos-<arq>.zip` |
+| Windows | un PC con Windows | `packaging/build_win.ps1` | `dist\sonoteca\sonoteca.exe` y `dist\Sonoteca-<versión>-windows-x86_64.zip` |
+| Linux | una máquina Linux **o Docker** (también desde Mac/Windows) | `packaging/build_linux_docker.sh` (o pasos manuales, §5) | `dist/Sonoteca-<versión>-linux-<arq>.tar.gz` |
 
 La arquitectura del binario es la de la máquina donde compilas: un `.app` hecho en un Mac con Apple Silicon (arm64) es
 para Apple Silicon; uno hecho en un Mac Intel, para Intel. Lo mismo con Linux (x86_64 o arm64).
@@ -81,7 +81,7 @@ muestra el **tamaño** y crea el zip.
 
 ### 3.3 Resultado y primera ejecución
 - `dist/Sonoteca.app` — la aplicación.
-- `dist/Sonoteca-<versión>-beta-macos-<arq>.zip` — para compartirla.
+- `dist/Sonoteca-<versión>-macos-<arq>.zip` — para compartirla.
 
 La app **no está firmada ni notarizada**. En el mismo Mac donde la compilaste se abre normal; en otro Mac, macOS la
 bloqueará la primera vez: **clic derecho ▸ Abrir ▸ Abrir**, o desde la terminal:
@@ -114,7 +114,7 @@ personales, tamaño y zip.
 
 ### 4.3 Resultado y primera ejecución
 - `dist\sonoteca\sonoteca.exe` (con sus bibliotecas en la misma carpeta; **no muevas el .exe solo**).
-- `dist\Sonoteca-<versión>-beta-windows-x86_64.zip` — descomprime y ejecuta `sonoteca\sonoteca.exe`.
+- `dist\Sonoteca-<versión>-windows-x86_64.zip` — descomprime y ejecuta `sonoteca\sonoteca.exe`.
 
 El ejecutable **no está firmado**: Windows SmartScreen puede mostrar «Windows protegió su PC» (*Más información ▸ Ejecutar de
 todas formas*), y algunos antivirus marcan por error los programas empaquetados con PyInstaller. Firmar el ejecutable
@@ -133,7 +133,7 @@ Hay dos caminos. El de **Docker** es el recomendado porque deja siempre el mismo
    ./packaging/build_linux_docker.sh                        # x86_64 (en un Mac Apple Silicon va emulado: lento)
    PLATFORM=linux/arm64 ./packaging/build_linux_docker.sh   # arm64 (nativo en Apple Silicon)
    ```
-3. Resultado: `dist/Sonoteca-<versión>-beta-linux-<arquitectura>.tar.gz`.
+3. Resultado: `dist/Sonoteca-<versión>-linux-<arquitectura>.tar.gz`.
 
 El script compila dentro de un contenedor Debian 12 (`python:3.12-bookworm`), así que el binario resultante necesita
 una versión de **glibc igual o mayor** que la de Debian 12 (2.36). Para distribuciones más antiguas habría que compilar en
@@ -156,7 +156,7 @@ pyinstaller packaging/sonoteca.spec --noconfirm --clean
 SONOTECA_SELFTEST=1 QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software \
   SONOTECA_DATA_DIR=/tmp/d SONOTECA_CACHE_DIR=/tmp/c dist/sonoteca/sonoteca && echo "humo OK"
 python packaging/check_bundle.py dist/sonoteca
-tar -C dist -czf Sonoteca-beta-linux-$(uname -m).tar.gz sonoteca
+tar -C dist -czf Sonoteca-linux-$(uname -m).tar.gz sonoteca
 ```
 
 ### 5.3 Usarlo en otra máquina Linux

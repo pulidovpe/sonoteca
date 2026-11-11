@@ -2,7 +2,7 @@
 # Construye el binario de Linux dentro de Docker (sirve desde macOS o Windows con Docker Desktop).
 # Uso: ./packaging/build_linux_docker.sh                 -> x86_64 (emulado en Apple Silicon: lento)
 #      PLATFORM=linux/arm64 ./packaging/build_linux_docker.sh   -> arm64 nativo en Apple Silicon
-# Resultado: dist/Sonoteca-<versión>-beta-linux-<arquitectura>.tar.gz
+# Resultado: dist/Sonoteca-<versión>-linux-<arquitectura>.tar.gz
 set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p dist
@@ -28,7 +28,7 @@ docker run --rm --platform "${PLATFORM:-linux/amd64}" -v "$PWD":/src"$VOL_OPTS" 
   cp assets/icons/sonoteca.png dist/sonoteca/sonoteca.png && cp packaging/linux/sonoteca.desktop dist/sonoteca/sonoteca.desktop
   cp packaging/linux/diagnose.sh dist/sonoteca/diagnose.sh && chmod +x dist/sonoteca/diagnose.sh
   V=$(python -c "import sonoteca; print(sonoteca.__version__)")
-  tar -C dist -czf "/src/dist/Sonoteca-$V-beta-linux-$(uname -m).tar.gz" sonoteca
+  tar -C dist -czf "/src/dist/Sonoteca-$V-linux-$(uname -m).tar.gz" sonoteca
   du -sh dist/sonoteca
   R="/src/dist/size-report-linux-$(uname -m).json"
   [ -f "$R" ] && mv -f "$R" "${R%.json}.prev.json" || true

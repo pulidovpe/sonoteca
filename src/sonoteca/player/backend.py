@@ -37,6 +37,13 @@ class PlayerBackend(QObject):
     def set_video_sink(self, sink) -> None:
         raise NotImplementedError
 
+    def open_paused(self, path: Path, position_ms: int) -> None:
+        """Carga `path` SIN reproducir, en pausa y en `position_ms` (restaurar la sesión al arrancar)."""
+        self.load(path)
+        self.pause()
+        if position_ms > 0:
+            self.seek(position_ms)
+
     def release(self) -> None:
         """Suelta el archivo actual (lo cierra) sin cambiar la lista; necesario en Windows para poder reescribirlo."""
 

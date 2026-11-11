@@ -465,3 +465,36 @@ def test_release_all_on_quit(env, flushes):
     ctrl.playAlbum(album, 0)
     ctrl.releaseAll()
     assert released == [1] and not ctrl.isLoaded(paths["Pista 1"])
+
+
+def test_session_is_saved_and_restored_paused(env, tmp_path):
+    import json
+    ctrl, be, album, _, paths = env
+    state = tmp_path / "session.json"
+    ctrl2 = PlayerController(be, ctrl._conn.execute("PRAGMA database_list").fetchone()[2], state_path=state)
+    ctrl2.playAlbum(album, 1)                                # suena «Pista 2»; quedan 2 y 3 en la lista
+    ctrl2.setVolume(0.3)
+    ctrl2.toggleShuffle()
+    ctrl2.cycleRepeat()
+    ctrl2._position = 5000
+    ctrl2.saveState()
+    saved = json.loads(state.read_text(encoding="utf-8"))
+    assert saved["volume"] == 0.3 and saved["shuffle"] is True and saved["repeat"] == "all"
+    assert paths["Pista 2"] in saved["queue"]["items"]
+
+    fresh_be = FakeBackend()
+    fresh = PlayerController(fresh_be, ctrl._conn.execute("PRAGMA database_list").fetchone()[2], state_path=state)
+    assert fresh.restoreState() is True
+    assert fresh.volume == 0.3 and fresh.shuffle and fresh.repeatMode == "all"
+    assert fresh.currentTrack["title"] == "Pista 2" and not fresh.playing    # recuperada, pero sin sonar sola
+    assert fresh.queueTrackIds() == ctrl2.queueTrackIds()
+    assert fresh_be.state == "paused" and fresh_be.seeks == [5000]
+    assert fresh.position == 5000
+
+
+def test_restore_without_a_saved_session_does_nothing(env, tmp_path):
+    ctrl, be, *_ = env
+    other = PlayerController(FakeBackend(), ctrl._conn.execute("PRAGMA database_list").fetchone()[2],
+                             state_path=tmp_path / "nada.json")
+    assert other.restoreState() is False and not other.hasTrack
+    assert PlayerController(FakeBackend(), None).restoreState() is False     # sin state_path no hay sesión

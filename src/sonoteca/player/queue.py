@@ -244,6 +244,27 @@ class PlayQueue:
             self._items, self._order, self._pos = [], [], -1
             self._flags = []
 
+    # ---- sesión (guardar/restaurar entre ejecuciones; ver core/session.py) ----
+    def snapshot(self) -> dict:
+        """Todo lo necesario para reconstruir la lista tal cual está: elementos, orden de reproducción, posición, Aleatorio,
+        repetición y el historial de «Anterior». (Las marcas «a continuación» no se guardan.)"""
+        return {"items": list(self._items), "order": list(self._order), "pos": self._pos,
+                "shuffle": self.shuffle, "repeat": self.repeat.value, "history": list(self._history)}
+
+    def restore(self, items: Iterable[int], order: Iterable[int], pos: int, shuffle: bool, repeat: str,
+                history: Iterable[int] = ()) -> int | None:
+        """Reconstruye la lista desde un `snapshot` (con el orden aleatorio exacto). Devuelve la pista actual."""
+        self._items = list(items)
+        self._flags = [False] * len(self._items)
+        self._order = [i for i in order if 0 <= i < len(self._items)]
+        if sorted(self._order) != list(range(len(self._items))):
+            self._order = list(range(len(self._items)))
+        self._pos = pos if 0 <= pos < len(self._order) else -1
+        self.shuffle = bool(shuffle)
+        self.repeat = RepeatMode(repeat) if repeat in {m.value for m in RepeatMode} else RepeatMode.OFF
+        self._history = list(history)
+        return self.current
+
     def cycle_repeat(self) -> RepeatMode:
         order = [RepeatMode.OFF, RepeatMode.ALL, RepeatMode.ONE]
         self.repeat = order[(order.index(self.repeat) + 1) % 3]

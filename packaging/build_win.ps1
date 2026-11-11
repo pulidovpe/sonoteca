@@ -23,4 +23,4 @@ $version = python -c "import sonoteca; print(sonoteca.__version__)"
 $report = "dist\size-report-windows.json"
 if (Test-Path $report) { Move-Item -Force $report "dist\size-report-windows.prev.json" }
 python packaging/size_report.py dist\sonoteca --top 20 --save $report --compare "dist\size-report-windows.prev.json"
-Compress-Archive -Force -Path dist\sonoteca -DestinationPath "dist\Sonoteca-$version-beta-windows-x86_64.zip"
+Compress-Archive -Force -Path dist\sonoteca -DestinationPath "dist\Sonoteca-$version-windows-x86_64.zip"

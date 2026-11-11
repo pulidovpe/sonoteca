@@ -252,7 +252,7 @@ def apply_pending_reset(data: Path | None = None, cache: Path | None = None) -> 
     if keep:
         backup.mkdir(parents=True, exist_ok=True)
     removed = []
-    for name in ("library.db", "library.db-wal", "library.db-shm", "covers", "artists", PENDING):
+    for name in ("library.db", "library.db-wal", "library.db-shm", "covers", "artists", "session.json", PENDING):
         item = data / name
         if not item.exists():
             continue

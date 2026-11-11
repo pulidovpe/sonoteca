@@ -5,6 +5,35 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.0] - 2026-11-10
+**Primera versión estable.** Es la versión 0.15.0 confirmada: se quita la etiqueta «beta» (README, nombres de los paquetes
+`Sonoteca-<versión>-<sistema>-<arq>`). Reúne la tanda 0.14.x:
+- Biblioteca con registro de carpetas y exclusiones; quitar canciones/álbumes/carpetas de la biblioteca sin tocar archivos;
+  listas creadas desde carpetas; Artistas tras «Buscar música».
+- Cabeceras de columna que ordenan, artista y álbum como enlaces, columna «En lista», ruta completa en el editor de tags.
+- Duplicados «misma canción, otro bitrate o formato».
+- Binario macOS más ligero (PySide6 6.12, ~162 MB).
+- Linux: arranque sin variables de entorno (sin `libstdc++` empaquetada), mini-reproductor en Wayland, aviso de vídeo sin imagen.
+- Windows: ventana mini con barra de título, escritura de tags de la pista que suena aplazada (0.14.21).
+- Sesión recordada entre ejecuciones (0.15.0). Verificada por el usuario.
+
+## [0.15.0] - 2026-11-10
+Cierre de la tanda 0.14.x (beta). Incluye 0.14.6–0.14.21 y lo siguiente:
+### Añadido
+- **La app recuerda la sesión**: al cerrar (y poco después de cada cambio, por si se cierra de golpe) guarda la **lista de
+  reproducción** con su orden exacto (también el aleatorio), la **pista actual y el punto** en que iba, **Aleatorio**,
+  **repetir**, el **volumen** y el **silencio**. Al abrir, todo vuelve **en pausa** (no empieza a sonar sola) y se retoma
+  con Play. Archivo `session.json` en la carpeta de datos; guarda rutas de archivo (no ids), así que sobrevive a
+  re-escaneos e importaciones. Lo que ya no esté en la biblioteca se omite; si falta el archivo de la pista actual (disco
+  desconectado) la lista se recupera sin cargarla. «Empezar desde cero» la borra.
+- `core/session.py`, `PlayQueue.snapshot/restore`, `PlayerBackend.open_paused` (Qt: carga, salta al punto al terminar de cargar
+  y queda en pausa), `PlayerController.saveState/restoreState`.
+### Límites conocidos
+- No se restauran la página abierta ni «Detener» en la página del álbum/lista de origen (`sourceKey`), ni las marcas «a
+  continuación». Si se pulsa Play antes de que termine de cargar, la pista puede empezar desde el inicio.
+*(Probado aquí, lógica pura: ida y vuelta de la lista con aleatorio, pistas desaparecidas, pista actual ausente, datos
+corruptos, lectura/escritura del archivo y consultas a SQLite. Tests nuevos, backend Qt y UI: sin ejecutar.)*
+
 ## [0.14.21] - 2026-11-10
 ### Cambiado (Windows)
 - **Editar los tags de la pista que suena ya no toca su archivo mientras suena** (se acabaron la pausa y el corte). La copia
