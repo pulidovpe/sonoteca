@@ -5,19 +5,23 @@ Garantías por archivo:
   2. Se relee la copia y se comprueba que los cambios quedaron y que la duración no cambió.
   3. Recién entonces se reemplaza el original de forma atómica (os.replace).
   4. Opcionalmente se guarda antes una copia del original en una carpeta de respaldo.
+  5. Si el archivo está en uso (Windows: la pista que suena) la copia verificada queda como escritura APLAZADA
+     (core/pending_tags.py): la app ya ve los tags nuevos y el reemplazo se hace al quedar libre el archivo.
 """
 from __future__ import annotations
 
 import hashlib
 import os
 import shutil
-import time
+import time  # noqa: F401  (los tests lo sustituyen para los reintentos)
 from pathlib import Path
 
 from mutagen.id3 import APIC, ID3, TALB, TCON, TDRC, TIT2, TPE1, TPE2, TPOS, TRCK, ID3NoHeaderError
 from mutagen.mp3 import MP3
 from mutagen.mp4 import MP4, MP4Cover
 
+from . import pending_tags
+from .pending_tags import replace_with_retry as _replace_with_retry
 from .tags import read_tags
 
 FIELDS = ("title", "artist", "album_artist", "album", "year", "track_no", "disc_no", "genre")
@@ -177,29 +181,24 @@ def _backup(path: Path, backup_dir: Path) -> None:
         f.write(f"{name}\t{path}\n")
 
 
-def _replace_with_retry(tmp: Path, path: Path, attempts: int = 12, delay: float = 0.15) -> None:
-    """os.replace con reintentos. En Windows el reemplazo falla con PermissionError [WinError 5/32] mientras algo tiene el
-    archivo abierto (el propio reproductor al soltarlo, el antivirus o el indexador); suele liberarse en menos de un
-    segundo. Solo reintenta PermissionError; cualquier otro error sale de inmediato."""
-    for attempt in range(attempts):
-        try:
-            os.replace(tmp, path)
-            return
-        except PermissionError:
-            if attempt == attempts - 1:
-                raise
-            time.sleep(delay)
+def _park(tmp: Path, path: Path) -> bool:
+    """Deja la copia verificada como escritura aplazada de `path` (se vuelca después, ver pending_tags.flush)."""
+    _replace_with_retry(tmp, pending_tags.pending_path(path))
+    pending_tags.register(path)
+    return False
 
 
 def write_tags(path: Path | str, changes: dict, cover: bytes | None = None, *,
                id3_version: int = 3, backup_dir: Path | None = None,
-               before_replace=None, after_replace=None) -> None:
+               is_busy=None, defer_on_lock: bool = False) -> bool:
     """Aplica `changes` (ya normalizados o crudos) a un archivo. Ver garantías en el docstring
     del módulo. Lanza TagWriteError si algo falla (el original no se modifica).
 
-    `before_replace(path)` se llama justo antes del reemplazo atómico, cuando la copia temporal ya está escrita y verificada,
-    y `after_replace(path)` justo después (también si el reemplazo falla, siempre que `before_replace` haya corrido). Permiten
-    soltar el archivo solo ese instante (Windows no deja reemplazar un archivo que el reproductor tiene abierto)."""
+    Devuelve True si el archivo quedó escrito y False si la escritura quedó APLAZADA: la copia ya está escrita y verificada
+    junto al archivo y se volcará con `pending_tags.flush`. Se aplaza cuando `is_busy(path)` dice que el archivo está en uso
+    (la pista que suena) o, con `defer_on_lock`, cuando el reemplazo sigue dando PermissionError tras los reintentos
+    (Windows: archivo abierto por el reproductor, el antivirus o el indexador). Si ya había una escritura aplazada, la nueva
+    parte de ella (las ediciones se acumulan)."""
     path = Path(path)
     if path.suffix.lower() not in {".mp3", ".m4a", ".mp4"}:
         raise TagWriteError(f"{path.name}: formato no soportado")
@@ -208,31 +207,36 @@ def write_tags(path: Path | str, changes: dict, cover: bytes | None = None, *,
     except ValueError as exc:
         raise TagWriteError(str(exc)) from exc
     tmp = path.with_name(f".{path.stem}.sonoteca-tmp{path.suffix}")
-    try:
-        shutil.copy2(path, tmp)
-        original_length = _length(tmp)
-        if path.suffix.lower() == ".mp3":
-            _apply_mp3(tmp, changes, cover, id3_version)
-        else:
-            _apply_mp4(tmp, changes, cover)
-        _verify(tmp, changes, cover is not None, original_length)
-        if backup_dir is not None:
-            _backup(path, backup_dir)
-        if before_replace is not None:
-            before_replace(path)
+    with pending_tags.LOCK:
+        try:
+            pending = pending_tags.pending_path(path)
+            shutil.copy2(pending if pending.is_file() else path, tmp)
+            original_length = _length(tmp)
+            if path.suffix.lower() == ".mp3":
+                _apply_mp3(tmp, changes, cover, id3_version)
+            else:
+                _apply_mp4(tmp, changes, cover)
+            _verify(tmp, changes, cover is not None, original_length)
+            if backup_dir is not None:
+                _backup(path, backup_dir)
+            if is_busy is not None and is_busy(path):
+                return _park(tmp, path)
             try:
                 _replace_with_retry(tmp, path)
-            finally:
-                if after_replace is not None:
-                    after_replace(path)
-        else:
-            _replace_with_retry(tmp, path)
-    except TagWriteError:
-        raise
-    except Exception as exc:
-        raise TagWriteError(f"{path.name}: {type(exc).__name__}: {exc}") from exc
-    finally:
-        tmp.unlink(missing_ok=True)
+            except PermissionError:
+                if not defer_on_lock:
+                    raise
+                return _park(tmp, path)
+            if pending.is_file():                    # la copia pendiente quedó incluida en lo que se acaba de escribir
+                pending.unlink(missing_ok=True)
+                pending_tags.unregister(path)
+            return True
+        except TagWriteError:
+            raise
+        except Exception as exc:
+            raise TagWriteError(f"{path.name}: {type(exc).__name__}: {exc}") from exc
+        finally:
+            tmp.unlink(missing_ok=True)
 
 
 def restore_backups(backup_dir: Path | str) -> tuple[int, list[str]]:

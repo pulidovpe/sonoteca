@@ -1,14 +1,16 @@
 """Puente entre la base SQLite y QML. Solo lectura en la Fase 2."""
 from __future__ import annotations
 
+import sys
 import threading
+from collections.abc import Callable
 from pathlib import Path
 
 from PySide6.QtCore import QFile, QObject, QUrl, Signal, Slot
 
 from sonoteca import __version__
-from sonoteca.core import (cleanup, covers, duplicates, file_delete, library, library_folders, paths, review, stats,
-                           tag_edit)
+from sonoteca.core import (cleanup, covers, duplicates, file_delete, library, library_folders, paths, pending_tags,
+                           review, scanner, stats, tag_edit)
 from sonoteca.core.db import connect, default_db_path
 from sonoteca.core.models import UNKNOWN_ALBUM, UNKNOWN_ARTIST
 from sonoteca.core.search import SearchIndex, normalize
@@ -29,10 +31,6 @@ class LibraryController(QObject):
     # los manejadores QML corren desde el bucle de eventos (sin tener tomado el GIL de Python).
     editProgress = Signal(int, int)
     editFinished = Signal("QVariantMap")
-    # Windows: el reproductor suelta el archivo que suena solo en el instante de reemplazarlo (ver tag_writer.write_tags).
-    # `releaseRequested(ruta, evento)`: el reproductor hace el fundido, suelta el archivo y activa el `threading.Event`.
-    releaseRequested = Signal(str, object)
-    fileReplaced = Signal(str)               # ya se reemplazó (o falló): el reproductor vuelve a cargar la pista
     rescanProgress = Signal(int, int)
     duplicatesProgress = Signal(int, int)
     duplicatesDeleted = Signal("QVariantMap")
@@ -47,6 +45,14 @@ class LibraryController(QObject):
         self._conn = connect(db_path)
         self._db_path = str(db_path) if db_path else str(default_db_path())
         self._index: SearchIndex | None = None
+        # Windows: la pista que suena no se puede reemplazar. Su escritura se aplaza (core/pending_tags.py) y se vuelca al
+        # quedar libre. `_busy(ruta)` lo aporta el reproductor (`set_busy_check`); en otros sistemas no hay aplazamiento.
+        self._busy: Callable[[Path], bool] | None = None
+        self._defer = sys.platform == "win32"
+        self._flush_lock = threading.Lock()
+
+    def set_busy_check(self, check: Callable[[Path], bool]) -> None:
+        self._busy = check
 
     @Slot(result="QVariantMap")
     def about(self) -> dict:
@@ -207,14 +213,25 @@ class LibraryController(QObject):
         args = ([int(i) for i in ids], dict(changes), cover_path, backup)
         threading.Thread(target=self._edit_worker, args=args, daemon=True).start()
 
-    def _before_replace(self, path) -> None:
-        """Hilo de trabajo: pide al reproductor que suelte el archivo y espera (máx. 3 s) a que lo haya hecho."""
-        released = threading.Event()
-        self.releaseRequested.emit(str(path), released)
-        released.wait(3.0)
+    # ---- escrituras aplazadas (Windows) ----
+    @Slot(str)
+    def flushPending(self, keep: str = "") -> None:
+        """Vuelca en un hilo aparte las escrituras aplazadas cuyo archivo ya quedó libre (`keep` = el que suena ahora)."""
+        if self._defer and pending_tags.registered():
+            threading.Thread(target=self.flushPendingNow, args=(keep, 12), daemon=True).start()
 
-    def _after_replace(self, path) -> None:
-        self.fileReplaced.emit(str(path))
+    def flushPendingNow(self, keep: str = "", attempts: int = 12) -> dict:
+        """Igual, pero sincrónico (arranque y cierre). Devuelve {"done", "locked", "skipped"}."""
+        with self._flush_lock:
+            conn = connect(self._db_arg)
+            try:
+                return pending_tags.flush_all(
+                    keep=[keep] if keep else [], attempts=attempts, is_busy=self._busy,
+                    on_done=lambda p: scanner.refresh_file_stat(conn, p))
+            except Exception:  # noqa: BLE001  (red de seguridad: queda en el diario y se reintenta después)
+                return {"done": 0, "locked": 0, "skipped": 0}
+            finally:
+                conn.close()
 
     def _edit_worker(self, ids: list, changes: dict, cover_path: str, backup: bool) -> None:
         try:
@@ -223,7 +240,7 @@ class LibraryController(QObject):
                 result = tag_edit.apply_edit(
                     conn, ids, changes, cover_path, backup,
                     progress=lambda done, total: self.editProgress.emit(done, total),
-                    before_replace=self._before_replace, after_replace=self._after_replace)
+                    is_busy=self._busy if self._defer else None, defer_on_lock=self._defer)
             finally:
                 conn.close()
             payload = result.to_dict()

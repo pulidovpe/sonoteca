@@ -2,12 +2,11 @@
 from __future__ import annotations
 
 import random
-import sys
 from pathlib import Path
 
 from PySide6.QtCore import Property, QObject, QTimer, Signal, Slot
 
-from sonoteca.core import library, paths, stats
+from sonoteca.core import library, paths, pending_tags, stats
 from sonoteca.core.db import connect
 from sonoteca.core.models import UNKNOWN_ALBUM, UNKNOWN_ARTIST
 from sonoteca.player.backend import PlayerBackend
@@ -31,6 +30,9 @@ class PlayerController(QObject):
     playsChanged = Signal()  # se contó una reproducción nueva
     audioChanged = Signal()  # cambió la lista de salidas de audio o la elegida
     queueMessage = Signal(str)  # aviso breve para mostrar al usuario
+    # El archivo que sonaba quedó libre (cambió la pista, terminó la lista o se detuvo): volcar las escrituras de tags
+    # aplazadas. El argumento es el archivo que sigue abierto ahora ("" si ninguno) y no debe tocarse.
+    pendingFlush = Signal(str)
 
     def __init__(self, backend: PlayerBackend, db_path: Path | str | None = None,
                  parent: QObject | None = None) -> None:
@@ -55,7 +57,8 @@ class PlayerController(QObject):
         # Aviso si un video suena pero no llega ninguna imagen (códec sin decodificador en este equipo, p. ej. AV1 sin
         # hardware compatible en Linux): se revisa unos segundos después de empezar a sonar.
         self._video_warned: int | None = None
-        self._resume: dict | None = None     # punto de la pista soltada para poder editar sus tags (Windows)
+        self._loaded: Path | None = None     # archivo que el backend tiene cargado (abierto); None si se soltó
+        self._idle = False                   # la lista terminó o se vació: nada va a sonar sin que el usuario lo pida
         self._video_check = QTimer(self)
         self._video_check.setSingleShot(True)
         self._video_check.setInterval(3000)
@@ -269,6 +272,11 @@ class PlayerController(QObject):
         if self._playing:
             self._backend.pause()
         else:
+            if self._loaded is None:         # se soltó el archivo al terminar (escritura de tags aplazada): se vuelve a cargar
+                row = library.get_track(self._conn, self.currentId)
+                if row is None or not Path(row["path"]).exists():
+                    return
+                self._load(Path(row["path"]))
             self._backend.play()
 
     @Slot()
@@ -375,6 +383,7 @@ class PlayerController(QObject):
     def _stop_and_clear(self) -> None:
         self._queue.clear()
         self._backend.stop()
+        self._release_if_pending()
         self._current = {}
         self._position = 0
         self._duration = 0
@@ -383,40 +392,32 @@ class PlayerController(QObject):
         self.durationChanged.emit()
         self.queueChanged.emit()
 
-    @Slot(str, object)
-    def releasePath(self, path: str, released) -> None:
-        """Windows: la pista que suena mantiene su archivo abierto y no se puede reemplazar al editar sus tags (PermissionError
-        [WinError 5]). Se suelta solo en el instante del reemplazo (la copia ya está escrita y verificada): fundido de salida
-        sin bloquear, se suelta y se avisa con `released.set()`. `restorePath` la vuelve a cargar en el mismo punto."""
-        self._resume = None
-        try:
-            if sys.platform == "win32" and self._current:
-                row = library.get_track(self._conn, self.currentId)
-                if row is not None and Path(row["path"]) == Path(path):
-                    self._resume = {"position": self._position, "playing": self._playing}
-                    if self._playing:
-                        self._backend.fade_out(120, lambda: self._finish_release(released))
-                        return
-                    self._backend.release()
-        finally:
-            if self._resume is None or not self._resume["playing"]:
-                released.set()
+    def isLoaded(self, path) -> bool:
+        """¿Tiene el reproductor abierto este archivo? (Windows no deja reemplazar un archivo abierto.) Se consulta desde el
+        hilo de edición: solo lee una referencia."""
+        loaded = self._loaded
+        return loaded is not None and Path(path) == loaded
 
-    def _finish_release(self, released) -> None:
+    def _load(self, path: Path) -> None:
+        self._loaded = path
+        self._idle = False
+        self._backend.load(path)
+        self.pendingFlush.emit(str(path))        # lo que sonaba antes ya quedó libre
+
+    def _release_if_pending(self) -> None:
+        """Parado (fin de lista, vaciar): si el archivo cargado tiene una escritura aplazada se suelta para poder volcarla;
+        `toggle` lo vuelve a cargar si se pulsa play."""
+        self._idle = True
+        if self._loaded is not None and pending_tags.has_pending(self._loaded):
+            self._backend.release()
+            self._loaded = None
+        self.pendingFlush.emit("" if self._loaded is None else str(self._loaded))
+
+    def releaseAll(self) -> None:
+        """Cierre de la app: suelta el archivo para que se vuelquen las escrituras aplazadas."""
+        self._backend.stop()
         self._backend.release()
-        released.set()
-
-    @Slot(str)
-    def restorePath(self, path: str) -> None:
-        """Tras reemplazar el archivo: vuelve a cargar la pista soltada, en el mismo punto y con el mismo estado."""
-        resume, self._resume = self._resume, None
-        if resume is None or not self._current:
-            return
-        row = library.get_track(self._conn, self.currentId)
-        if row is None or Path(row["path"]) != Path(path):
-            self._backend.set_volume(self._volume)
-            return
-        self._backend.resume(Path(row["path"]), resume["position"], resume["playing"], self._volume)
+        self._loaded = None
 
     @Slot("QVariantList")
     def forgetTracks(self, ids: list) -> None:
@@ -479,6 +480,8 @@ class PlayerController(QObject):
         if fresh != self._current:
             self._current = fresh
             self.currentChanged.emit()
+        if self._idle:                       # parada al terminar: no hace falta esperar para volcar tags aplazados
+            self._release_if_pending()
 
     @Slot(result="QVariantList")
     def queueItems(self) -> list[dict]:
@@ -545,7 +548,7 @@ class PlayerController(QObject):
         self.positionChanged.emit()
         self.durationChanged.emit()
         self.queueChanged.emit()
-        self._backend.load(Path(row["path"]))
+        self._load(Path(row["path"]))
         self._backend.play()
 
     def _advance(self, auto: bool) -> None:
@@ -558,6 +561,7 @@ class PlayerController(QObject):
     def _finish(self) -> None:
         """Fin de la cola: se detiene, pero la última pista sigue mostrándose."""
         self._backend.stop()
+        self._release_if_pending()
         self._position = 0
         self.positionChanged.emit()
 

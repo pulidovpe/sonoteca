@@ -106,10 +106,11 @@ def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int
         media.publish(track.get("title", ""), track.get("artist", ""), track.get("album", ""), player.duration,
                       player.position, player.playing, player.hasTrack)
 
-    # Windows: soltar el archivo que suena solo en el instante de reemplazarlo al editar sus tags (receptores QObject: se
-    # ejecutan en el hilo principal aunque la señal salga del hilo de trabajo)
-    controller.releaseRequested.connect(player.releasePath)
-    controller.fileReplaced.connect(player.restorePath)
+    # Windows: la escritura de tags de la pista que suena se aplaza (core/pending_tags.py) y se vuelca al quedar libre el
+    # archivo: al cambiar de pista, terminar la lista, cerrar la app o, si la app se cerró de golpe, al arrancar.
+    controller.set_busy_check(player.isLoaded)
+    player.pendingFlush.connect(controller.flushPending)
+    controller.flushPendingNow(attempts=3)       # restos de una sesión anterior (nada suena todavía)
     player.playingChanged.connect(publish_now_playing)
     player.currentChanged.connect(publish_now_playing)
     player.durationChanged.connect(publish_now_playing)
@@ -131,6 +132,8 @@ def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int
         except Exception as exc:  # noqa: BLE001  (solo diagnóstico: nunca debe impedir el arranque)
             print(f"[tiempos] no se pudo medir el primer fotograma: {exc}", file=sys.stderr)
     code = app.exec()
+    player.releaseAll()                          # suelta el archivo que suena y vuelca los tags aplazados antes de salir
+    controller.flushPendingNow()
     # Cierre ordenado: primero se destruye la interfaz QML y después los controladores. Si Python libera los
     # controladores antes, los enlaces QML que siguen vivos leen `library` o `playlists` ya destruidos y salen
     # errores como «Cannot call method 'stats' of null» al cerrar la ventana.

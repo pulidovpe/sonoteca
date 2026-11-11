@@ -17,6 +17,7 @@ from sonoteca.core.covers import (
     extract_embedded_cover,
 )
 from sonoteca.core.db import connect
+from sonoteca.core.pending_tags import effective_source
 
 BUCKETS = (160, 320, 640)  # tamaños en disco; evita una miniatura por cada tamaño pedido
 
@@ -89,7 +90,9 @@ class CoverProvider(QQuickImageProvider):
 
     def _load_file(self, kind: str, path: Path, target: int) -> QImage | None:
         try:
-            st = path.stat()
+            # Con una escritura de tags aplazada (core/pending_tags.py) la portada vigente está en la copia pendiente:
+            # su tamaño/fecha son los que invalidan la caché (los del archivo original no cambian hasta el volcado).
+            st = (effective_source(path) if kind == "embedded" else path).stat()
         except OSError:
             return None
         key = hashlib.sha1(f"{path}|{st.st_mtime_ns}|{st.st_size}|{target}".encode()).hexdigest()

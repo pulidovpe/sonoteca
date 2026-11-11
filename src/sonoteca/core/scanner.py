@@ -131,6 +131,16 @@ def reindex_file(conn: sqlite3.Connection, path: Path) -> None:
         _upsert(conn, meta, st.st_size, st.st_mtime_ns, fix_case=True)  # edición: manda la grafía nueva
 
 
+def refresh_file_stat(conn: sqlite3.Connection, path: Path) -> None:
+    """Tras volcar una escritura aplazada: guarda el tamaño/fecha nuevos del archivo (sus tags ya estaban en la base)."""
+    try:
+        st = Path(path).stat()
+    except OSError:
+        return
+    with conn:
+        conn.execute("UPDATE files SET size=?, mtime_ns=? WHERE path=?", (st.st_size, st.st_mtime_ns, str(path)))
+
+
 def finalize(conn: sqlite3.Connection) -> None:
     """Recalcula años de álbum y elimina álbumes/artistas que quedaron sin pistas."""
     with conn:

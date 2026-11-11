@@ -7,22 +7,26 @@ from pathlib import Path
 from mutagen.id3 import ID3
 from mutagen.mp4 import MP4
 
+from .pending_tags import effective_source
+
 FOLDER_COVER_STEMS = ("cover", "folder", "front", "album", "albumart")
 FOLDER_COVER_EXTS = (".jpg", ".jpeg", ".png")
 
 
 def extract_embedded_cover(path: Path) -> bytes | None:
-    """Bytes de la portada embebida (mp3: APIC, m4a/mp4: covr), o None."""
+    """Bytes de la portada embebida (mp3: APIC, m4a/mp4: covr), o None. Si hay una escritura de tags aplazada, la lee de
+    su copia (core/pending_tags.py): es la portada vigente."""
     try:
         ext = path.suffix.lower()
+        source = effective_source(path)
         if ext == ".mp3":
-            frames = ID3(path).getall("APIC")
+            frames = ID3(source).getall("APIC")
             if not frames:
                 return None
             front = [f for f in frames if f.type == 3]  # 3 = portada frontal
             return bytes((front or frames)[0].data)
         if ext in {".m4a", ".mp4"}:
-            covers = (MP4(path).tags or {}).get("covr")
+            covers = (MP4(source).tags or {}).get("covr")
             return bytes(covers[0]) if covers else None
     except Exception:  # noqa: BLE001  (archivo ilegible o sin tags: simplemente no hay portada)
         return None

@@ -138,6 +138,7 @@ def preview(conn: sqlite3.Connection, track_ids: list[int], raw_changes: dict,
 class EditResult:
     updated: int = 0
     failed: list[tuple[str, str]] = field(default_factory=list)
+    pending: int = 0          # archivos cuya escritura quedó aplazada (en uso): la app ya muestra los tags nuevos
     backup_dir: str = ""
     album_id: int = 0
 
@@ -145,6 +146,7 @@ class EditResult:
         return {
             "updated": self.updated,
             "failed": [{"path": p, "message": m} for p, m in self.failed],
+            "pending": self.pending,
             "backupDir": self.backup_dir,
             "albumId": self.album_id,
         }
@@ -153,9 +155,11 @@ class EditResult:
 def apply_edit(conn: sqlite3.Connection, track_ids: list[int], raw_changes: dict,
                cover_path: str = "", backup: bool = True, id3_version: int = 3,
                progress: Callable[[int, int], None] | None = None,
-               before_replace: Callable[[Path], None] | None = None,
-               after_replace: Callable[[Path], None] | None = None) -> EditResult:
+               is_busy: Callable[[Path], bool] | None = None,
+               defer_on_lock: bool = False) -> EditResult:
     """Escribe los cambios en los archivos y actualiza la base conservando los ids de pista.
+    Un archivo en uso (`is_busy`) no se reemplaza: su escritura queda aplazada (`result.pending`), la base ya refleja los
+    tags nuevos y el volcado al archivo lo hace `pending_tags.flush`.
     Un archivo que falla no detiene a los demás. Lanza ValueError si los datos son inválidos."""
     ids = _unique(track_ids)
     changes = normalize_changes(raw_changes)
@@ -182,9 +186,11 @@ def apply_edit(conn: sqlite3.Connection, track_ids: list[int], raw_changes: dict
                     cover_store.archive_embedded(path)  # si no se puede archivar, no se toca el archivo
                 per_file = {**{k: v for k, v in _derived(_rows(conn, [track_id])[0]).items()
                                if k not in changes}, **changes}
-                write_tags(path, per_file, cover, id3_version=id3_version, backup_dir=backup_dir,
-                           before_replace=before_replace, after_replace=after_replace)
-                reindex_file(conn, path)
+                written = write_tags(path, per_file, cover, id3_version=id3_version, backup_dir=backup_dir,
+                                     is_busy=is_busy, defer_on_lock=defer_on_lock)
+                reindex_file(conn, path)        # lee de la copia pendiente si la escritura quedó aplazada
+                if not written:
+                    result.pending += 1
                 result.updated += 1
             except (TagWriteError, OSError) as exc:
                 result.failed.append((str(path), str(exc)))

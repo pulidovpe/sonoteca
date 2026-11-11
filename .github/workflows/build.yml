@@ -1,4 +1,4 @@
-name: Build Sonoteca (alfa)
+name: Build Sonoteca
 
 on:
   push:
@@ -22,7 +22,7 @@ on:
         default: false
         type: boolean
       release_tag:
-        description: 'Opcional: tag (ej. v0.9.2.3) para publicar en Releases lo que se compile'
+        description: 'Opcional: tag (ej. v1.0.0) para publicar en Releases lo que se compile'
         required: false
         default: ''
         type: string
@@ -39,6 +39,40 @@ jobs:
     outputs:
       matrix: ${{ steps.m.outputs.matrix }}
     steps:
+      # Solo se baja el archivo de la versión, para comprobar que el tag coincide con ella.
+      - name: Checkout (solo la versión)
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: src/sonoteca/__init__.py
+          sparse-checkout-cone-mode: false
+
+      # Falla pronto (antes de compilar en tres sistemas) si el tag no corresponde a `__version__`.
+      # v1.0.0 exige __version__ = "1.0.0"; un sufijo (v1.1.0-rc1) se acepta y se publica como prerelease.
+      - name: Verificar que el tag coincide con la versión
+        shell: python
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          import os, re, sys
+
+          tag = os.environ["RELEASE_TAG"] or (os.environ["REF_NAME"] if os.environ["REF_TYPE"] == "tag" else "")
+          if not tag:
+              print("Sin tag: se compila sin publicar, no hay nada que verificar.")
+              sys.exit(0)
+          code = open("src/sonoteca/__init__.py", encoding="utf-8").read()
+          found = re.search(r"""__version__\s*=\s*["'](\d+\.\d+\.\d+(?:\.\d+)?)["']""", code)
+          if not found:
+              print("::error::No se encontró __version__ en src/sonoteca/__init__.py")
+              sys.exit(1)
+          version = found.group(1)
+          wanted = tag.lstrip("vV")
+          if wanted != version and not wanted.startswith(version + "-"):
+              print(f"::error::El tag {tag} no coincide con __version__ = {version}. Sube la versión o corrige el tag.")
+              sys.exit(1)
+          print(f"OK: tag {tag} y __version__ {version} coinciden")
+
       - id: m
         shell: python
         env:
@@ -113,6 +147,15 @@ jobs:
         run: |
           chmod +x packaging/*.sh
           ./packaging/build_linux_docker.sh
+
+      # Docker (rootful) deja dist/ como root; en un runner propio el próximo checkout no podría limpiarlo.
+      - name: Devolver la propiedad de dist/ (Linux)
+        if: always() && matrix.os_key == 'linux'
+        shell: bash
+        run: |
+          VOL=""; [ "$(uname -s)" = "Linux" ] && VOL=":z"
+          docker run --rm -v "$PWD":/src"$VOL" python:3.12-bookworm \
+            chown -R "$(id -u):$(id -g)" /src/dist || true
 
       - name: Build (macOS)
         if: matrix.os_key == 'macos'
@@ -225,13 +268,20 @@ jobs:
           TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           ls -lh release_files
+          # Versión estable (v1.0.0, v1.2.3...) = release normal y «Latest».
+          # Con sufijo (v1.1.0-rc1, v1.1.0-beta2) o por debajo de 1.0 = prerelease.
+          if [[ "$TAG" == *-* || "${TAG#v}" == 0.* ]]; then
+            KIND=(--prerelease)
+          else
+            KIND=(--prerelease=false --latest)
+          fi
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release upload "$TAG" release_files/* --repo "$GITHUB_REPOSITORY" --clobber
-            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --notes-file release_notes.md
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --notes-file release_notes.md "${KIND[@]}"
           else
             gh release create "$TAG" release_files/* \
               --repo "$GITHUB_REPOSITORY" \
               --title "Sonoteca $TAG" \
               --notes-file release_notes.md \
-              --prerelease
+              "${KIND[@]}"
           fi

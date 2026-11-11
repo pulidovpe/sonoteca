@@ -174,27 +174,89 @@ def test_replace_gives_up_after_attempts_and_does_not_retry_other_errors(monkeyp
     assert len(calls) == 1
 
 
-def test_write_tags_hooks_surround_the_replace(tmp_path, monkeypatch):
-    p = make_mp3(tmp_path / "h.mp3", title="Viejo")
-    order = []
+@pytest.fixture
+def data_dir(tmp_path, monkeypatch):
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path / "datos"))
+    return tmp_path / "datos"
+
+
+def test_busy_file_gets_a_deferred_write_and_flush_applies_it(tmp_path, data_dir):
+    from sonoteca.core import pending_tags
+    p = make_mp3(tmp_path / "s.mp3", title="Viejo")
+    before = sha(p)
+    assert write_tags(p, {"title": "Nuevo"}, is_busy=lambda q: True) is False
+    assert sha(p) == before                                     # el archivo que suena no se tocó
+    assert pending_tags.has_pending(p) and pending_tags.registered() == [str(p)]
+    assert read_tags(p).title == "Nuevo"                        # la app ya ve los tags nuevos (lee de la copia)
+    assert pending_tags.flush(p) == "done"
+    assert not pending_tags.has_pending(p) and pending_tags.registered() == []
+    assert read_tags(p).title == "Nuevo" and sha(p) != before
+
+
+def test_deferred_edits_accumulate(tmp_path, data_dir):
+    p = make_mp3(tmp_path / "a.mp3", title="Viejo", artist="Viejo")
+    assert write_tags(p, {"title": "T1"}, is_busy=lambda q: True) is False
+    assert write_tags(p, {"artist": "A2"}, is_busy=lambda q: True) is False
+    m = read_tags(p)
+    assert (m.title, m.artist) == ("T1", "A2")                  # la segunda edición parte de la primera
+    from sonoteca.core import pending_tags
+    pending_tags.flush(p)
+    m = read_tags(p)
+    assert (m.title, m.artist) == ("T1", "A2")
+
+
+def test_edit_after_the_file_is_free_includes_the_pending_and_clears_it(tmp_path, data_dir):
+    from sonoteca.core import pending_tags
+    p = make_mp3(tmp_path / "b.mp3", title="Viejo", artist="Viejo")
+    write_tags(p, {"title": "T1"}, is_busy=lambda q: True)
+    assert write_tags(p, {"artist": "A2"}, is_busy=lambda q: False) is True
+    assert not pending_tags.has_pending(p) and pending_tags.registered() == []
+    m = read_tags(p)
+    assert (m.title, m.artist) == ("T1", "A2")
+
+
+def test_lock_falls_back_to_deferral_only_when_allowed(tmp_path, data_dir, monkeypatch):
+    from sonoteca.core import pending_tags
+    p = make_mp3(tmp_path / "l.mp3", title="Viejo")
     real = tag_writer.os.replace
-    monkeypatch.setattr(tag_writer.os, "replace", lambda s, d: (order.append("replace"), real(s, d))[1])
-    write_tags(p, {"title": "Nuevo"}, before_replace=lambda q: order.append("before"),
-               after_replace=lambda q: order.append("after"))
-    assert order == ["before", "replace", "after"]
-    assert read_tags(p).title == "Nuevo"
 
+    def locked(src, dst):
+        if str(dst) == str(p):
+            raise PermissionError(13, "Acceso denegado")
+        real(src, dst)
 
-def test_after_replace_runs_even_if_the_replace_fails(tmp_path, monkeypatch):
-    p = make_mp3(tmp_path / "f.mp3", title="Viejo")
-    order = []
-
-    def boom(s, d):
-        raise OSError("disco lleno")
-
-    monkeypatch.setattr(tag_writer.os, "replace", boom)
+    monkeypatch.setattr(tag_writer.os, "replace", locked)
+    monkeypatch.setattr(tag_writer.time, "sleep", lambda _s: None)
     with pytest.raises(TagWriteError):
-        write_tags(p, {"title": "Nuevo"}, before_replace=lambda q: order.append("before"),
-                   after_replace=lambda q: order.append("after"))
-    assert order == ["before", "after"]
-    assert read_tags(p).title == "Viejo"                       # el original no se tocó
+        write_tags(p, {"title": "Nuevo"})                       # sin defer_on_lock (macOS/Linux) el error se informa
+    assert not pending_tags.has_pending(p)
+    assert write_tags(p, {"title": "Nuevo"}, defer_on_lock=True) is False
+    assert pending_tags.has_pending(p) and read_tags(p).title == "Nuevo"
+
+
+def test_flush_keeps_it_pending_while_locked_and_never_recreates_a_deleted_file(tmp_path, data_dir, monkeypatch):
+    from sonoteca.core import pending_tags
+    p = make_mp3(tmp_path / "k.mp3", title="Viejo")
+    write_tags(p, {"title": "Nuevo"}, is_busy=lambda q: True)
+    real = tag_writer.os.replace
+    monkeypatch.setattr(tag_writer.os, "replace",
+                        lambda s, d: (_ for _ in ()).throw(PermissionError(13, "x")))
+    monkeypatch.setattr(tag_writer.time, "sleep", lambda _s: None)
+    assert pending_tags.flush(p, attempts=2) == "locked"
+    assert pending_tags.registered() == [str(p)]                # sigue en el diario: se reintentará
+    monkeypatch.setattr(tag_writer.os, "replace", real)
+    p.unlink()                                                  # el archivo se eliminó mientras tanto
+    assert pending_tags.flush(p) == "none"
+    assert not p.exists() and not pending_tags.has_pending(p) and pending_tags.registered() == []
+
+
+def test_flush_all_skips_the_playing_file(tmp_path, data_dir):
+    from sonoteca.core import pending_tags
+    a = make_mp3(tmp_path / "x.mp3", title="X")
+    b = make_mp3(tmp_path / "y.mp3", title="Y")
+    for q in (a, b):
+        write_tags(q, {"title": "Nuevo"}, is_busy=lambda _q: True)
+    done = []
+    out = pending_tags.flush_all(keep=[a], on_done=done.append)
+    assert out == {"done": 1, "locked": 0, "skipped": 1} and done == [b]
+    assert pending_tags.has_pending(a) and not pending_tags.has_pending(b)

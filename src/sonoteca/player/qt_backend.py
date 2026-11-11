@@ -81,60 +81,6 @@ class QtPlayerBackend(PlayerBackend):
     def video_frames(self) -> int:
         return self._frames
 
-    def _ramp(self, start: float, end: float, ms: int, on_done=None) -> None:
-        """Rampa de volumen con QTimer (no bloquea; el bucle de eventos aplica cada paso). `start`/`end` en posición 0..1."""
-        if getattr(self, "_fade_timer", None) is not None:
-            self._fade_timer.stop()
-        steps = 8
-        timer = self._fade_timer = QTimer(self)
-        timer.setInterval(max(1, ms // steps))
-        count = [0]
-
-        def tick() -> None:
-            count[0] += 1
-            self.set_volume(start + (end - start) * min(1.0, count[0] / steps))
-            if count[0] >= steps:
-                timer.stop()
-                if on_done is not None:
-                    on_done()
-
-        timer.timeout.connect(tick)
-        timer.start()
-
-    def fade_out(self, ms: int, done) -> None:
-        if self._audio is None:
-            done()
-            return
-        pos = self._audio.volume() ** 0.5          # set_volume aplica una curva cuadrática: se vuelve a la posición del control
-        self._ramp(pos, 0.0, ms, done)
-
-    def resume(self, path: Path, position_ms: int, playing: bool, volume: float) -> None:
-        self._frames = 0
-        self.set_volume(0.0)                         # entra en silencio
-        restored = [False]
-
-        def restore() -> None:
-            if not restored[0]:
-                restored[0] = True
-                self.set_volume(volume)
-
-        def on_status(status) -> None:
-            if status not in (QMediaPlayer.MediaStatus.LoadedMedia, QMediaPlayer.MediaStatus.BufferedMedia):
-                return
-            self._player.mediaStatusChanged.disconnect(on_status)
-            if position_ms > 0:
-                self._player.setPosition(position_ms)
-            if playing:
-                self._player.play()
-                self._ramp(0.0, volume, 200, lambda: restored.__setitem__(0, True))
-            else:
-                self._player.pause()
-                restore()
-
-        self._player.mediaStatusChanged.connect(on_status)
-        self._player.setSource(QUrl.fromLocalFile(str(path)))
-        QTimer.singleShot(4000, restore)             # si el archivo no llega a cargar, que el volumen no quede en 0
-
     def release(self) -> None:
         self._frames = 0
         self._player.stop()

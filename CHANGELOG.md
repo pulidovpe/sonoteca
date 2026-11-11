@@ -5,6 +5,24 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [0.14.21] - 2026-11-10
+### Cambiado (Windows)
+- **Editar los tags de la pista que suena ya no toca su archivo mientras suena** (se acabaron la pausa y el corte). La copia
+  nueva se escribe y verifica igual que antes, pero se guarda como **escritura aplazada** (`.nombre.sonoteca-pending.ext`,
+  oculta, junto al archivo). La base de datos, el reproductor y las portadas leen de esa copia, así que los tags nuevos se
+  ven al instante; el archivo real se reemplaza al quedar libre: **al terminar la canción, al cambiar de pista, al terminar o
+  vaciar la lista, al cerrar la app** y, si la app se cerró de golpe, **al arrancar** (diario `pending_tags.json`).
+  - Varias ediciones seguidas se acumulan sobre la misma copia. Un archivo eliminado nunca se recrea al volcar.
+  - Si el reemplazo sigue bloqueado tras los reintentos (antivirus, indexador) también se aplaza en vez de fallar (solo Windows).
+  - Aviso al editar: «… se guardará en su archivo al terminar».
+  - macOS y Linux no cambian (reemplazan el archivo al instante, como antes).
+- Eliminado el diseño de 0.14.20 (`before_replace/after_replace`, `releasePath/restorePath`, `fade_out`, `resume`): ya no se
+  suelta ni se recarga la pista, así que no hay fundidos.
+- Nuevo `core/pending_tags.py`; `write_tags(..., is_busy, defer_on_lock)` devuelve `False` si dejó la escritura aplazada;
+  `read_tags`, `extract_embedded_cover` y la caché de miniaturas leen de la copia pendiente.
+*(Probado aquí con mutagen simulado: aplazar, acumular, volcar, escribir libre con pendiente previa, bloqueo→aplazar, volcado
+bloqueado, archivo borrado, `flush_all` con la pista que suena, diario corrupto. Tests nuevos, UI/Qt y Windows: sin ejecutar.)*
+
 ## [0.14.20] - 2026-11-09
 ### Corregido (Windows)
 - **Editar los tags de la pista que suena dejaba la reproducción parada durante toda la escritura** y el fundido de 0.14.19 no

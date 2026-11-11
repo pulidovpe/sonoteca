@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from conftest import make_cover, make_mp3, needs_ffmpeg
 
@@ -147,3 +149,17 @@ def test_editing_a_track_with_names_deduced_from_filename_writes_them_and_leaves
     meta = read_tags(root / "X/03- Ace Of Base - Happy Nation.mp3")
     assert (meta.title, meta.artist, meta.album, meta.track_no) == ("Happy Nation", "Ace Of Base", "The Sign", 3)
     assert meta.inferred is False
+
+
+def test_editing_a_busy_file_updates_the_db_now_and_defers_the_file(env, tmp_path):
+    from sonoteca.core import pending_tags
+    conn, root, ids = env
+    playing = library.get_track(conn, ids[0])["path"]
+    result = tag_edit.apply_edit(conn, [ids[0]], {"title": "Nuevo título"}, backup=False,
+                                 is_busy=lambda p: str(p) == playing)
+    assert (result.updated, result.pending, result.failed) == (1, 1, [])
+    assert result.to_dict()["pending"] == 1
+    assert library.get_track(conn, ids[0])["title"] == "Nuevo título"      # la base ya lo muestra
+    assert pending_tags.has_pending(playing)
+    pending_tags.flush(playing)
+    assert read_tags(Path(playing)).title == "Nuevo título"

@@ -398,60 +398,70 @@ def _track_path(ctrl):
     return library.get_track(ctrl._conn, ctrl.currentId)["path"]
 
 
-def test_release_only_at_replace_time_and_resume_same_point_on_windows(env, monkeypatch):
-    import threading
+@pytest.fixture
+def flushes(env, tmp_path, monkeypatch):
+    monkeypatch.setenv("SONOTECA_DATA_DIR", str(tmp_path / "datos"))
     ctrl, be, album, _, paths = env
-    calls = []
-    be.release = lambda: calls.append("release")
+    got = []
+    ctrl.pendingFlush.connect(got.append)
+    return got
+
+
+def _mark_pending(path):
+    from pathlib import Path
+
+    from sonoteca.core import pending_tags
+    pending_tags.pending_path(Path(path)).write_bytes(b"x")
+
+
+def test_is_loaded_and_flush_is_requested_when_the_track_changes(env, flushes):
+    ctrl, be, album, _, paths = env
     ctrl.playAlbum(album, 0)
-    ctrl._position = 42_000
-    monkeypatch.setattr("sonoteca.ui.player_controller.sys.platform", "win32")
-
-    other = threading.Event()
-    ctrl.releasePath(paths["Pista 2"], other)               # otro archivo: no se toca
-    assert other.is_set() and calls == []
-
-    done = threading.Event()
-    ctrl.releasePath(_track_path(ctrl), done)               # el que suena: fundido (el falso termina al instante) y se suelta
-    assert calls == ["release"] and done.is_set()
-
-    resumed = []
-    be.resume = lambda path, pos, playing, vol: resumed.append((str(path), pos, playing, vol))
-    ctrl.restorePath(_track_path(ctrl))
-    assert resumed == [(paths["Pista 1"], 42_000, True, ctrl.volume)]
-    ctrl.restorePath(_track_path(ctrl))                     # sin nada pendiente no hace nada más
-    assert len(resumed) == 1
+    assert ctrl.isLoaded(paths["Pista 1"]) and not ctrl.isLoaded(paths["Pista 2"])
+    assert flushes == [paths["Pista 1"]]                     # al cargar una pista se pide volcar lo anterior (menos ella)
+    be.finish()
+    assert ctrl.isLoaded(paths["Pista 2"]) and not ctrl.isLoaded(paths["Pista 1"])
+    assert flushes[-1] == paths["Pista 2"]
 
 
-def test_release_waits_for_fade_and_keeps_paused_state(env, monkeypatch):
-    import threading
-    ctrl, be, album, *_ = env
-    pending, calls = [], []
-    be.fade_out = lambda ms, done: pending.append(done)     # fundido en curso
-    be.release = lambda: calls.append("release")
+def test_end_of_queue_releases_a_file_with_deferred_tags_and_play_reloads_it(env, flushes):
+    ctrl, be, album, _, paths = env
+    released = []
+    be.release = lambda: released.append(1)
+    ctrl.playAlbum(album, 2)                                 # la última pista
+    _mark_pending(paths["Pista 3"])
+    be.finish()                                              # termina la lista
+    assert released == [1] and not ctrl.isLoaded(paths["Pista 3"])
+    assert flushes[-1] == ""                                 # nada sigue abierto: se puede volcar todo
+    ctrl.toggle()                                            # play: se vuelve a cargar
+    assert str(be.loaded) == paths["Pista 3"] and ctrl.isLoaded(paths["Pista 3"]) and ctrl.playing
+
+
+def test_end_of_queue_keeps_the_file_loaded_when_nothing_is_pending(env, flushes):
+    ctrl, be, album, _, paths = env
+    released = []
+    be.release = lambda: released.append(1)
+    ctrl.playAlbum(album, 2)
+    be.finish()
+    assert released == [] and ctrl.isLoaded(paths["Pista 3"])
+    assert flushes[-1] == paths["Pista 3"]
+
+
+def test_refresh_current_releases_a_stopped_track_with_deferred_tags(env, flushes):
+    ctrl, be, album, _, paths = env
+    released = []
+    be.release = lambda: released.append(1)
+    ctrl.playAlbum(album, 2)
+    be.finish()                                              # terminó; sigue cargada (sin pendientes)
+    _mark_pending(paths["Pista 3"])                          # se edita estando parada
+    ctrl.refreshCurrent()
+    assert released == [1] and not ctrl.isLoaded(paths["Pista 3"])
+
+
+def test_release_all_on_quit(env, flushes):
+    ctrl, be, album, _, paths = env
+    released = []
+    be.release = lambda: released.append(1)
     ctrl.playAlbum(album, 0)
-    monkeypatch.setattr("sonoteca.ui.player_controller.sys.platform", "win32")
-    done = threading.Event()
-    ctrl.releasePath(_track_path(ctrl), done)
-    assert not done.is_set() and calls == []                 # aún atenuando: el archivo sigue abierto
-    pending[0]()                                             # termina el fundido
-    assert calls == ["release"] and done.is_set()
-
-    ctrl.restorePath(_track_path(ctrl))
-    ctrl.toggle()                                            # en pausa: sin fundido, se suelta de inmediato
-    pending.clear(); calls.clear()
-    done2 = threading.Event()
-    ctrl.releasePath(_track_path(ctrl), done2)
-    assert pending == [] and calls == ["release"] and done2.is_set()
-
-
-def test_release_does_nothing_outside_windows(env, monkeypatch):
-    import threading
-    ctrl, be, album, *_ = env
-    calls = []
-    be.release = lambda: calls.append("release")
-    ctrl.playAlbum(album, 0)
-    monkeypatch.setattr("sonoteca.ui.player_controller.sys.platform", "darwin")
-    done = threading.Event()
-    ctrl.releasePath(_track_path(ctrl), done)
-    assert calls == [] and done.is_set()
+    ctrl.releaseAll()
+    assert released == [1] and not ctrl.isLoaded(paths["Pista 1"])

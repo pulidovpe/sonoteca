@@ -478,6 +478,9 @@ ApplicationWindow {
         if (n === 0 && first) return "No se pudo actualizar ning\u00fan archivo: " + detail
         var text = n === 1 ? "1 archivo actualizado" : n + " archivos actualizados"
         if (first) text += " \u00b7 " + (failed.length === 1 ? "1 fall\u00f3" : failed.length + " fallaron") + ": " + detail
+        if ((result.pending || 0) > 0)
+            text += " \u00b7 " + (result.pending === 1 ? "la canci\u00f3n que suena se guardar\u00e1 en su archivo al terminar"
+                                                         : result.pending + " canciones se guardar\u00e1n en su archivo al terminar de sonar")
         return text
     }
 
@@ -1086,7 +1089,7 @@ ApplicationWindow {
         function onEditFinished(result) {
             tagEditor.close()      // sin ventana de resultado: solo un aviso breve
             tagEditor.step = 0
-            win.toast(win.editSummary(result), (result.failed && result.failed.length > 0) ? 8000 : 3000)
+            win.toast(win.editSummary(result), ((result.failed && result.failed.length > 0) || result.pending > 0) ? 8000 : 3000)
             Theme.dataRevision++   // todas las páginas se vuelven a consultar
             player.refreshCurrent()   // la barra de reproducción muestra los tags nuevos
             // Si el álbum abierto cambió de identidad (p. ej. se renombró), seguir al nuevo

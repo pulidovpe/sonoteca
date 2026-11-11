@@ -12,6 +12,7 @@ from mutagen.mp3 import MP3
 from mutagen.mp4 import MP4
 
 from .models import SUPPORTED_EXTENSIONS, UNKNOWN_ALBUM, UNKNOWN_ARTIST, VIDEO_EXTENSIONS, TrackMeta
+from .pending_tags import effective_source
 from .search import normalize
 
 _YEAR_RE = re.compile(r"(\d{4})")
@@ -125,12 +126,14 @@ def _first(frame) -> str | None:
 
 
 def read_tags(path: Path) -> TrackMeta:
+    """Tags de `path`. Si hay una escritura aplazada (core/pending_tags.py) se leen de su copia: son los tags vigentes."""
     ext = path.suffix.lower()
+    source = effective_source(path)
     try:
         if ext == ".mp3":
-            return _read_mp3(path)
+            return _read_mp3(path, source)
         if ext in {".m4a", ".mp4"}:
-            return _read_mp4(path)
+            return _read_mp4(path, source)
     except Exception as exc:  # mutagen lanza muchas excepciones distintas
         raise TagReadError(f"{type(exc).__name__}: {exc}") from exc
     raise TagReadError(f"Extensión no soportada: {ext}")
@@ -177,8 +180,8 @@ def _build(path: Path, fmt: str, *, duration, bitrate, has_cover=False, title=No
     )
 
 
-def _read_mp3(path: Path) -> TrackMeta:
-    audio = MP3(path)  # lanza HeaderNotFoundError si no hay frames MPEG válidos
+def _read_mp3(path: Path, source: Path | None = None) -> TrackMeta:
+    audio = MP3(source or path)  # lanza HeaderNotFoundError si no hay frames MPEG válidos
     tags = audio.tags  # ID3 o None
     if tags is None:
         return _build(path, "mp3", duration=audio.info.length, bitrate=audio.info.bitrate)
@@ -218,8 +221,8 @@ def _mp4_number(tags, key: str) -> int | None:
         return None
 
 
-def _read_mp4(path: Path) -> TrackMeta:
-    audio = MP4(path)
+def _read_mp4(path: Path, source: Path | None = None) -> TrackMeta:
+    audio = MP4(source or path)
     tags = audio.tags or {}
     return _build(
         path, path.suffix.lower().lstrip("."),
