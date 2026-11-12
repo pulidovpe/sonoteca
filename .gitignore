@@ -14,3 +14,5 @@ dist/
 # Las letras tienen copyright: viven en la base de datos local (carpeta de datos), nunca en el repositorio
 *.lrc
 library.db*
+.DS_Store
+**/.DS_Store
