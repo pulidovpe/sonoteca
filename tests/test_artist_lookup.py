@@ -1,5 +1,4 @@
 """0.8.4: elegir el artista correcto (candidatos de Wikipedia) o escribir una descripción propia."""
-import httpx
 from test_online import Net, js, make_client, url_has
 
 from sonoteca.core.db import connect

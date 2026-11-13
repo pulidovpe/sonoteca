@@ -17,7 +17,7 @@ Hay **dos agentes de Claude** trabajando en paralelo, cada uno en su chat, más 
 7. Al entregar, di qué probaste y qué no; la CI es un segundo compilador, no un sustituto de tu prueba.
 
 ## Qué hace hoy
-- `.github/workflows/ci.yml` («CI Tests»): `ruff`, higiene del repo y `pytest` en Linux con PySide6 fijado por `packaging/build-constraints.txt`. Se dispara en push a `main`, `feature/**`, `fix/**`; en PR a `main`; a mano; y como llamada desde otro workflow.
+- `.github/workflows/ci.yml` («CI Tests»): `ruff` (solo reglas E4/E7/E9/F: errores reales; las de estilo —I, UP, SIM, RUF— están fuera a propósito, ~77 avisos pendientes de decidir), higiene del repo y `pytest` en Linux con PySide6 fijado por `packaging/build-constraints.txt`. Se dispara en push a `main`, `feature/**`, `fix/**`; en PR a `main`; a mano; y como llamada desde otro workflow.
 - `.github/scripts/check_baseline.py`: compara los fallos con `.github/known-failures.txt`.
 - `.github/workflows/build.yml`: compila y publica el release al subir un tag `v*`. No lo toques.
 
@@ -35,3 +35,6 @@ gh run watch "$(gh run list --workflow ci.yml -L1 --json databaseId -q '.[0].dat
 3. ⏳ `android.yml`: `assembleDebug` + pruebas JVM en `android/**`; APK debug como artefacto.
 4. ⏳ Matriz macOS/Windows para los pendientes de Windows.
 5. ⏳ Opcional: revisión con IA solo consultiva.
+
+## Datos de desarrollo ≠ datos reales
+Ejecutar una versión de desarrollo sobre tu biblioteca real **migra su base** (esquema v10 desde 1.0.1) y las apps antiguas dejan de abrirla («La base tiene versión 10, más nueva que esta app»). No hay vuelta atrás automática. Para desarrollar o probar binarios viejos: `SONOTECA_DATA_DIR=~/sonoteca-dev ./sonoteca gui`.
