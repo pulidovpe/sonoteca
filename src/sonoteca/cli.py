@@ -30,6 +30,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--db", type=Path, help=f"ruta de la base (por defecto {default_db_path()})")
     sub = p.add_subparsers(dest="cmd", required=True)
 
+    s = sub.add_parser("sync-serve", help="servidor de sincronización con la app Android (HTTPS)")
+    s.add_argument("--port", type=int, default=8765, help="puerto (por defecto 8765)")
+    s.add_argument("--solo-usb", action="store_true",
+                   help="escucha solo en 127.0.0.1 (para usar con `adb reverse`, sin exponer nada en la red)")
+
+    s = sub.add_parser("sync-devices", help="listar o revocar los dispositivos emparejados")
+    s.add_argument("--revocar", metavar="ID", help="quitar el acceso de un dispositivo")
+
     s = sub.add_parser("scan", help="indexar una carpeta (incremental)")
     s.add_argument("path", type=Path)
     s.add_argument("--force", action="store_true", help="releer todos los archivos")
@@ -179,6 +187,10 @@ def _run(argv: list[str] | None = None) -> int:
         from .core import legacy
 
         legacy.ensure_migrated()
+    if args.cmd == "sync-serve":
+        return _sync_serve(args, out)
+    if args.cmd == "sync-devices":
+        return _sync_devices(args, out)
     if args.cmd == "export":
         from .core import portable
 
@@ -357,6 +369,70 @@ def _run(argv: list[str] | None = None) -> int:
                   file=out)
     return 0
 
+
+
+def _sync_serve(args, out) -> int:
+    """Arranca el servidor de sincronización y muestra cómo emparejar el móvil (Wi-Fi y USB)."""
+    import threading
+
+    from .sync import server as sync_server
+
+    db = args.db or default_db_path()
+    connect(db).close()   # crea o migra la base (esquema v10) antes de servir
+    host = "127.0.0.1" if args.solo_usb else "0.0.0.0"
+    srv = sync_server.make_server(db, host=host, port=args.port, log=lambda m: print(f"  {m}", file=out, flush=True))
+    code = srv.pairing.new_code()
+    print(f"Sonoteca — sincronización (API v1)  ·  base: {db}", file=out)
+    print(f"Huella del certificado (SHA-256): {srv.fingerprint}", file=out)
+    print(f"Código de emparejamiento: {code}   (vale 5 min, un solo uso; pulsa Intro para generar otro)", file=out)
+    print("", file=out)
+    if not args.solo_usb:
+        for ip in sync_server.lan_addresses() or ["<IP-de-este-equipo>"]:
+            print(f"Wi-Fi  → {srv.pairing_url(ip, code)}", file=out)
+    print(f"USB    → 1) adb reverse tcp:{srv.port} tcp:{srv.port}   2) {srv.pairing_url('localhost', code)}", file=out)
+    print("", file=out)
+    print("Ctrl+C para detener.", file=out, flush=True)
+
+    def _renew() -> None:
+        while True:
+            try:
+                if not sys.stdin.readline():
+                    return
+            except (OSError, ValueError):
+                return
+            print(f"Código nuevo: {srv.pairing.new_code()}", file=out, flush=True)
+
+    if sys.stdin is not None and sys.stdin.isatty():
+        threading.Thread(target=_renew, daemon=True).start()
+    try:
+        srv.serve_forever()
+    except KeyboardInterrupt:
+        print("\nDetenido.", file=out)
+    finally:
+        srv.server_close()
+    return 0
+
+
+def _sync_devices(args, out) -> int:
+    from .sync import pairing
+
+    conn = connect(args.db or default_db_path())
+    try:
+        if args.revocar:
+            if pairing.revoke(conn, args.revocar):
+                print(f"Acceso revocado: {args.revocar}", file=out)
+                return 0
+            print(f"No hay ningún dispositivo con id {args.revocar}", file=sys.stderr)
+            return 1
+        devices = pairing.list_devices(conn)
+        if not devices:
+            print("Ningún dispositivo emparejado.", file=out)
+        for d in devices:
+            print(f"{d['device_id']}  {d['name']}  emparejado {d['created_at']}  última conexión {d['last_seen'] or '—'}",
+                  file=out)
+        return 0
+    finally:
+        conn.close()
 
 def main(argv: list[str] | None = None) -> int:
     try:

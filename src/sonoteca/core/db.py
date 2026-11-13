@@ -6,7 +6,7 @@ from pathlib import Path
 
 from . import paths
 
-SCHEMA_VERSION = 9
+SCHEMA_VERSION = 10
 
 SCHEMA_V1 = """
 CREATE TABLE artists (
@@ -183,6 +183,89 @@ def migrate(conn: sqlite3.Connection) -> None:
                 " kind TEXT NOT NULL CHECK (kind IN ('file', 'folder')))")
             _backfill_library_folders(conn)
             conn.execute("PRAGMA user_version = 9")
+    if version < 10 or not _v10_complete(conn):
+        # (la segunda condición repara una base que dice ser v10 pero a la que le faltan piezas: `_migrate_v10` es repetible)
+        with conn:
+            _migrate_v10(conn)
+
+
+_V10_OBJECTS = frozenset({
+    "deleted_playlists", "sync_devices", "idx_tracks_uuid", "idx_playlists_uuid", "trg_tracks_uuid", "trg_playlists_new",
+    "trg_playlists_rename", "trg_playlist_tracks_add", "trg_playlist_tracks_del", "trg_playlists_gone"})
+
+
+def _v10_complete(conn: sqlite3.Connection) -> bool:
+    """¿Existen todas las tablas, índices, disparadores y columnas del esquema v10? (consulta barata)"""
+    marks = ",".join("?" * len(_V10_OBJECTS))
+    found = {r[0] for r in conn.execute(f"SELECT name FROM sqlite_master WHERE name IN ({marks})", tuple(_V10_OBJECTS))}
+    if found != _V10_OBJECTS:
+        return False
+    wanted = (("files", {"content_hash", "hash_size", "hash_mtime_ns"}), ("tracks", {"uuid"}),
+              ("playlists", {"uuid", "updated_at"}))
+    return all(cols <= {r[1] for r in conn.execute(f"PRAGMA table_info({table})")} for table, cols in wanted)
+
+
+# v10 (sincronización con el móvil): identidad estable de pistas y listas.
+# `tracks.uuid` es la identidad entre dispositivos; `files.content_hash` (SHA-256, con caché por tamaño+fecha) detecta
+# cambios de contenido. Las listas llevan `uuid` y `updated_at` (última modificación gana). Todo lo mantienen
+# disparadores de SQLite, así que cualquier ruta de código (escáner, listas, importación) los respeta sin cambios.
+_UUID_SQL = (
+    "lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) || '-'"
+    " || substr('89ab', abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)), 2) || '-' || hex(randomblob(6)))")
+_NOW_SQL = "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')"
+
+SCHEMA_V10_TRIGGERS = (
+    f"""CREATE TRIGGER IF NOT EXISTS trg_tracks_uuid AFTER INSERT ON tracks WHEN NEW.uuid IS NULL
+    BEGIN UPDATE tracks SET uuid = {_UUID_SQL} WHERE id = NEW.id; END""",
+    f"""CREATE TRIGGER IF NOT EXISTS trg_playlists_new AFTER INSERT ON playlists
+    WHEN NEW.uuid IS NULL OR NEW.updated_at IS NULL
+    BEGIN
+        UPDATE playlists SET uuid = COALESCE(NEW.uuid, {_UUID_SQL}),
+                             updated_at = COALESCE(NEW.updated_at, {_NOW_SQL})
+        WHERE id = NEW.id;
+    END""",
+    f"""CREATE TRIGGER IF NOT EXISTS trg_playlists_rename AFTER UPDATE OF name ON playlists
+    WHEN NEW.updated_at IS OLD.updated_at
+    BEGIN UPDATE playlists SET updated_at = {_NOW_SQL} WHERE id = NEW.id; END""",
+    f"""CREATE TRIGGER IF NOT EXISTS trg_playlist_tracks_add AFTER INSERT ON playlist_tracks
+    BEGIN UPDATE playlists SET updated_at = {_NOW_SQL} WHERE id = NEW.playlist_id; END""",
+    f"""CREATE TRIGGER IF NOT EXISTS trg_playlist_tracks_del AFTER DELETE ON playlist_tracks
+    BEGIN UPDATE playlists SET updated_at = {_NOW_SQL} WHERE id = OLD.playlist_id; END""",
+    f"""CREATE TRIGGER IF NOT EXISTS trg_playlists_gone AFTER DELETE ON playlists WHEN OLD.uuid IS NOT NULL
+    BEGIN
+        INSERT OR REPLACE INTO deleted_playlists (uuid, deleted_at) VALUES (OLD.uuid, {_NOW_SQL});
+    END""",
+)
+
+
+def _add_column(conn: sqlite3.Connection, table: str, definition: str) -> None:
+    """ALTER TABLE ... ADD COLUMN solo si falta (así la migración se puede repetir tras una interrupción)."""
+    name = definition.split()[0]
+    if name not in {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {definition}")
+
+
+def _migrate_v10(conn: sqlite3.Connection) -> None:
+    for column in ("content_hash TEXT", "hash_size INTEGER", "hash_mtime_ns INTEGER"):
+        _add_column(conn, "files", column)
+    _add_column(conn, "tracks", "uuid TEXT")
+    _add_column(conn, "playlists", "uuid TEXT")
+    _add_column(conn, "playlists", "updated_at TEXT")
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS deleted_playlists ("
+        " uuid TEXT PRIMARY KEY, deleted_at TEXT NOT NULL)")
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS sync_devices ("
+        " device_id TEXT PRIMARY KEY, name TEXT NOT NULL, token_hash TEXT NOT NULL UNIQUE,"
+        " created_at TEXT NOT NULL, last_seen TEXT)")
+    conn.execute(f"UPDATE tracks SET uuid = {_UUID_SQL} WHERE uuid IS NULL")
+    conn.execute(f"UPDATE playlists SET uuid = {_UUID_SQL} WHERE uuid IS NULL")
+    conn.execute(f"UPDATE playlists SET updated_at = {_NOW_SQL} WHERE updated_at IS NULL")
+    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_tracks_uuid ON tracks(uuid)")
+    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_playlists_uuid ON playlists(uuid)")
+    for statement in SCHEMA_V10_TRIGGERS:
+        conn.execute(statement)
+    conn.execute("PRAGMA user_version = 10")
 
 
 def _backfill_library_folders(conn: sqlite3.Connection) -> None:

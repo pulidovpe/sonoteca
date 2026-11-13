@@ -12,6 +12,7 @@ dependencies = [
     "platformdirs>=4.2",
     "httpx>=0.27",
     "keyring>=25",
+    "cryptography>=42",   # certificado TLS autofirmado del servidor de sincronización (Android)
 ]
 
 [project.urls]

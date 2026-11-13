@@ -18,22 +18,13 @@ Sonoteca es un reproductor y organizador de **música local** de escritorio: tu 
 - Todo se guarda en una base SQLite local; nada se envía a servidores propios.
 
 ## Capturas
-<p align="center"><img src="docs/capturas/01-albumes.png" width="860" alt="Página Álbumes con las portadas de la biblioteca y el panel Reproduciendo a la derecha"></p>
-<p align="center"><em>Álbumes: la biblioteca por portadas, con el panel «Reproduciendo» siempre a la derecha.</em></p>
+![Álbumes](docs/capturas/01-albumes.png)
+![Reproduciendo](docs/capturas/02-reproduciendo.png)
+![Menú de una canción](docs/capturas/03-menu-cancion.png)
+![Descargar portadas e información](docs/capturas/04-descargar-portadas.png)
+![Primer arranque](docs/capturas/05-bienvenida.png)
 
-<p align="center"><img src="docs/capturas/02-reproduciendo.png" width="860" alt="Página de un artista con la canción que suena, la lista Reproduciendo y la barra de reproducción"></p>
-<p align="center"><em>Página de artista, con la lista «Reproduciendo» y la barra de reproducción (aleatorio, repetir, salida de audio, volumen).</em></p>
-
-<p align="center"><img src="docs/capturas/03-menu-cancion.png" width="860" alt="Menú de una canción con las opciones de reproducir, agregar a la lista, ir al artista o álbum, ver letra y editar tags"></p>
-<p align="center"><em>Menú de una canción: reproducir ahora o a continuación, agregar a una lista, ir al artista o álbum, letra y edición de tags.</em></p>
-
-<p align="center"><img src="docs/capturas/04-descargar-portadas.png" width="860" alt="Ventana para descargar portadas e información de artistas con aviso del tiempo estimado"></p>
-<p align="center"><em>Descarga opcional de portadas e información: avisa cuánto puede tardar y no modifica tus archivos de música.</em></p>
-
-<p align="center"><img src="docs/capturas/05-bienvenida.png" width="860" alt="Ventana de bienvenida para elegir las carpetas donde buscar música"></p>
-<p align="center"><em>Primer arranque: eliges las carpetas donde buscar tu música.</em></p>
-
-La música y las portadas de las capturas son obras de terceros descargadas de [Free Music Archive](https://freemusicarchive.org/) con licencia CC BY; los créditos de cada canción están en [`docs/CREDITOS.md`](docs/CREDITOS.md). La licencia MIT de Sonoteca no se aplica a esas obras.
+*La música y las portadas que aparecen en las capturas son de terceros, con licencias Creative Commons; créditos en [`docs/CREDITOS.md`](docs/CREDITOS.md). Las imágenes de `docs/capturas/` no están cubiertas por la licencia MIT del código.*
 
 ## Instalación (desde el código)
 Requiere Python 3.11+ (se prueba con 3.12).

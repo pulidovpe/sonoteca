@@ -5,6 +5,26 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.2] - 2026-11-12
+- La migración v10 se repara sola: una base que dice ser v10 pero a la que le faltan tablas, índices, disparadores o columnas
+  (`sync_devices`, etc.) se completa al abrirla (`sonoteca sync-devices` fallaba con «no such table: sync_devices» en una base
+  real; la causa exacta sigue sin confirmar). Comprobación barata (~0,1 ms por conexión). Prueba nueva en `test_sync_schema.py`.
+
+## [1.0.1] - 2026-11-12
+**Android, fase 1 de 6: base de sincronización en el escritorio** (esquema **v10**). Todavía no existe la app Android.
+- Esquema v10 (migra solo desde v9, repetible si se interrumpe): `tracks.uuid` y `playlists.uuid` (identidad estable entre
+  dispositivos), `playlists.updated_at`, `files.content_hash` (SHA-256 con caché por tamaño y fecha), tablas
+  `deleted_playlists` (borrados que se propagan) y `sync_devices`. Los uuid y las marcas de tiempo los mantienen
+  disparadores de SQLite: el escáner, las listas y la importación no cambian.
+- `core/content_hash.py`: huella con caché; no relee archivos que no cambiaron.
+- `sync/`: servidor HTTPS (`sonoteca sync-serve [--solo-usb] [--port]`) con certificado autofirmado que el móvil fija por
+  huella, emparejamiento con código de 6 dígitos de un solo uso (5 min, 5 intentos) y token (solo se guarda su SHA-256),
+  manifiesto, descarga de audio con `Range` y verificación por huella, portadas, letras y recepción de listas
+  (última modificación gana). `sonoteca sync-devices [--revocar ID]`.
+- Solo audio, portadas y letras; el video no se sincroniza. Protocolo en `docs/SYNC.md`.
+- Dependencia nueva: `cryptography>=42`.
+- Pruebas: `tests/test_sync_schema.py`, `test_sync_merge.py`, `test_sync_server.py` (servidor HTTPS real en 127.0.0.1).
+
 ## [1.0.0] - 2026-11-10
 **Primera versión estable.** Es la versión 0.15.0 confirmada: se quita la etiqueta «beta» (README, nombres de los paquetes
 `Sonoteca-<versión>-<sistema>-<arq>`). Reúne la tanda 0.14.x:
@@ -16,6 +36,7 @@ datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_ver
 - Linux: arranque sin variables de entorno (sin `libstdc++` empaquetada), mini-reproductor en Wayland, aviso de vídeo sin imagen.
 - Windows: ventana mini con barra de título, escritura de tags de la pista que suena aplazada (0.14.21).
 - Sesión recordada entre ejecuciones (0.15.0). Verificada por el usuario.
+- Capturas de pantalla en el README (`docs/capturas/`) y `docs/CREDITOS.md`. Texto del aviso de descarga de portadas con mayúscula inicial.
 - «Acerca de Sonoteca» muestra la licencia (MIT, copyright), el repositorio y el correo de contacto (enlaces que abren el
   navegador y el cliente de correo). Datos en `sonoteca/__init__.py`; `pyproject.toml` añade correo y `[project.urls]`.
 
