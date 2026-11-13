@@ -1,0 +1,5 @@
+# Fallos de pytest ya existentes que NO rompen la CI mientras se corrigen en su propia rama.
+# Un id por línea (tal como los imprime pytest: tests/test_x.py::test_y). Líneas con # se ignoran.
+# Una prueba nueva que falle y no esté aquí SÍ rompe la CI.
+# Al arreglar una, bórrala de aquí (la CI avisa cuáles ya pasan).
+# Para generar la lista inicial: ejecuta «CI Tests» a mano y copia el bloque del resumen del job.
