@@ -62,5 +62,5 @@ def test_lyrics_icon_is_abc_with_lines():
     if theme is None:
         from pathlib import Path
         theme = (Path(__file__).resolve().parents[1] / "src/sonoteca/ui/qml/Theme.qml").read_text(encoding="utf-8")
-    line = next(l for l in theme.splitlines() if "iconLyrics" in l)
+    line = next(ln for ln in theme.splitlines() if "iconLyrics" in ln)
     assert line.count("M") >= 8 and "M4 5 H20 V7 H4 Z" not in line

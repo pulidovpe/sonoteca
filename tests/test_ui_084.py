@@ -86,7 +86,8 @@ def test_scan_controller_scans_folders_and_reports(qapp, tmp_path, monkeypatch):
     c.scan([str(tmp_path / "musica")])
     end = time.time() + 20
     while not results and time.time() < end:
-        qapp.processEvents(); time.sleep(0.02)
+        qapp.processEvents()
+        time.sleep(0.02)
     assert results and results[0]["added"] == 2 and results[0]["folders"] == 1
     from sonoteca.core.db import connect
     assert connect(db).execute("SELECT COUNT(*) FROM tracks").fetchone()[0] == 2

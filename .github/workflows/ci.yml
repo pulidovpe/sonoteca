@@ -54,7 +54,10 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install "ruff>=0.6"
-      - run: ruff check src tests
+      # Reglas fijadas aquí (E4, E7, E9 y F = errores reales: imports/variables sin usar, sintaxis...)
+      # para que el resultado NO dependa de la versión de ruff ni de reglas de estilo por defecto.
+      # Ampliar (I, UP, SIM, RUF...) es una decisión aparte: ver docs/CI.md.
+      - run: ruff check --select E4,E7,E9,F --output-format=github src tests
 
   hygiene:
     name: Higiene del repositorio
