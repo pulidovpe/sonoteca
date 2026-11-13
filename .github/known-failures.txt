@@ -1,5 +1,32 @@
 # Fallos de pytest ya existentes que NO rompen la CI mientras se corrigen en su propia rama.
 # Un id por línea (tal como los imprime pytest: tests/test_x.py::test_y). Líneas con # se ignoran.
 # Una prueba nueva que falle y no esté aquí SÍ rompe la CI.
-# Al arreglar una, bórrala de aquí (la CI avisa cuáles ya pasan).
-# Para generar la lista inicial: ejecuta «CI Tests» a mano y copia el bloque del resumen del job.
+# Al arreglar una, bórrala de aquí (la CI avisa cuáles ya pasan). Esta lista solo puede ENCOGER.
+#
+# Origen: CI «CI Tests» sobre el tag v1.0.0 (Linux, Python 3.12), 26 ids = 9 fallos + 17 errores.
+tests/test_folder_lists_ui.py::test_dialog_creates_lists_from_library_folders
+tests/test_library_folders_ui.py::test_folders_dialog_lists_removes_and_includes_again
+tests/test_list_buttons.py::test_playlist_click_starts_the_list_from_that_song_unless_shuffle_is_on
+tests/test_player_controller.py::test_all_files_missing_does_not_loop_forever
+tests/test_player_controller.py::test_new_temporary_list_keeps_only_the_current_track
+tests/test_player_controller.py::test_stop_playback_pauses_and_rewinds_without_touching_the_queue
+tests/test_review.py::test_dismiss_empties_the_list_and_survives_a_rescan
+tests/test_review.py::test_rescan_rereads_files_and_reports_what_got_resolved
+tests/test_review.py::test_schema_has_dismiss_table
+tests/test_ui_081.py::test_menu_says_reproduciendo_and_badge_toggles_offline
+tests/test_ui_082.py::test_begin_ignores_empty_selection
+tests/test_ui_082.py::test_dropping_a_dragged_track_on_a_sidebar_list_adds_it
+tests/test_ui_082.py::test_sidebar_lists_expand_and_show_existing_playlists
+tests/test_ui_083.py::test_artist_page_top_tracks_and_queue_thumbnails
+tests/test_ui_083.py::test_back_skips_deleted_playlist
+tests/test_ui_083.py::test_history_back_forward_and_discarding_forward_branch
+tests/test_ui_083.py::test_home_page_ranks_listened_content
+tests/test_ui_083.py::test_typing_in_search_does_not_flood_history_and_back_leaves_search
+tests/test_ui_084.py::test_artist_manual_description_and_wrong_artist_dialog
+tests/test_ui_084.py::test_home_list_cards_use_collage_component
+tests/test_ui_084.py::test_scan_dialog_and_home_after_menu_action
+tests/test_ui_edit.py::test_long_cover_name_and_long_tags_stay_inside_the_form
+tests/test_ui_lyrics.py::test_lyrics_page_shows_stored_lyrics_and_follows_position
+tests/test_ui_playlists.py::test_playlist_page_plays_reorders_removes_and_queues
+tests/test_ui_playlists.py::test_tags_can_be_edited_from_the_queue_and_the_playlist
+tests/test_ui_queue.py::test_play_next_new_temporary_list_and_clear

@@ -83,6 +83,15 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
 
+      # El script y la lista de fallos conocidos se toman SIEMPRE de la versión del workflow
+      # (no de la ref probada): así funciona también al probar un tag antiguo sin .github/.
+      - name: Checkout de las herramientas de CI
+        uses: actions/checkout@v4
+        with:
+          path: ci-tools
+          sparse-checkout: .github
+          sparse-checkout-cone-mode: true
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -121,9 +130,9 @@ jobs:
           echo "rc=$RC" >> "$GITHUB_OUTPUT"
           exit 0
 
-      # Falla solo si hay fallos que no están en .github/known-failures.txt.
+      # Falla solo si hay fallos que no están en known-failures.txt.
       - name: Comparar con fallos conocidos
-        run: python .github/scripts/check_baseline.py pytest.log "${{ steps.pytest.outputs.rc }}" .github/known-failures.txt
+        run: python ci-tools/.github/scripts/check_baseline.py pytest.log "${{ steps.pytest.outputs.rc }}" ci-tools/.github/known-failures.txt
 
       - name: Subir log de pytest
         if: always()
