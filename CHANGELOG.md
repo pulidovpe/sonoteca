@@ -5,6 +5,12 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.3] - 2026-11-13
+**Android, fase 2 de 6** (carpeta `android/`; el código Python no cambia). Proyecto Gradle (AGP 9.5.1, Kotlin integrado, KSP 2.3.10,
+Room 2.8.5), cliente HTTPS con huella de certificado fijada, emparejado con la URL de `sonoteca sync-serve`, descarga del manifiesto,
+réplica en Room (pistas, listas y su orden) y pantalla Compose con el catálogo por artista. Pruebas JVM con un certificado y un
+manifiesto generados por el servidor real. Detalles y salvedades en `docs/ANDROID.md`.
+
 ## [1.0.2] - 2026-11-12
 - La migración v10 se repara sola: una base que dice ser v10 pero a la que le faltan tablas, índices, disparadores o columnas
   (`sync_devices`, etc.) se completa al abrirla (`sonoteca sync-devices` fallaba con «no such table: sync_devices» en una base

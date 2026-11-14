@@ -1,0 +1,526 @@
+...........................................................E............ [ 14%]
+.............E..F....................................................... [ 28%]
+........................................................F.......F....... [ 42%]
+....F................................................................... [ 56%]
+.....................EEE................................................ [ 70%]
+........................................................................ [ 84%]
+EEEEEEEEE...EEE.............................F....F.........F..F...F..... [ 98%]
+.......                                                                  [100%]
+==================================== ERRORS ====================================
+_______ ERROR at setup of test_dialog_creates_lists_from_library_folders _______
+file /home/runner/work/sonoteca/sonoteca/tests/test_folder_lists_ui.py, line 29
+  @needs_ffmpeg
+  def test_dialog_creates_lists_from_library_folders(qml_env):
+file /home/runner/work/sonoteca/sonoteca/tests/conftest.py, line 89
+  @pytest.fixture
+  def qml_env(qapp, db_file, tmp_path):
+E       fixture 'db_file' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, library_dir, monkeypatch, platformdirs_isolated, pytestconfig, qapp, qml_env, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/home/runner/work/sonoteca/sonoteca/tests/conftest.py:89
+____ ERROR at setup of test_folders_dialog_lists_removes_and_includes_again ____
+file /home/runner/work/sonoteca/sonoteca/tests/test_library_folders_ui.py, line 16
+  @needs_ffmpeg
+  def test_folders_dialog_lists_removes_and_includes_again(qml_env):
+file /home/runner/work/sonoteca/sonoteca/tests/conftest.py, line 89
+  @pytest.fixture
+  def qml_env(qapp, db_file, tmp_path):
+E       fixture 'db_file' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, library_dir, monkeypatch, platformdirs_isolated, pytestconfig, qapp, qml_env, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/home/runner/work/sonoteca/sonoteca/tests/conftest.py:89
+_______________ ERROR at setup of test_schema_has_dismiss_table ________________
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_schema_has_dismiss_table0')
+
+    @pytest.fixture
+    def conn(tmp_path):
+        root = tmp_path / "m"
+        make_mp3(root / "completa.mp3", title="Completa", artist="X", album="Y", date="2000", track="1/1")
+        make_mp3(root / "sin_album.mp3", title="Sin album", artist="X")
+        make_mp3(root / "Otro Artista - Cancion.mp3")          # sin tags: se deduce del nombre
+        c = connect(tmp_path / "r.db")
+        scan(c, root)
+>       c.root = root
+        ^^^^^^
+E       AttributeError: 'sqlite3.Connection' object has no attribute 'root'
+
+tests/test_review.py:21: AttributeError
+____ ERROR at setup of test_dismiss_empties_the_list_and_survives_a_rescan _____
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_dismiss_empties_the_list_0')
+
+    @pytest.fixture
+    def conn(tmp_path):
+        root = tmp_path / "m"
+        make_mp3(root / "completa.mp3", title="Completa", artist="X", album="Y", date="2000", track="1/1")
+        make_mp3(root / "sin_album.mp3", title="Sin album", artist="X")
+        make_mp3(root / "Otro Artista - Cancion.mp3")          # sin tags: se deduce del nombre
+        c = connect(tmp_path / "r.db")
+        scan(c, root)
+>       c.root = root
+        ^^^^^^
+E       AttributeError: 'sqlite3.Connection' object has no attribute 'root'
+
+tests/test_review.py:21: AttributeError
+__ ERROR at setup of test_rescan_rereads_files_and_reports_what_got_resolved ___
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_rescan_rereads_files_and_0')
+
+    @pytest.fixture
+    def conn(tmp_path):
+        root = tmp_path / "m"
+        make_mp3(root / "completa.mp3", title="Completa", artist="X", album="Y", date="2000", track="1/1")
+        make_mp3(root / "sin_album.mp3", title="Sin album", artist="X")
+        make_mp3(root / "Otro Artista - Cancion.mp3")          # sin tags: se deduce del nombre
+        c = connect(tmp_path / "r.db")
+        scan(c, root)
+>       c.root = root
+        ^^^^^^
+E       AttributeError: 'sqlite3.Connection' object has no attribute 'root'
+
+tests/test_review.py:21: AttributeError
+___ ERROR at setup of test_menu_says_reproduciendo_and_badge_toggles_offline ___
+file /home/runner/work/sonoteca/sonoteca/tests/test_ui_081.py, line 37
+  def test_menu_says_reproduciendo_and_badge_toggles_offline(qml_env):
+file /home/runner/work/sonoteca/sonoteca/tests/conftest.py, line 89
+  @pytest.fixture
+  def qml_env(qapp, db_file, tmp_path):
+E       fixture 'db_file' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, env, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, library_dir, monkeypatch, platformdirs_isolated, pytestconfig, qapp, qml_env, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/home/runner/work/sonoteca/sonoteca/tests/conftest.py:89
+___ ERROR at setup of test_sidebar_lists_expand_and_show_existing_playlists ____
+file /home/runner/work/sonoteca/sonoteca/tests/test_ui_082.py, line 18
+  def test_sidebar_lists_expand_and_show_existing_playlists(qml_env):
+file /home/runner/work/sonoteca/sonoteca/tests/conftest.py, line 89
+  @pytest.fixture
+  def qml_env(qapp, db_file, tmp_path):
+E       fixture 'db_file' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, library_dir, monkeypatch, platformdirs_isolated, pytestconfig, qapp, qml_env, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/home/runner/work/sonoteca/sonoteca/tests/conftest.py:89
+__ ERROR at setup of test_dropping_a_dragged_track_on_a_sidebar_list_adds_it ___
+file /home/runner/work/sonoteca/sonoteca/tests/test_ui_082.py, line 30
+  def test_dropping_a_dragged_track_on_a_sidebar_list_adds_it(qml_env):
+file /home/runner/work/sonoteca/sonoteca/tests/conftest.py, line 89
+  @pytest.fixture
+  def qml_env(qapp, db_file, tmp_path):
+E       fixture 'db_file' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, library_dir, monkeypatch, platformdirs_isolated, pytestconfig, qapp, qml_env, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/home/runner/work/sonoteca/sonoteca/tests/conftest.py:89
+_____________ ERROR at setup of test_begin_ignores_empty_selection _____________
+file /home/runner/work/sonoteca/sonoteca/tests/test_ui_082.py, line 49
+  def test_begin_ignores_empty_selection(qml_env):
+file /home/runner/work/sonoteca/sonoteca/tests/conftest.py, line 89
+  @pytest.fixture
+  def qml_env(qapp, db_file, tmp_path):
+E       fixture 'db_file' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, library_dir, monkeypatch, platformdirs_isolated, pytestconfig, qapp, qml_env, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/home/runner/work/sonoteca/sonoteca/tests/conftest.py:89
+__ ERROR at setup of test_history_back_forward_and_discarding_forward_branch ___
+file /home/runner/work/sonoteca/sonoteca/tests/test_ui_083.py, line 20
+  def test_history_back_forward_and_discarding_forward_branch(qml_env):
+file /home/runner/work/sonoteca/sonoteca/tests/conftest.py, line 89
+  @pytest.fixture
+  def qml_env(qapp, db_file, tmp_path):
+E       fixture 'db_file' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, library_dir, monkeypatch, platformdirs_isolated, pytestconfig, qapp, qml_env, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/home/runner/work/sonoteca/sonoteca/tests/conftest.py:89
+_ ERROR at setup of test_typing_in_search_does_not_flood_history_and_back_leaves_search _
+file /home/runner/work/sonoteca/sonoteca/tests/test_ui_083.py, line 42
+  def test_typing_in_search_does_not_flood_history_and_back_leaves_search(qml_env):
+file /home/runner/work/sonoteca/sonoteca/tests/conftest.py, line 89
+  @pytest.fixture
+  def qml_env(qapp, db_file, tmp_path):
+E       fixture 'db_file' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, library_dir, monkeypatch, platformdirs_isolated, pytestconfig, qapp, qml_env, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/home/runner/work/sonoteca/sonoteca/tests/conftest.py:89
+______________ ERROR at setup of test_back_skips_deleted_playlist ______________
+file /home/runner/work/sonoteca/sonoteca/tests/test_ui_083.py, line 55
+  def test_back_skips_deleted_playlist(qml_env):
+file /home/runner/work/sonoteca/sonoteca/tests/conftest.py, line 89
+  @pytest.fixture
+  def qml_env(qapp, db_file, tmp_path):
+E       fixture 'db_file' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, library_dir, monkeypatch, platformdirs_isolated, pytestconfig, qapp, qml_env, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/home/runner/work/sonoteca/sonoteca/tests/conftest.py:89
+___________ ERROR at setup of test_home_page_ranks_listened_content ____________
+file /home/runner/work/sonoteca/sonoteca/tests/test_ui_083.py, line 67
+  def test_home_page_ranks_listened_content(qml_env):
+file /home/runner/work/sonoteca/sonoteca/tests/conftest.py, line 89
+  @pytest.fixture
+  def qml_env(qapp, db_file, tmp_path):
+E       fixture 'db_file' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, library_dir, monkeypatch, platformdirs_isolated, pytestconfig, qapp, qml_env, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/home/runner/work/sonoteca/sonoteca/tests/conftest.py:89
+______ ERROR at setup of test_artist_page_top_tracks_and_queue_thumbnails ______
+file /home/runner/work/sonoteca/sonoteca/tests/test_ui_083.py, line 84
+  def test_artist_page_top_tracks_and_queue_thumbnails(qml_env):
+file /home/runner/work/sonoteca/sonoteca/tests/conftest.py, line 89
+  @pytest.fixture
+  def qml_env(qapp, db_file, tmp_path):
+E       fixture 'db_file' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, library_dir, monkeypatch, platformdirs_isolated, pytestconfig, qapp, qml_env, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/home/runner/work/sonoteca/sonoteca/tests/conftest.py:89
+________ ERROR at setup of test_scan_dialog_and_home_after_menu_action _________
+file /home/runner/work/sonoteca/sonoteca/tests/test_ui_084.py, line 100
+  @needs_ffmpeg
+  def test_scan_dialog_and_home_after_menu_action(qml_env):
+file /home/runner/work/sonoteca/sonoteca/tests/conftest.py, line 89
+  @pytest.fixture
+  def qml_env(qapp, db_file, tmp_path):
+E       fixture 'db_file' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, audio_env, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, library_dir, monkeypatch, platformdirs_isolated, pytestconfig, qapp, qml_env, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/home/runner/work/sonoteca/sonoteca/tests/conftest.py:89
+___ ERROR at setup of test_artist_manual_description_and_wrong_artist_dialog ___
+file /home/runner/work/sonoteca/sonoteca/tests/test_ui_084.py, line 111
+  @needs_ffmpeg
+  def test_artist_manual_description_and_wrong_artist_dialog(qml_env, tmp_path):
+file /home/runner/work/sonoteca/sonoteca/tests/conftest.py, line 89
+  @pytest.fixture
+  def qml_env(qapp, db_file, tmp_path):
+E       fixture 'db_file' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, audio_env, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, library_dir, monkeypatch, platformdirs_isolated, pytestconfig, qapp, qml_env, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/home/runner/work/sonoteca/sonoteca/tests/conftest.py:89
+_________ ERROR at setup of test_home_list_cards_use_collage_component _________
+file /home/runner/work/sonoteca/sonoteca/tests/test_ui_084.py, line 125
+  @needs_ffmpeg
+  def test_home_list_cards_use_collage_component(qml_env):
+file /home/runner/work/sonoteca/sonoteca/tests/conftest.py, line 89
+  @pytest.fixture
+  def qml_env(qapp, db_file, tmp_path):
+E       fixture 'db_file' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, audio_env, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, library_dir, monkeypatch, platformdirs_isolated, pytestconfig, qapp, qml_env, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/home/runner/work/sonoteca/sonoteca/tests/conftest.py:89
+=================================== FAILURES ===================================
+___ test_playlist_click_starts_the_list_from_that_song_unless_shuffle_is_on ____
+
+    def test_playlist_click_starts_the_list_from_that_song_unless_shuffle_is_on():
+        page = _read("PlaylistDetail.qml")
+>       assert "if (player.shuffle) player.playFrom(sourceKey, ids, index)" in page
+E       assert 'if (player.shuffle) player.playFrom(sourceKey, ids, index)' in 'import QtQuick\nimport QtQuick.Controls\nimport "."\n\nItem {\n    id: page\n    property int playlistId: 0\n    prop...onRemoveRequested: page.removeAt(modelData.position)\n        }\n        ScrollBar.vertical: ScrollBar { }\n    }\n}\n'
+
+tests/test_list_buttons.py:37: AssertionError
+_________________ test_all_files_missing_does_not_loop_forever _________________
+
+env = (<sonoteca.ui.player_controller.PlayerController(0x5a784e6c78e0) at 0x7d81b5a09cc0>, <fakes.FakeBackend(0x5a784e71f4e0...ng_does_no0/music/A/3.mp3', 'Clip': '/tmp/pytest-of-runner/pytest-0/test_all_files_missing_does_no0/music/V/clip.mp4'})
+
+    def test_all_files_missing_does_not_loop_forever(env):
+        ctrl, _be, album, _, paths = env
+        for t in ("Pista 1", "Pista 2", "Pista 3"):
+            os.remove(paths[t])
+        msgs = []
+        ctrl.errorMessage.connect(msgs.append)
+        ctrl.playAlbum(album, 0)
+>       assert len(msgs) == 3 and not ctrl.playing
+E       AssertionError: assert (2 == 3)
+E        +  where 2 = len(['No se encuentra el archivo de «Pista 1»', 'No se encuentra el archivo de «Pista 2»'])
+
+tests/test_player_controller.py:110: AssertionError
+_____________ test_new_temporary_list_keeps_only_the_current_track _____________
+
+env = (<sonoteca.ui.player_controller.PlayerController(0x5a784e7aa210) at 0x7d81b58a9900>, <fakes.FakeBackend(0x5a784e5b0890...ist_keeps_0/music/A/3.mp3', 'Clip': '/tmp/pytest-of-runner/pytest-0/test_new_temporary_list_keeps_0/music/V/clip.mp4'})
+
+    def test_new_temporary_list_keeps_only_the_current_track(env):
+        ctrl, be, album, _, paths = env
+        ctrl.playAlbum(album, 1)  # suena Pista 2
+        ctrl.newTemporaryList()
+        assert titles(ctrl) == ["Pista 2"] and ctrl.playing and ctrl.currentTrack["title"] == "Pista 2"
+        ctrl.addToQueue([_ids(ctrl, "Pista 1")])
+        be.finish()
+        assert str(be.loaded) == paths["Pista 1"]
+        ctrl.clearQueue()
+        ctrl.newTemporaryList()  # sin nada sonando: queda vacía
+>       assert titles(ctrl) == [] and ctrl.queueLength == 0
+E       AssertionError: assert (['Pista 1'] == []
+E         
+E         Left contains one more item: 'Pista 1'
+E         
+E         Full diff: (-: missing in left side, +: extra in left side)
+E         - []
+E         + [
+E         +     'Pista 1',
+E         + ])
+
+tests/test_player_controller.py:201: AssertionError
+_______ test_stop_playback_pauses_and_rewinds_without_touching_the_queue _______
+
+env = (<sonoteca.ui.player_controller.PlayerController(0x5a784e8b4d70) at 0x7d81af571580>, <fakes.FakeBackend(0x5a784e8b4dc0...auses_and_0/music/A/3.mp3', 'Clip': '/tmp/pytest-of-runner/pytest-0/test_stop_playback_pauses_and_0/music/V/clip.mp4'})
+
+    def test_stop_playback_pauses_and_rewinds_without_touching_the_queue(env):
+        ctrl, be, album, _, paths = env
+        ctrl.playAlbum(album, 0)
+        be.positionChanged.emit(12000)
+        ctrl.stopPlayback()
+>       assert not ctrl.playing and be.position == 0 and titles(ctrl) == ["Pista 1", "Pista 2", "Pista 3"]
+                                    ^^^^^^^^^^^
+E       AttributeError: 'FakeBackend' object has no attribute 'position'
+
+tests/test_player_controller.py:335: AttributeError
+___________ test_long_cover_name_and_long_tags_stay_inside_the_form ____________
+
+qml_env = namespace(engine=<PySide6.QtQml.QQmlApplicationEngine(0x5a784f3c31e0) at 0x7d81b57520c0>, win=<PySide6.QtQuick.QQuickW...19ff08c20>, js=<function qml_env.<locals>.js at 0x7d819ff09620>, act=<function qml_env.<locals>.act at 0x7d819ff08720>)
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_long_cover_name_and_long_0')
+
+    def test_long_cover_name_and_long_tags_stay_inside_the_form(qml_env, tmp_path):
+        env = qml_env
+        js, act = env.js, env.act
+        long_title = "Un título larguísimo " * 8
+        conn = connect(env.controller._db_path)
+        tid = album_ids(env.controller)[1][0]
+        track = library.get_track(conn, tid)
+        from pathlib import Path as _P
+    
+        from sonoteca.core.tag_writer import write_tags
+    
+        write_tags(_P(track["path"]), {"title": long_title, "album": "A" * 150})
+        from sonoteca.core.scanner import reindex_file
+    
+        reindex_file(conn, _P(track["path"]))
+        conn.close()
+        act(f"win.editTags([{tid}])", 400)
+        # los campos largos muestran el principio del texto, no el final
+        assert js("tagEditor.fieldCursor('title')") == 0
+        assert js("tagEditor.fieldCursor('album')") == 0
+        # nombre de portada largo: se elide y el botón "Quitar" no se sale del formulario
+        act(f"tagEditor.coverPath = '/algun/lugar/{LONG_NAME}'", 300)
+        assert js("tagEditor.coverNameItem.truncated") is True
+        assert js("tagEditor.coverNameItem.text").endswith(".jpg")
+        right_edge = js("tagEditor.removeCoverItem.mapToItem(tagEditor.contentItem, "
+                        "tagEditor.removeCoverItem.width, 0).x")
+        assert right_edge <= js("tagEditor.contentItem.width") + 0.5
+        # y uno corto no se elide
+        act("tagEditor.coverPath = '/x/a.jpg'", 200)
+        assert js("tagEditor.coverNameItem.truncated") is False
+>       assert env.warnings == []
+E       AssertionError: assert ['file:///hom...e:///x/a.jpg'] == []
+E         
+E         Left contains 2 more items, first extra item: 'file:///home/runner/work/sonoteca/sonoteca/src/sonoteca/ui/qml/TagEditor.qml:240:25: QML QQuickImage: Cannot open: file:///algun/lugar/Portada_del_album_con_un_nombre_de_archivo_ridiculamente_largo_version_final_v2_(copia).jpg'
+E         
+E         Full diff: (-: missing in left side, +: extra in left side)
+E         - []
+E         + [
+E         +     'file:///home/runner/work/sonoteca/sonoteca/src/sonoteca/ui/qml/TagEditor.qml:240:25: '
+E         +     'QML QQuickImage: Cannot open: '
+E         +     'file:///algun/lugar/Portada_del_album_con_un_nombre_de_archivo_ridiculamente_largo_version_final_v2_(copia).jpg',
+E         +     'file:///home/runner/work/sonoteca/sonoteca/src/sonoteca/ui/qml/TagEditor.qml:240:25: '
+E         +     'QML QQuickImage: Cannot open: file:///x/a.jpg',
+E         + ]
+
+tests/test_ui_edit.py:210: AssertionError
+----------------------------- Captured stderr call -----------------------------
+file:///home/runner/work/sonoteca/sonoteca/src/sonoteca/ui/qml/TagEditor.qml:240:25: QML QQuickImage: Cannot open: file:///algun/lugar/Portada_del_album_con_un_nombre_de_archivo_ridiculamente_largo_version_final_v2_(copia).jpg
+file:///home/runner/work/sonoteca/sonoteca/src/sonoteca/ui/qml/TagEditor.qml:240:25: QML QQuickImage: Cannot open: file:///x/a.jpg
+__________ test_lyrics_page_shows_stored_lyrics_and_follows_position ___________
+
+qml_env = namespace(engine=<PySide6.QtQml.QQmlApplicationEngine(0x5a784f023030) at 0x7d81b597afc0>, win=<PySide6.QtQuick.QQuickW...19ff09b20>, js=<function qml_env.<locals>.js at 0x7d819ff099e0>, act=<function qml_env.<locals>.act at 0x7d819ff096c0>)
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_lyrics_page_shows_stored_0')
+
+    def test_lyrics_page_shows_stored_lyrics_and_follows_position(qml_env, tmp_path):
+        env = qml_env
+        js_, act, wait = env.js, env.act, env.wait
+        conn = connect(env.controller._db_path)
+        tid = first_track(env.controller._db_path)
+        store.save_lyrics(conn, tid, plain="a\nb\nc", synced=LRC)
+        store.save_translation(conn, tid, "ES", ["uno", "dos", "tres"], "DeepL")
+        conn.close()
+        act(f"win.showLyrics({tid})", 500)
+        assert js_("stack.currentItem.doc.found") is True
+        assert js_("stack.currentItem.listItem.count") == 3
+        assert js_("stack.currentItem.mode") == "both"
+        assert js_("stack.currentItem.indexFor(0)") == -1
+        assert js_("stack.currentItem.indexFor(3500)") == 1
+        act("stack.currentItem.viewMode = 'original'", 200)
+        assert js_("stack.currentItem.mode") == "original"
+        # sin pista que suene, la sección Letra pide reproducir algo
+        act("win.showSection('lyrics')", 400)
+>       assert "Reproduce" in js_("stack.currentItem.emptyMessage")
+E       AssertionError: assert 'Reproduce' in ''
+E        +  where '' = <function qml_env.<locals>.js at 0x7d819ff099e0>('stack.currentItem.emptyMessage')
+
+tests/test_ui_lyrics.py:169: AssertionError
+_____________ test_playlist_page_plays_reorders_removes_and_queues _____________
+
+qml_env = namespace(engine=<PySide6.QtQml.QQmlApplicationEngine(0x5a784e801980) at 0x7d81b59d3380>, win=<PySide6.QtQuick.QQuickW...19ff091c0>, js=<function qml_env.<locals>.js at 0x7d819ff0a660>, act=<function qml_env.<locals>.act at 0x7d819ff09440>)
+
+    def test_playlist_page_plays_reorders_removes_and_queues(qml_env):
+        env = qml_env
+        js, act = env.js, env.act
+        ids = track_ids(env)
+        pid = env.playlists.createWithTracks("L", ids)["id"]
+        act("showSection('playlists')", 400)
+        act(f"openPlaylist({pid})", 400)
+        assert js("win.canBack") is True and js("stack.currentItem.info.name") == "L"
+        assert titles(js("stack.currentItem.items.map(function (x) { return x.title })")) == [
+            "Pista 1", "Pista 2", "Pista 3"]
+        act(f"playlists.moveTrack({pid}, 0, 1)", 250)   # el reordenamiento ahora es solo arrastrando
+        act(f"playlists.moveTrack({pid}, 2, 1)", 250)
+        assert env.playlists.trackIds(pid) == [ids[1], ids[2], ids[0]]
+        act("stack.currentItem.removeAt(1)", 250)
+        assert env.playlists.trackIds(pid) == [ids[1], ids[0]]
+        act("stack.currentItem.playAll()", 300)
+        assert js("player.currentTrack.title") == "Pista 2" and js("player.playing")
+        env.player.clearQueue()
+        act("player.addToQueue(stack.currentItem.ids)", 250)
+>       assert js("player.queueLength") == 2
+E       AssertionError: assert 3 == 2
+E        +  where 3 = <function qml_env.<locals>.js at 0x7d819ff0a660>('player.queueLength')
+
+tests/test_ui_playlists.py:116: AssertionError
+___________ test_tags_can_be_edited_from_the_queue_and_the_playlist ____________
+
+qml_env = namespace(engine=<PySide6.QtQml.QQmlApplicationEngine(0x5a784eff7540) at 0x7d81b5b1b540>, win=<PySide6.QtQuick.QQuickW...19ff099e0>, js=<function qml_env.<locals>.js at 0x7d819ff0a5c0>, act=<function qml_env.<locals>.act at 0x7d819ff0a520>)
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_tags_can_be_edited_from_t0')
+
+    def test_tags_can_be_edited_from_the_queue_and_the_playlist(qml_env, tmp_path):
+        env = qml_env
+        js, act = env.js, env.act
+        ids = track_ids(env)
+        env.player.playTrackIds(ids, 0)
+        act("showSection('queue')", 400)
+        act(f"queuePage.editRequested([{ids[1]}])", 400)  # lo que emite el botón "Editar tags" de la fila
+        assert js("tagEditor.visible") is True and js("tagEditor.info.title.value") == "Pista 2"
+        act("tagEditor.close()", 300)
+        # el menú de la fila ofrece "Editar tags…"
+        act(f"queuePage.menuRequested([{ids[0]}]); trackMenu.edit()", 400)
+        assert js("tagEditor.visible") is True and js("tagEditor.info.title.value") == "Pista 1"
+        act("tagEditor.close()", 300)
+        # tras editar, la cola y la barra de reproducción muestran el título nuevo
+        env.controller.applyEdit([ids[0]], {"title": "Título nuevo"}, "", False)
+        assert poll(env, "player.currentTrack.title === 'Título nuevo'")
+>       assert titles(js("stack.currentItem.items.map(function (x) { return x.title })"))[0] == "Título nuevo"
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_ui_playlists.py:175: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+code = 'stack.currentItem.items.map(function (x) { return x.title })'
+
+    def js(code):
+        # Se deja terminar la carga de portadas antes de evaluar: destruir tarjetas con imágenes
+        # en carga mientras Python tiene el GIL tomado puede bloquearse (no ocurre con app.exec()).
+        wait(150)
+        expr = QQmlExpression(engine.contextForObject(win), win, code)
+        value, _undefined = expr.evaluate()  # PySide6 devuelve (valor, es_indefinido)
+>       assert not expr.hasError(), expr.error().toString()
+E       AssertionError: <Unknown File>:0: TypeError: Cannot call method 'map' of undefined
+E       assert not True
+E        +  where True = <built-in method hasError of PySide6.QtQml.QQmlExpression object at 0x7d819ff3abc0>()
+E        +    where <built-in method hasError of PySide6.QtQml.QQmlExpression object at 0x7d819ff3abc0> = <PySide6.QtQml.QQmlExpression(0x5a784eb00ef0) at 0x7d819ff3abc0>.hasError
+
+tests/conftest.py:160: AssertionError
+_________________ test_play_next_new_temporary_list_and_clear __________________
+
+qml_env = namespace(engine=<PySide6.QtQml.QQmlApplicationEngine(0x5a784f3dc960) at 0x7d81b5b21200>, win=<PySide6.QtQuick.QQuickW...19ff0ade0>, js=<function qml_env.<locals>.js at 0x7d819ff0aa20>, act=<function qml_env.<locals>.act at 0x7d819ff0a660>)
+
+    def test_play_next_new_temporary_list_and_clear(qml_env):
+        env = qml_env
+        js, act = env.js, env.act
+        album, track_ids = ids(env)
+        env.player.playAlbum(album, 0)  # suena Pista 1; la lista es el álbum
+        act("showSection('queue')", 400)
+        act(f"trackMenu.ids = [{track_ids[2]}]; trackMenu.playLater()", 300)
+        assert page_titles(env) == ["Pista 1", "Pista 3", "Pista 2", "Pista 3"]
+        assert js("toastText.text") == "1 canción sonará a continuación"
+        act("actNewList.trigger()", 300)  # lista nueva: se queda solo la que suena
+        assert page_titles(env) == ["Pista 1"] and js("player.hasTrack")
+        act("actClearList.trigger()", 300)
+>       assert page_titles(env) == [] and not js("player.hasTrack")
+E       AssertionError: assert (['Pista 1'] == []
+E         
+E         Left contains one more item: 'Pista 1'
+E         
+E         Full diff: (-: missing in left side, +: extra in left side)
+E         - []
+E         + [
+E         +     'Pista 1',
+E         + ])
+
+tests/test_ui_queue.py:88: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_list_buttons.py::test_playlist_click_starts_the_list_from_that_song_unless_shuffle_is_on - assert 'if (player.shuffle) player.playFrom(sourceKey, ids, index)' in 'import QtQuick\nimport QtQuick.Controls\nimport "."\n\nItem {\n    id: page\n    property int playlistId: 0\n    prop...onRemoveRequested: page.removeAt(modelData.position)\n        }\n        ScrollBar.vertical: ScrollBar { }\n    }\n}\n'
+FAILED tests/test_player_controller.py::test_all_files_missing_does_not_loop_forever - AssertionError: assert (2 == 3)
+ +  where 2 = len(['No se encuentra el archivo de «Pista 1»', 'No se encuentra el archivo de «Pista 2»'])
+FAILED tests/test_player_controller.py::test_new_temporary_list_keeps_only_the_current_track - AssertionError: assert (['Pista 1'] == []
+  
+  Left contains one more item: 'Pista 1'
+  
+  Full diff: (-: missing in left side, +: extra in left side)
+  - []
+  + [
+  +     'Pista 1',
+  + ])
+FAILED tests/test_player_controller.py::test_stop_playback_pauses_and_rewinds_without_touching_the_queue - AttributeError: 'FakeBackend' object has no attribute 'position'
+FAILED tests/test_ui_edit.py::test_long_cover_name_and_long_tags_stay_inside_the_form - AssertionError: assert ['file:///hom...e:///x/a.jpg'] == []
+  
+  Left contains 2 more items, first extra item: 'file:///home/runner/work/sonoteca/sonoteca/src/sonoteca/ui/qml/TagEditor.qml:240:25: QML QQuickImage: Cannot open: file:///algun/lugar/Portada_del_album_con_un_nombre_de_archivo_ridiculamente_largo_version_final_v2_(copia).jpg'
+  
+  Full diff: (-: missing in left side, +: extra in left side)
+  - []
+  + [
+  +     'file:///home/runner/work/sonoteca/sonoteca/src/sonoteca/ui/qml/TagEditor.qml:240:25: '
+  +     'QML QQuickImage: Cannot open: '
+  +     'file:///algun/lugar/Portada_del_album_con_un_nombre_de_archivo_ridiculamente_largo_version_final_v2_(copia).jpg',
+  +     'file:///home/runner/work/sonoteca/sonoteca/src/sonoteca/ui/qml/TagEditor.qml:240:25: '
+  +     'QML QQuickImage: Cannot open: file:///x/a.jpg',
+  + ]
+FAILED tests/test_ui_lyrics.py::test_lyrics_page_shows_stored_lyrics_and_follows_position - AssertionError: assert 'Reproduce' in ''
+ +  where '' = <function qml_env.<locals>.js at 0x7d819ff099e0>('stack.currentItem.emptyMessage')
+FAILED tests/test_ui_playlists.py::test_playlist_page_plays_reorders_removes_and_queues - AssertionError: assert 3 == 2
+ +  where 3 = <function qml_env.<locals>.js at 0x7d819ff0a660>('player.queueLength')
+FAILED tests/test_ui_playlists.py::test_tags_can_be_edited_from_the_queue_and_the_playlist - AssertionError: <Unknown File>:0: TypeError: Cannot call method 'map' of undefined
+assert not True
+ +  where True = <built-in method hasError of PySide6.QtQml.QQmlExpression object at 0x7d819ff3abc0>()
+ +    where <built-in method hasError of PySide6.QtQml.QQmlExpression object at 0x7d819ff3abc0> = <PySide6.QtQml.QQmlExpression(0x5a784eb00ef0) at 0x7d819ff3abc0>.hasError
+FAILED tests/test_ui_queue.py::test_play_next_new_temporary_list_and_clear - AssertionError: assert (['Pista 1'] == []
+  
+  Left contains one more item: 'Pista 1'
+  
+  Full diff: (-: missing in left side, +: extra in left side)
+  - []
+  + [
+  +     'Pista 1',
+  + ])
+ERROR tests/test_folder_lists_ui.py::test_dialog_creates_lists_from_library_folders
+ERROR tests/test_library_folders_ui.py::test_folders_dialog_lists_removes_and_includes_again
+ERROR tests/test_review.py::test_schema_has_dismiss_table - AttributeError: 'sqlite3.Connection' object has no attribute 'root'
+ERROR tests/test_review.py::test_dismiss_empties_the_list_and_survives_a_rescan - AttributeError: 'sqlite3.Connection' object has no attribute 'root'
+ERROR tests/test_review.py::test_rescan_rereads_files_and_reports_what_got_resolved - AttributeError: 'sqlite3.Connection' object has no attribute 'root'
+ERROR tests/test_ui_081.py::test_menu_says_reproduciendo_and_badge_toggles_offline
+ERROR tests/test_ui_082.py::test_sidebar_lists_expand_and_show_existing_playlists
+ERROR tests/test_ui_082.py::test_dropping_a_dragged_track_on_a_sidebar_list_adds_it
+ERROR tests/test_ui_082.py::test_begin_ignores_empty_selection
+ERROR tests/test_ui_083.py::test_history_back_forward_and_discarding_forward_branch
+ERROR tests/test_ui_083.py::test_typing_in_search_does_not_flood_history_and_back_leaves_search
+ERROR tests/test_ui_083.py::test_back_skips_deleted_playlist
+ERROR tests/test_ui_083.py::test_home_page_ranks_listened_content
+ERROR tests/test_ui_083.py::test_artist_page_top_tracks_and_queue_thumbnails
+ERROR tests/test_ui_084.py::test_scan_dialog_and_home_after_menu_action
+ERROR tests/test_ui_084.py::test_artist_manual_description_and_wrong_artist_dialog
+ERROR tests/test_ui_084.py::test_home_list_cards_use_collage_component
+9 failed, 485 passed, 17 errors in 173.50s (0:02:53)
