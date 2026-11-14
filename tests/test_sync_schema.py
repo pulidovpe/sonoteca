@@ -3,9 +3,8 @@ from __future__ import annotations
 
 import os
 import re
-import sqlite3
 
-from sync_support import add_track
+from sync_support import add_track, downgrade_to_v9
 
 from sonoteca.core import content_hash, playlists
 from sonoteca.core.db import SCHEMA_VERSION, connect, migrate
@@ -60,23 +59,6 @@ def test_playlist_edits_touch_updated_at_and_delete_leaves_tombstone(tmp_path):
     assert conn.execute("SELECT uuid FROM deleted_playlists").fetchone()[0] == uuid
 
 
-def _downgrade_to_v9(conn):
-    """Deja la base como la dejaba la versión 1.0.0 (sin columnas, tablas ni disparadores de v10)."""
-    for (name,) in conn.execute("SELECT name FROM sqlite_master WHERE type = 'trigger'").fetchall():
-        conn.execute(f"DROP TRIGGER {name}")
-    conn.execute("DROP INDEX idx_tracks_uuid")
-    conn.execute("DROP INDEX idx_playlists_uuid")
-    conn.execute("DROP TABLE deleted_playlists")
-    conn.execute("DROP TABLE sync_devices")
-    for col in ("content_hash", "hash_size", "hash_mtime_ns"):
-        conn.execute(f"ALTER TABLE files DROP COLUMN {col}")
-    conn.execute("ALTER TABLE tracks DROP COLUMN uuid")
-    conn.execute("ALTER TABLE playlists DROP COLUMN uuid")
-    conn.execute("ALTER TABLE playlists DROP COLUMN updated_at")
-    conn.execute("PRAGMA user_version = 9")
-    conn.commit()
-
-
 def test_upgrade_from_v9_backfills_and_keeps_data(tmp_path):
     path = tmp_path / "old.db"
     conn = connect(path)
@@ -84,7 +66,7 @@ def test_upgrade_from_v9_backfills_and_keeps_data(tmp_path):
     t2 = add_track(conn, tmp_path / "m", "b")
     pid = playlists.create(conn, "Vieja")
     playlists._rewrite(conn, pid, [t2, t1])
-    _downgrade_to_v9(conn)
+    downgrade_to_v9(conn)
     assert conn.execute("PRAGMA user_version").fetchone()[0] == 9
     conn.close()
 
@@ -102,7 +84,7 @@ def test_migration_is_resumable_after_partial_run(tmp_path):
     path = tmp_path / "partial.db"
     conn = connect(path)
     add_track(conn, tmp_path / "m", "a")
-    _downgrade_to_v9(conn)
+    downgrade_to_v9(conn)
     conn.execute("ALTER TABLE files ADD COLUMN content_hash TEXT")   # como si se hubiera interrumpido a medias
     conn.commit()
     conn.close()

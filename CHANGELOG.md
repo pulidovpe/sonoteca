@@ -5,6 +5,18 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.5] - 2026-11-13
+- **Copia de seguridad antes de migrar** (`core/db.py`): `migrate()` crea `library.db.v<N>.bak` con la API de copia de SQLite antes de tocar el
+  esquema; no sobrescribe una copia existente y aborta sin modificar la base si no puede copiar. Corrige que la migración v9→v10 se hiciera sobre
+  la biblioteca real sin copia (las versiones antiguas no abren una base más nueva). Pruebas: `tests/test_db_backup.py`.
+- `docs/MIGRACIONES.md`: reglas (copia, prueba de migración, directorio de desarrollo `SONOTECA_DATA_DIR`) y cómo volver atrás.
+- Dos importaciones sin usar quitadas de las pruebas de sync (lint F401). Ayuda `downgrade_to_v9` movida a `tests/sync_support.py`.
+
+## [1.0.4] - 2026-11-13
+- README: insignias y tabla con el estado de los pipelines de GitHub Actions (`ci.yml`, `build.yml`); aclarado que `.gitlab-ci.yml` nunca se ha ejecutado.
+- Nuevo canal entre agentes en `docs/agentes/` (un archivo por mensaje, zonas de cada agente) con el primer mensaje al agente de CI.
+- Android: la compilación de Kotlin con Room/KSP bajo AGP 9.5.1 se verificó en Android Studio (sin cambios de código).
+
 ## [1.0.3] - 2026-11-13
 **Android, fase 2 de 6** (carpeta `android/`; el código Python no cambia). Proyecto Gradle (AGP 9.5.1, Kotlin integrado, KSP 2.3.10,
 Room 2.8.5), cliente HTTPS con huella de certificado fijada, emparejado con la URL de `sonoteca sync-serve`, descarga del manifiesto,

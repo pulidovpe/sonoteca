@@ -10,7 +10,7 @@ import threading
 import pytest
 from sync_support import add_track
 
-from sonoteca.core import content_hash, playlists
+from sonoteca.core import playlists
 from sonoteca.core.db import connect
 from sonoteca.sync import pairing
 from sonoteca.sync.server import _parse_range, make_server

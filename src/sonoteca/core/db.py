@@ -1,6 +1,7 @@
 """Conexión SQLite y esquema. Las migraciones usan PRAGMA user_version."""
 from __future__ import annotations
 
+import os
 import sqlite3
 from pathlib import Path
 
@@ -119,12 +120,53 @@ def connect(path: Path | str | None = None) -> sqlite3.Connection:
     return conn
 
 
+def backup_path(db_path: str | os.PathLike[str], version: int) -> Path:
+    """Dónde queda la copia previa a migrar desde `version`: `library.db.v<version>.bak`."""
+    return Path(f"{db_path}.v{version}.bak")
+
+
+def _backup_before_migration(conn: sqlite3.Connection, version: int) -> Path | None:
+    """Copia consistente de la base ANTES de cambiar su esquema, para poder volver a la versión anterior de la app.
+
+    Usa la API de copia de SQLite (no copia los archivos a mano): incluye lo que aún está en el `-wal` y no necesita
+    `-wal`/`-shm`. No se sobrescribe una copia ya existente (se conserva la más antigua). Si no se puede copiar, la migración
+    se aborta SIN tocar la base. No hace nada con bases en memoria ni con bases nuevas (versión 0)."""
+    row = conn.execute("PRAGMA database_list").fetchone()
+    db_file = row[2] if row else ""
+    if not db_file or version < 1:
+        return None
+    target = backup_path(db_file, version)
+    if target.exists():
+        return target
+    partial = Path(f"{target}.tmp")
+    try:
+        partial.unlink(missing_ok=True)
+        dest = sqlite3.connect(partial)
+        try:
+            conn.backup(dest)
+        finally:
+            dest.close()
+        os.replace(partial, target)
+    except (OSError, sqlite3.Error) as exc:
+        try:
+            partial.unlink(missing_ok=True)
+        except OSError:
+            pass
+        raise RuntimeError(
+            f"No se pudo crear la copia de seguridad previa a la migración ({target}): {exc}. "
+            "No se modificó la base de datos."
+        ) from exc
+    return target
+
+
 def migrate(conn: sqlite3.Connection) -> None:
     version = conn.execute("PRAGMA user_version").fetchone()[0]
     if version > SCHEMA_VERSION:
         raise RuntimeError(
             f"La base tiene versión {version}, más nueva que esta app ({SCHEMA_VERSION})."
         )
+    if version < SCHEMA_VERSION or (version >= 10 and not _v10_complete(conn)):
+        _backup_before_migration(conn, version)   # SIEMPRE antes de tocar el esquema (docs/MIGRACIONES.md)
     if version < 1:
         with conn:
             conn.executescript(SCHEMA_V1)

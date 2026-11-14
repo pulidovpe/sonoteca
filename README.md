@@ -4,6 +4,8 @@
 
 [![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-green.svg)](LICENSE)
 ![Versión: 1.0](https://img.shields.io/badge/versi%C3%B3n-1.0-blue.svg)
+[![CI](https://github.com/pulidovpe/sonoteca/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/pulidovpe/sonoteca/actions/workflows/ci.yml)
+[![Build](https://github.com/pulidovpe/sonoteca/actions/workflows/build.yml/badge.svg)](https://github.com/pulidovpe/sonoteca/actions/workflows/build.yml)
 
 Sonoteca es un reproductor y organizador de **música local** de escritorio: tu biblioteca de mp3, m4a y mp4 (video) organizada por artista, álbum y año, con edición de tags. Funciona **sin conexión por defecto**; internet es opcional y solo se usa para portadas, información de artistas y álbumes, letras y traducción.
 
@@ -159,7 +161,21 @@ Si encuentras un error, abre una incidencia con la versión (`sonoteca --version
 ```bash
 ruff check src tests && pytest     # pytest requiere ffmpeg para generar archivos de prueba
 ```
-`.gitlab-ci.yml` ejecuta lint, pruebas y paquetes por sistema operativo. Los cambios se registran en [`CHANGELOG.md`](CHANGELOG.md). El repositorio **no debe contener letras** (tienen copyright; viven solo en la base local). Estado y decisiones del proyecto: `CONTEXT_COMPACT.md`.
+### Datos de desarrollo
+Al desarrollar o probar usa **siempre** un directorio de datos aparte (`export SONOTECA_DATA_DIR="$HOME/sonoteca-dev"`), nunca la biblioteca real.
+Las migraciones de esquema dejan una copia `library.db.v<N>.bak` antes de actuar; reglas y cómo volver atrás en [`docs/MIGRACIONES.md`](docs/MIGRACIONES.md).
+
+### Pipelines (GitHub Actions)
+| Pipeline | Estado | Qué hace | Cuándo corre |
+|---|---|---|---|
+| [CI](.github/workflows/ci.yml) | [![CI](https://github.com/pulidovpe/sonoteca/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/pulidovpe/sonoteca/actions/workflows/ci.yml) | Integración continua del código (alcance exacto: ver el archivo) | ver el archivo |
+| [Build](.github/workflows/build.yml) | [![Build](https://github.com/pulidovpe/sonoteca/actions/workflows/build.yml/badge.svg)](https://github.com/pulidovpe/sonoteca/actions/workflows/build.yml) | Compila y empaqueta (PyInstaller) para Linux, Windows y macOS, y publica el release con el CHANGELOG | Al subir un tag `vX.Y.Z` (debe coincidir con `__version__`) o a mano desde *Actions* |
+
+Los workflows viven en `main`; el estado mostrado es el de esa rama. Todavía **no hay pipeline para la app Android** (`android/`).
+`.gitlab-ci.yml` se conserva de una etapa anterior y **nunca se ha ejecutado**. Los agentes que mantienen estos pipelines se comunican en
+[`docs/agentes/`](docs/agentes/README.md).
+
+Los cambios se registran en [`CHANGELOG.md`](CHANGELOG.md). El repositorio **no debe contener letras** (tienen copyright; viven solo en la base local). Estado y decisiones del proyecto: `CONTEXT_COMPACT.md`.
 
 **Actualizando desde `musicapp`** (`zsh: command not found: sonoteca`): el entorno virtual sigue teniendo instalado el paquete antiguo. Dentro del proyecto y con el entorno activado:
 ```bash

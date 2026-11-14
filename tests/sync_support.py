@@ -26,3 +26,20 @@ def add_track(conn: sqlite3.Connection, root: Path, name: str, artist: str = "Ar
         return conn.execute(
             "INSERT INTO tracks (album_id, artist_id, title, track_no, duration, file_id) VALUES (?,?,?,?,?,?)",
             (album_id, artist_id, title or name, track_no, 60.0, file_id)).lastrowid
+
+
+def downgrade_to_v9(conn: sqlite3.Connection) -> None:
+    """Deja la base como la dejaba la versión 1.0.0 (sin columnas, tablas ni disparadores de v10)."""
+    for (name,) in conn.execute("SELECT name FROM sqlite_master WHERE type = 'trigger'").fetchall():
+        conn.execute(f"DROP TRIGGER {name}")
+    conn.execute("DROP INDEX idx_tracks_uuid")
+    conn.execute("DROP INDEX idx_playlists_uuid")
+    conn.execute("DROP TABLE deleted_playlists")
+    conn.execute("DROP TABLE sync_devices")
+    for col in ("content_hash", "hash_size", "hash_mtime_ns"):
+        conn.execute(f"ALTER TABLE files DROP COLUMN {col}")
+    conn.execute("ALTER TABLE tracks DROP COLUMN uuid")
+    conn.execute("ALTER TABLE playlists DROP COLUMN uuid")
+    conn.execute("ALTER TABLE playlists DROP COLUMN updated_at")
+    conn.execute("PRAGMA user_version = 9")
+    conn.commit()

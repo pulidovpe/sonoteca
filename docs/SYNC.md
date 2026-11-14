@@ -1,5 +1,8 @@
 # Sincronización con Android — protocolo v1
 
+> **Pruebas con el escritorio**: ejecuta `sonoteca sync-serve` solo con `SONOTECA_DATA_DIR` apuntando a un directorio de desarrollo
+> (copia segura de la biblioteca en [`docs/MIGRACIONES.md`](MIGRACIONES.md)), nunca con la biblioteca real.
+
 Contrato entre el escritorio (`sonoteca sync-serve`) y la app Android. Todo va por **HTTPS** con JSON, en la red local
 o por USB. Solo audio, portadas y letras (el video no se sincroniza).
 

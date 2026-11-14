@@ -1,5 +1,8 @@
 # App Android de Sonoteca (carpeta `android/`)
 
+> **Pruebas con el escritorio**: ejecuta `sonoteca sync-serve` solo con `SONOTECA_DATA_DIR` apuntando a un directorio de desarrollo
+> (copia segura de la biblioteca en [`docs/MIGRACIONES.md`](MIGRACIONES.md)), nunca con la biblioteca real.
+
 Kotlin nativo: Jetpack Compose (UI), Room con KSP (base local), Media3 (audio, fase 4). Protocolo con el escritorio: `docs/SYNC.md`.
 Toolchain verificada (2026-11): AGP 9.5.1 con Kotlin integrado (no se aplica el plugin `kotlin-android`), Gradle 9.6.0, Kotlin 2.2.10,
 KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más adelante), compileSdk/targetSdk 37, minSdk 29.
