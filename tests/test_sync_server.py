@@ -235,3 +235,27 @@ def test_certificate_is_reused_between_runs(tmp_path):
 ])
 def test_parse_range(header, size, expected):
     assert _parse_range(header, size) == expected
+
+
+def test_internal_error_returns_json_500_and_keeps_the_server_alive(tmp_path):
+    db = tmp_path / "lib.db"
+    conn = connect(db)
+    t1 = add_track(conn, tmp_path / "m", "uno", content=BODY)
+    uuid = conn.execute("SELECT uuid FROM tracks WHERE id = ?", (t1,)).fetchone()[0]
+
+    def broken(conn_, track_id):
+        raise RuntimeError("boom")
+
+    logs = []
+    server = make_server(db, host="127.0.0.1", port=0, tls_dir=tmp_path / "tls", cover_provider=broken, log=logs.append)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        client = Client(server, _pair(server))
+        status, data = client.json("GET", f"/v1/tracks/{uuid}/cover")
+        assert status == 500 and "RuntimeError" in data["error"] and "boom" in data["error"]
+        assert any("Traceback" in line and "boom" in line for line in logs)   # la traza queda en el registro
+        assert client.json("GET", "/v1/ping")[0] == 200                       # y el servidor sigue atendiendo
+    finally:
+        server.shutdown()
+        server.server_close()
+        conn.close()

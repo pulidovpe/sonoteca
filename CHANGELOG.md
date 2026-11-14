@@ -5,6 +5,16 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.6] - 2026-11-14
+- **Migración v10 más robusta** (`core/db.py`): si ya existe una tabla con el nombre de una de v10 (`deleted_playlists`, `sync_devices`) pero con otras
+  columnas, se **aparta** renombrándola a `<nombre>_incompatible` (sin borrar datos) y se crea la correcta; antes `CREATE TABLE IF NOT EXISTS` la respetaba
+  y el manifiesto fallaba con «no such column: uuid». Los disparadores propios se redefinen siempre. `_v10_complete` comprueba también las columnas.
+  Se deja `library.db.v<N>.bak` antes de reparar. Origen de esa tabla ajena: sin determinar.
+- Servidor de sincronización: un error interno responde **500 con JSON** y deja la traza en el registro, en vez de cortar la conexión (el móvil veía
+  «unexpected end of stream»). Android muestra un mensaje claro cuando se corta la conexión.
+- Pruebas nuevas: tabla ajena apartada, v10 con tabla incorrecta reparada al abrir, 500 con traza y servidor vivo.
+- Verificado por Pablo en el POCO: el emparejamiento por USB (TLS con huella fijada, código y token) funciona.
+
 ## [1.0.5] - 2026-11-13
 - **Copia de seguridad antes de migrar** (`core/db.py`): `migrate()` crea `library.db.v<N>.bak` con la API de copia de SQLite antes de tocar el
   esquema; no sobrescribe una copia existente y aborta sin modificar la base si no puede copiar. Corrige que la migración v9→v10 se hiciera sobre

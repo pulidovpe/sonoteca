@@ -3,12 +3,14 @@
 Solo biblioteca estándar más `cryptography` (certificado). Cada petición abre su propia conexión a SQLite."""
 from __future__ import annotations
 
+import functools
 import json
 import os
 import re
 import socket
 import ssl
 import threading
+import traceback
 from collections.abc import Callable
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -130,10 +132,38 @@ class SyncServer(ThreadingHTTPServer):
         super().handle_error(request, client_address)
 
 
+def _guarded(method):
+    """Un error inesperado en una ruta responde 500 con JSON (y deja la traza en el registro del servidor) en vez de cortar la
+    conexión sin respuesta, que el cliente ve como «unexpected end of stream»."""
+    @functools.wraps(method)
+    def wrapper(self):
+        self._responded = False
+        try:
+            method(self)
+        except (ConnectionError, TimeoutError, ssl.SSLError):
+            self.close_connection = True
+        except Exception as exc:   # noqa: BLE001 - frontera del servidor: se informa al cliente y se registra
+            self.server.log("ERROR interno en " + self.command + " " + self.path + "\n" + traceback.format_exc().rstrip())
+            if self._responded:
+                self.close_connection = True   # ya se enviaron cabeceras: no se puede mandar otra respuesta
+            else:
+                try:
+                    self._error(500, f"Error interno del escritorio ({type(exc).__name__}: {exc})")
+                except OSError:
+                    self.close_connection = True
+    return wrapper
+
+
 class _Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
     timeout = 30
     server: SyncServer
+
+    _responded = False
+
+    def send_response(self, code: int, message: str | None = None) -> None:
+        self._responded = True
+        super().send_response(code, message)
 
     def log_message(self, format: str, *args) -> None:   # noqa: A002
         self.server.log(f"{self.address_string()} {format % args}")
@@ -178,6 +208,7 @@ class _Handler(BaseHTTPRequestHandler):
         return True
 
     # --- enrutado ---------------------------------------------------------------------------------------------------
+    @_guarded
     def do_GET(self) -> None:   # noqa: N802
         path = self.path.split("?", 1)[0]
         if path == "/v1/ping":
@@ -201,6 +232,7 @@ class _Handler(BaseHTTPRequestHandler):
         finally:
             conn.close()
 
+    @_guarded
     def do_POST(self) -> None:   # noqa: N802
         if self.path.split("?", 1)[0] != "/v1/pair":
             self._error(404, "ruta desconocida")
@@ -224,6 +256,7 @@ class _Handler(BaseHTTPRequestHandler):
         self.server.log(f"dispositivo emparejado: {name.strip()[:80]}")
         self._json(200, {"token": token, "fingerprint": self.server.fingerprint, "api": API_VERSION})
 
+    @_guarded
     def do_PUT(self) -> None:   # noqa: N802
         match = _ROUTE_PLAYLIST.match(self.path.split("?", 1)[0])
         if not match:
@@ -245,6 +278,7 @@ class _Handler(BaseHTTPRequestHandler):
         finally:
             conn.close()
 
+    @_guarded
     def do_DELETE(self) -> None:   # noqa: N802
         match = _ROUTE_PLAYLIST.match(self.path.split("?", 1)[0])
         if not match:

@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.io.IOException
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
@@ -76,6 +77,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             "Por USB, ¿ejecutaste `adb reverse`? Por Wi-Fi, ¿están en la misma red?"
         is SocketTimeoutException -> "El escritorio tardó demasiado en responder."
         is UnknownHostException -> "No se encuentra el equipo ${(e.message ?: "")}. Revisa la dirección."
+        is IOException -> "Se cortó la conexión con el escritorio. Mira la consola de `sonoteca sync-serve`: " +
+            "si hubo un error interno, ahí está la traza. Detalle: ${e.message}"
         is IllegalArgumentException -> e.message ?: "Datos inválidos."
         else -> "Error inesperado: ${e.javaClass.simpleName}: ${e.message}"
     }

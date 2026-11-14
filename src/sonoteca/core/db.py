@@ -231,20 +231,41 @@ def migrate(conn: sqlite3.Connection) -> None:
             _migrate_v10(conn)
 
 
-_V10_OBJECTS = frozenset({
-    "deleted_playlists", "sync_devices", "idx_tracks_uuid", "idx_playlists_uuid", "trg_tracks_uuid", "trg_playlists_new",
-    "trg_playlists_rename", "trg_playlist_tracks_add", "trg_playlist_tracks_del", "trg_playlists_gone"})
+_V10_TRIGGERS = ("trg_tracks_uuid", "trg_playlists_new", "trg_playlists_rename", "trg_playlist_tracks_add",
+                 "trg_playlist_tracks_del", "trg_playlists_gone")
+_V10_TABLE_COLUMNS = {
+    "deleted_playlists": frozenset({"uuid", "deleted_at"}),
+    "sync_devices": frozenset({"device_id", "name", "token_hash", "created_at", "last_seen"}),
+}
+_V10_OBJECTS = frozenset({"deleted_playlists", "sync_devices", "idx_tracks_uuid", "idx_playlists_uuid", *_V10_TRIGGERS})
+
+
+def _columns(conn: sqlite3.Connection, table: str) -> set[str]:
+    return {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
 
 
 def _v10_complete(conn: sqlite3.Connection) -> bool:
-    """¿Existen todas las tablas, índices, disparadores y columnas del esquema v10? (consulta barata)"""
+    """¿Existen todas las tablas, índices, disparadores y columnas del esquema v10 (y con las columnas correctas)?"""
     marks = ",".join("?" * len(_V10_OBJECTS))
     found = {r[0] for r in conn.execute(f"SELECT name FROM sqlite_master WHERE name IN ({marks})", tuple(_V10_OBJECTS))}
     if found != _V10_OBJECTS:
         return False
     wanted = (("files", {"content_hash", "hash_size", "hash_mtime_ns"}), ("tracks", {"uuid"}),
-              ("playlists", {"uuid", "updated_at"}))
-    return all(cols <= {r[1] for r in conn.execute(f"PRAGMA table_info({table})")} for table, cols in wanted)
+              ("playlists", {"uuid", "updated_at"}), *_V10_TABLE_COLUMNS.items())
+    return all(cols <= _columns(conn, table) for table, cols in wanted)
+
+
+def _set_aside_incompatible_tables(conn: sqlite3.Connection) -> None:
+    """Si ya existe una tabla con el nombre de una de v10 pero con otras columnas (no es la nuestra), se APARTA renombrándola
+    a `<nombre>_incompatible` (sin borrar sus datos) para poder crear la correcta. `CREATE TABLE IF NOT EXISTS` la habría respetado."""
+    for table, wanted in _V10_TABLE_COLUMNS.items():
+        cols = _columns(conn, table)
+        if cols and not wanted <= cols:
+            new, n = f"{table}_incompatible", 0
+            while _columns(conn, new):
+                n += 1
+                new = f"{table}_incompatible{n}"
+            conn.execute(f"ALTER TABLE {table} RENAME TO {new}")
 
 
 # v10 (sincronización con el móvil): identidad estable de pistas y listas.
@@ -288,6 +309,9 @@ def _add_column(conn: sqlite3.Connection, table: str, definition: str) -> None:
 
 
 def _migrate_v10(conn: sqlite3.Connection) -> None:
+    for name in _V10_TRIGGERS:   # propios: se redefinen siempre (así no queda ninguno viejo ni apuntando a una tabla renombrada)
+        conn.execute(f"DROP TRIGGER IF EXISTS {name}")
+    _set_aside_incompatible_tables(conn)
     for column in ("content_hash TEXT", "hash_size INTEGER", "hash_mtime_ns INTEGER"):
         _add_column(conn, "files", column)
     _add_column(conn, "tracks", "uuid TEXT")

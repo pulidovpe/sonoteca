@@ -91,3 +91,40 @@ def test_if_the_copy_cannot_be_made_the_database_is_not_touched(tmp_path):
     with pytest.raises(RuntimeError, match="copia de seguridad"):
         connect(path)
     assert _version(path) == 9
+
+
+def test_a_foreign_table_with_a_v10_name_is_set_aside_not_dropped(tmp_path):
+    """Caso real: `deleted_playlists` ya existía con otras columnas (sin `uuid`) y `CREATE TABLE IF NOT EXISTS` la respetaba."""
+    path, conn = _v9_library(tmp_path)
+    conn.execute("CREATE TABLE deleted_playlists (id INTEGER PRIMARY KEY, name TEXT, deleted_at TEXT)")
+    conn.execute("INSERT INTO deleted_playlists (name, deleted_at) VALUES ('Ajena', '2026-01-01')")
+    conn.execute("CREATE TABLE sync_devices (device_id TEXT, nota TEXT)")
+    conn.commit()
+    conn.close()
+    conn = connect(path)
+    assert {r[1] for r in conn.execute("PRAGMA table_info(deleted_playlists)")} == {"uuid", "deleted_at"}
+    assert {"device_id", "name", "token_hash", "created_at", "last_seen"} <= {
+        r[1] for r in conn.execute("PRAGMA table_info(sync_devices)")}
+    assert conn.execute("SELECT name FROM deleted_playlists_incompatible").fetchone()[0] == "Ajena"   # datos intactos
+    assert conn.execute("SELECT nota FROM sync_devices_incompatible").fetchall() == []
+    pid = playlists.create(conn, "Nueva")
+    playlists.delete(conn, pid)   # el disparador escribe en la tabla CORRECTA, no en la apartada
+    assert conn.execute("SELECT COUNT(*) FROM deleted_playlists").fetchone()[0] == 1
+    assert conn.execute("SELECT COUNT(*) FROM deleted_playlists_incompatible").fetchone()[0] == 1
+    assert backup_path(path, 9).is_file()
+
+
+def test_a_v10_database_with_a_wrong_table_is_repaired_on_open(tmp_path):
+    path = tmp_path / "library.db"
+    conn = connect(path)
+    conn.execute("DROP TABLE deleted_playlists")
+    conn.execute("CREATE TABLE deleted_playlists (id INTEGER PRIMARY KEY, name TEXT)")
+    conn.commit()
+    conn.close()
+    conn = connect(path)
+    assert {r[1] for r in conn.execute("PRAGMA table_info(deleted_playlists)")} == {"uuid", "deleted_at"}
+    assert backup_path(path, 10).is_file()
+    conn.close()
+    conn = connect(path)   # segunda apertura: ya completa, no aparta nada más
+    assert [r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE name LIKE '%incompatible%'")] == [
+        "deleted_playlists_incompatible"]
