@@ -5,6 +5,11 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.8] - 2026-11-15
+- `sync-serve` muestra la **carpeta de datos** en uso (y si es la predeterminada = biblioteca real) para detectar de qué carpeta sale el certificado.
+- Android: mensaje claro cuando el certificado del escritorio no es el fijado al emparejar (pulsar «Olvidar» y emparejar otra vez). `docs/SYNC.md` lo explica.
+- Canal: respuesta al agente de CI sobre `android.yml`, con corrección: el JDK del proyecto es **25** (`gradle-daemon-jvm.properties`), no 21.
+
 ## [1.0.7] - 2026-11-14
 - `sonoteca sync-serve --solo-usb` ejecuta **`adb reverse` automáticamente** para cada móvil autorizado (`sync/usb.py`; busca `adb` en el PATH y en el SDK
   de Android) y lo repite al pulsar Intro. Soluciona el «No se pudo conectar» tras reiniciar adb o reconectar el cable. `--sin-adb` lo desactiva.

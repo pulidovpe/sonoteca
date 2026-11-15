@@ -22,6 +22,10 @@ o por USB. Solo audio, portadas y letras (el video no se sincroniza).
 solo uso y se invalida tras 5 fallos. El token se manda en `Authorization: Bearer <token>`; el escritorio solo guarda su SHA-256.
 Revocar: `sonoteca sync-devices --revocar <id>`.
 
+**Si cambia el certificado** (el servidor arrancó con otra carpeta de datos, se borró `<datos>/sync/` o es otro equipo), el móvil lo rechaza a propósito: la huella
+fijada ya no coincide. En la app pulsa «Olvidar» y empareja otra vez con la URL actual. El servidor imprime al arrancar la carpeta de datos que usa;
+el certificado vive en `<datos>/sync/server-cert.pem`.
+
 ## Identidad
 - `uuid` de la pista (v4) = identidad estable. Sobrevive a editar tags y a re-escanear.
 - `hash` (SHA-256 del archivo) = contenido. Cambia al editar tags: si la pista conserva el uuid y cambia el hash, el móvil

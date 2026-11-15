@@ -385,6 +385,8 @@ def _sync_serve(args, out) -> int:
     srv = sync_server.make_server(db, host=host, port=args.port, log=lambda m: print(f"  {m}", file=out, flush=True))
     code = srv.pairing.new_code()
     print(f"Sonoteca — sincronización (API v1)  ·  base: {db}", file=out)
+    origin = "SONOTECA_DATA_DIR" if paths.env("DATA_DIR") else "carpeta PREDETERMINADA: tu biblioteca real"
+    print(f"Carpeta de datos: {paths.data_dir()}  ({origin})", file=out)
     print(f"Huella del certificado (SHA-256): {srv.fingerprint}", file=out)
     print(f"Código de emparejamiento: {code}   (vale 5 min, un solo uso; pulsa Intro para generar otro)", file=out)
     print("", file=out)

@@ -71,8 +71,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             403 -> "Código de emparejamiento incorrecto o caducado. Genera uno nuevo (Intro en el escritorio)."
             else -> "El escritorio respondió: ${e.message}"
         }
-        is SSLException -> "No se pudo establecer una conexión segura: la huella del certificado no coincide " +
-            "(¿emparejaste con otro equipo?). Detalle: ${e.message}"
+        is SSLException -> "El certificado del escritorio no es el que se fijó al emparejar. Pasa si el servidor usa otra " +
+            "carpeta de datos, se borró su carpeta «sync» o es otro equipo. Si es tu escritorio: pulsa «Olvidar» y " +
+            "empareja de nuevo con la URL que muestra ahora el servidor. Detalle: ${e.message}"
         is ConnectException -> "No se pudo conectar. ¿Está corriendo `sonoteca sync-serve`? " +
             "Por USB, ¿ejecutaste `adb reverse`? Por Wi-Fi, ¿están en la misma red?"
         is SocketTimeoutException -> "El escritorio tardó demasiado en responder."
