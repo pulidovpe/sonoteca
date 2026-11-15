@@ -40,5 +40,5 @@ def test_derived_values_only_for_inferred_tracks(tmp_path):
     conn.execute("UPDATE tracks SET track_no = 3 WHERE id = ?", (inferred,))
     conn.commit()
     rows = {r["id"]: r for r in tag_edit._rows(conn, [inferred, tagged])}
-    assert tag_edit._derived(rows[inferred]) == {"title": f"T1", "artist": "Otro", "track_no": 3}
+    assert tag_edit._derived(rows[inferred]) == {"title": "T1", "artist": "Otro", "track_no": 3}
     assert tag_edit._derived(rows[tagged]) == {}
