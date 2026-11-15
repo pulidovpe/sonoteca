@@ -34,6 +34,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--port", type=int, default=8765, help="puerto (por defecto 8765)")
     s.add_argument("--solo-usb", action="store_true",
                    help="escucha solo en 127.0.0.1 (para usar con `adb reverse`, sin exponer nada en la red)")
+    s.add_argument("--sin-adb", action="store_true",
+                   help="con --solo-usb, no ejecutar `adb reverse` automáticamente (hacerlo a mano)")
 
     s = sub.add_parser("sync-devices", help="listar o revocar los dispositivos emparejados")
     s.add_argument("--revocar", metavar="ID", help="quitar el acceso de un dispositivo")
@@ -391,7 +393,10 @@ def _sync_serve(args, out) -> int:
             print(f"Wi-Fi  → {srv.pairing_url(ip, code)}", file=out)
     print(f"USB    → 1) adb reverse tcp:{srv.port} tcp:{srv.port}   2) {srv.pairing_url('localhost', code)}", file=out)
     print("", file=out)
-    print("Ctrl+C para detener.", file=out, flush=True)
+    auto_usb = args.solo_usb and not args.sin_adb
+    if auto_usb:
+        _apply_adb_reverse(srv.port, out)
+    print("Ctrl+C para detener." + ("  Intro = código nuevo y repetir `adb reverse`." if auto_usb else ""), file=out, flush=True)
 
     def _renew() -> None:
         while True:
@@ -401,6 +406,8 @@ def _sync_serve(args, out) -> int:
             except (OSError, ValueError):
                 return
             print(f"Código nuevo: {srv.pairing.new_code()}", file=out, flush=True)
+            if auto_usb:
+                _apply_adb_reverse(srv.port, out)
 
     if sys.stdin is not None and sys.stdin.isatty():
         threading.Thread(target=_renew, daemon=True).start()
@@ -411,6 +418,27 @@ def _sync_serve(args, out) -> int:
     finally:
         srv.server_close()
     return 0
+
+
+def _apply_adb_reverse(port: int, out) -> None:
+    """`adb reverse` para cada móvil autorizado. El redireccionamiento se pierde al reiniciar adb o al reconectar el cable."""
+    import subprocess
+
+    from .sync import usb
+
+    try:
+        results = usb.reverse_all(port)
+    except FileNotFoundError as exc:
+        print(f"adb reverse: {exc} Hazlo a mano: adb reverse tcp:{port} tcp:{port}", file=out, flush=True)
+        return
+    except (OSError, subprocess.SubprocessError) as exc:
+        print(f"adb reverse: no se pudo ejecutar adb ({exc})", file=out, flush=True)
+        return
+    if not results:
+        print("adb reverse: no hay ningún móvil autorizado. Conecta el cable, acepta «Permitir depuración USB» y pulsa Intro.",
+              file=out, flush=True)
+    for serial, ok, message in results:
+        print(f"adb reverse {serial}: " + ("listo" if ok else f"FALLÓ ({message})"), file=out, flush=True)
 
 
 def _sync_devices(args, out) -> int:

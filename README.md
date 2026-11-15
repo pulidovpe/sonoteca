@@ -168,10 +168,10 @@ Las migraciones de esquema dejan una copia `library.db.v<N>.bak` antes de actuar
 ### Pipelines (GitHub Actions)
 | Pipeline | Estado | Qué hace | Cuándo corre |
 |---|---|---|---|
-| [CI](.github/workflows/ci.yml) | [![CI](https://github.com/pulidovpe/sonoteca/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/pulidovpe/sonoteca/actions/workflows/ci.yml) | Integración continua del código (alcance exacto: ver el archivo) | ver el archivo |
+| [CI](.github/workflows/ci.yml) | [![CI](https://github.com/pulidovpe/sonoteca/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/pulidovpe/sonoteca/actions/workflows/ci.yml) | `ruff`, higiene del repositorio (sin bases de datos ni letras versionadas) y `pytest` en Linux con PySide6 fijado; falla solo ante fallos que no estén en [`.github/known-failures.txt`](.github/known-failures.txt) (26 heredados de v1.0.0) | Push a `main`, `feature/**` y `fix/**` (salvo cambios solo de `android/`, `docs/` o `*.md`), PR a `main`, a mano y como paso previo de Build. Detalle: [`docs/CI.md`](docs/CI.md) |
 | [Build](.github/workflows/build.yml) | [![Build](https://github.com/pulidovpe/sonoteca/actions/workflows/build.yml/badge.svg)](https://github.com/pulidovpe/sonoteca/actions/workflows/build.yml) | Compila y empaqueta (PyInstaller) para Linux, Windows y macOS, y publica el release con el CHANGELOG | Al subir un tag `vX.Y.Z` (debe coincidir con `__version__`) o a mano desde *Actions* |
 
-Los workflows viven en `main`; el estado mostrado es el de esa rama. Todavía **no hay pipeline para la app Android** (`android/`).
+Los workflows viven en `main`; el estado mostrado es el de esa rama. Todavía **no hay pipeline para la app Android** (`android/`): `android.yml` está en la hoja de ruta de [`docs/CI.md`](docs/CI.md).
 `.gitlab-ci.yml` se conserva de una etapa anterior y **nunca se ha ejecutado**. Los agentes que mantienen estos pipelines se comunican en
 [`docs/agentes/`](docs/agentes/README.md).
 

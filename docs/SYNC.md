@@ -8,8 +8,10 @@ o por USB. Solo audio, portadas y letras (el video no se sincroniza).
 
 ## Transporte
 - **Wi-Fi**: el móvil se conecta a `https://<ip-del-equipo>:8765`.
-- **USB**: `adb reverse tcp:8765 tcp:8765` en el Mac y el móvil usa `https://localhost:8765`. Con `--solo-usb` el servidor
-  escucha solo en 127.0.0.1 (nada expuesto en la red).
+- **USB**: el móvil usa `https://localhost:8765` y hace falta `adb reverse tcp:8765 tcp:8765`. Con `--solo-usb` el servidor escucha solo en
+  127.0.0.1 (nada expuesto en la red) y **ejecuta `adb reverse` por ti** para cada móvil autorizado (`--sin-adb` lo desactiva). El redireccionamiento
+  **se pierde al reiniciar adb (p. ej. Android Studio) o al reconectar el cable**: el móvil dirá «No se pudo conectar»; pulsa Intro en la terminal del
+  servidor (repite `adb reverse` y genera un código nuevo). Con varios dispositivos conectados, adb necesita `-s <serie>` (el servidor ya lo hace).
 - **Certificado**: autofirmado (ECDSA P-256, 10 años) en `<datos>/sync/`. El móvil NO valida contra autoridades: compara la
   huella SHA-256 del certificado DER con la recibida al emparejar (TrustManager propio, sin comprobar el nombre de host).
 

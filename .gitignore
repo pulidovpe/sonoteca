@@ -12,3 +12,6 @@ dist/
 # Las letras tienen copyright: viven en la base de datos local (carpeta de datos), nunca en el repositorio
 *.lrc
 library.db*
+# Restos de macOS y registros de pruebas locales
+.DS_Store
+pytest.log

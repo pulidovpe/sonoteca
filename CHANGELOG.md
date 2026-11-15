@@ -5,6 +5,13 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.7] - 2026-11-14
+- `sonoteca sync-serve --solo-usb` ejecuta **`adb reverse` automáticamente** para cada móvil autorizado (`sync/usb.py`; busca `adb` en el PATH y en el SDK
+  de Android) y lo repite al pulsar Intro. Soluciona el «No se pudo conectar» tras reiniciar adb o reconectar el cable. `--sin-adb` lo desactiva.
+  Pruebas: `tests/test_sync_usb.py`.
+- README: fila de CI con el alcance real descrito en `docs/CI.md`. `.gitignore`: `.DS_Store` y `pytest.log`.
+- El árbol de Pablo (`git archive`) es ahora la base de las entregas: incluye `.github/`, `docs/CI.md` y el proyecto Gradle completo.
+
 ## [1.0.6] - 2026-11-14
 - **Migración v10 más robusta** (`core/db.py`): si ya existe una tabla con el nombre de una de v10 (`deleted_playlists`, `sync_devices`) pero con otras
   columnas, se **aparta** renombrándola a `<nombre>_incompatible` (sin borrar datos) y se crea la correcta; antes `CREATE TABLE IF NOT EXISTS` la respetaba
