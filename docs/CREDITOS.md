@@ -1,28 +1,18 @@
 # Créditos de la música y las portadas de las capturas
 
-Las capturas de `docs/capturas/` (usadas en el [README](../README.md)) muestran música y portadas de terceros descargadas de
-[Free Music Archive](https://freemusicarchive.org/). Todas las canciones se distribuyen con la licencia
-[Creative Commons Attribution (CC BY)](https://creativecommons.org/licenses/by/4.0/), que permite el uso personal y comercial y
-pide acreditar a la persona autora: **título de la canción, nombre del artista, fuente (Free Music Archive) y tipo de licencia**.
-La **licencia MIT de Sonoteca no se aplica a estas obras ni a las capturas**.
+Las capturas de `docs/capturas/` muestran música y portadas de terceros descargadas de [Free Music Archive](https://freemusicarchive.org/).
+Free Music Archive pide acreditar con: título de la canción, nombre del artista, fuente y tipo de licencia. Las licencias
+(CC BY, CC BY-NC-SA…) son de cada pista; la **licencia MIT de Sonoteca no se aplica a estas obras ni a las capturas**.
 
-| Canción | Artista | Fuente | Licencia |
-|---|---|---|---|
-| Mental Health | A. Cooper | [Free Music Archive](https://freemusicarchive.org/) | [CC BY](https://creativecommons.org/licenses/by/4.0/) |
-| Storytime | AJ Super | [Free Music Archive](https://freemusicarchive.org/) | [CC BY](https://creativecommons.org/licenses/by/4.0/) |
-| Bold Cinematic Music With Confident Brass | Alex Morgan | [Free Music Archive](https://freemusicarchive.org/) | [CC BY](https://creativecommons.org/licenses/by/4.0/) |
-| 11 MPH | JMHBM | [Free Music Archive](https://freemusicarchive.org/) | [CC BY](https://creativecommons.org/licenses/by/4.0/) |
-| Men With Deep Purses and Great Designs | Lemon Knife | [Free Music Archive](https://freemusicarchive.org/) | [CC BY](https://creativecommons.org/licenses/by/4.0/) |
-| Not on Mars | Lemon Knife | [Free Music Archive](https://freemusicarchive.org/) | [CC BY](https://creativecommons.org/licenses/by/4.0/) |
-| Space Gambler | Lemon Knife | [Free Music Archive](https://freemusicarchive.org/) | [CC BY](https://creativecommons.org/licenses/by/4.0/) |
-| Whaler's Widow | Lemon Knife | [Free Music Archive](https://freemusicarchive.org/) | [CC BY](https://creativecommons.org/licenses/by/4.0/) |
-| Double Helix | nisei23 | [Free Music Archive](https://freemusicarchive.org/) | [CC BY](https://creativecommons.org/licenses/by/4.0/) |
-| Love Love What Can You Say Love | Origami Repetika | [Free Music Archive](https://freemusicarchive.org/) | [CC BY](https://creativecommons.org/licenses/by/4.0/) |
-| DREAM AGAIN | PC-ONE | [Free Music Archive](https://freemusicarchive.org/) | [CC BY](https://creativecommons.org/licenses/by/4.0/) |
-| THE DAYS OF LIGHT | PC-ONE | [Free Music Archive](https://freemusicarchive.org/) | [CC BY](https://creativecommons.org/licenses/by/4.0/) |
-| The Road | Punk Rock Opera | [Free Music Archive](https://freemusicarchive.org/) | [CC BY](https://creativecommons.org/licenses/by/4.0/) |
-| FUGUE STATE (dark, soundtrack, glitch) | Soularflair | [Free Music Archive](https://freemusicarchive.org/) | [CC BY](https://creativecommons.org/licenses/by/4.0/) |
+| Canción | Artista | Álbum | Fuente | Licencia |
+|---|---|---|---|---|
+| Graverobbin | Here Comes A Big Black Cloud!! | Pompeii (2008) | Free Music Archive | (por completar) |
+| Shaking Off the Disease | Jon Shuemaker | Formal Apology (2026) | Free Music Archive | (por completar) |
+| Just Do! | Lao Ban | (sin álbum) | Free Music Archive | (por completar) |
+| (por completar) | Azavela Torres | Coyote de Corbata | Free Music Archive | (por completar) |
+| (por completar) | Lopkerjo | This American War / Tomorrows Never Come | Free Music Archive | (por completar) |
+| (por completar) | Joseph Sacco | (sin álbum) | Free Music Archive | (por completar) |
+| (por completar) | Mushroom Funghi | (por completar) | Free Music Archive | (por completar) |
+| (por completar) | Rod | (por completar) | Free Music Archive | (por completar) |
 
-Las portadas que aparecen son las incluidas en los propios archivos descargados y pertenecen a los mismos autores; las canciones
-que no traían portada se muestran con el marcador de color que genera Sonoteca. Si alguna portada no pudiera mostrarse según su
-licencia, se retirará de las capturas.
+Las portadas pertenecen a sus autores; si alguna no tiene licencia que permita mostrarla, se retirará de las capturas.

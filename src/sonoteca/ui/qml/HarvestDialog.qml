@@ -107,7 +107,7 @@ Popup {
                     wrapMode: Text.WordWrap
                     color: root.plan.long ? Theme.warn : Theme.text
                     font.pixelSize: 14
-                    text: (root.plan.long ? "Es bastante m\u00fasica: " : "") + "tiempo estimado " + root.plan.duration
+                    text: (root.plan.long ? "Es bastante m\u00fasica: tiempo estimado " : "Tiempo estimado: ") + root.plan.duration
                           + ". " + (root.plan.long ? "Puedes ocultar esta ventana y seguir usando Sonoteca, o cancelar cuando quieras; lo ya descargado se conserva. " : "")
                           + "Es una estimaci\u00f3n: depende de tu conexi\u00f3n."
                 }

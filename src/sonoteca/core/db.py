@@ -1,12 +1,13 @@
 """Conexión SQLite y esquema. Las migraciones usan PRAGMA user_version."""
 from __future__ import annotations
 
+import os
 import sqlite3
 from pathlib import Path
 
 from . import paths
 
-SCHEMA_VERSION = 9
+SCHEMA_VERSION = 10
 
 SCHEMA_V1 = """
 CREATE TABLE artists (
@@ -119,12 +120,53 @@ def connect(path: Path | str | None = None) -> sqlite3.Connection:
     return conn
 
 
+def backup_path(db_path: str | os.PathLike[str], version: int) -> Path:
+    """Dónde queda la copia previa a migrar desde `version`: `library.db.v<version>.bak`."""
+    return Path(f"{db_path}.v{version}.bak")
+
+
+def _backup_before_migration(conn: sqlite3.Connection, version: int) -> Path | None:
+    """Copia consistente de la base ANTES de cambiar su esquema, para poder volver a la versión anterior de la app.
+
+    Usa la API de copia de SQLite (no copia los archivos a mano): incluye lo que aún está en el `-wal` y no necesita
+    `-wal`/`-shm`. No se sobrescribe una copia ya existente (se conserva la más antigua). Si no se puede copiar, la migración
+    se aborta SIN tocar la base. No hace nada con bases en memoria ni con bases nuevas (versión 0)."""
+    row = conn.execute("PRAGMA database_list").fetchone()
+    db_file = row[2] if row else ""
+    if not db_file or version < 1:
+        return None
+    target = backup_path(db_file, version)
+    if target.exists():
+        return target
+    partial = Path(f"{target}.tmp")
+    try:
+        partial.unlink(missing_ok=True)
+        dest = sqlite3.connect(partial)
+        try:
+            conn.backup(dest)
+        finally:
+            dest.close()
+        os.replace(partial, target)
+    except (OSError, sqlite3.Error) as exc:
+        try:
+            partial.unlink(missing_ok=True)
+        except OSError:
+            pass
+        raise RuntimeError(
+            f"No se pudo crear la copia de seguridad previa a la migración ({target}): {exc}. "
+            "No se modificó la base de datos."
+        ) from exc
+    return target
+
+
 def migrate(conn: sqlite3.Connection) -> None:
     version = conn.execute("PRAGMA user_version").fetchone()[0]
     if version > SCHEMA_VERSION:
         raise RuntimeError(
             f"La base tiene versión {version}, más nueva que esta app ({SCHEMA_VERSION})."
         )
+    if version < SCHEMA_VERSION or (version >= 10 and not _v10_complete(conn)):
+        _backup_before_migration(conn, version)   # SIEMPRE antes de tocar el esquema (docs/MIGRACIONES.md)
     if version < 1:
         with conn:
             conn.executescript(SCHEMA_V1)
@@ -183,6 +225,113 @@ def migrate(conn: sqlite3.Connection) -> None:
                 " kind TEXT NOT NULL CHECK (kind IN ('file', 'folder')))")
             _backfill_library_folders(conn)
             conn.execute("PRAGMA user_version = 9")
+    if version < 10 or not _v10_complete(conn):
+        # (la segunda condición repara una base que dice ser v10 pero a la que le faltan piezas: `_migrate_v10` es repetible)
+        with conn:
+            _migrate_v10(conn)
+
+
+_V10_TRIGGERS = ("trg_tracks_uuid", "trg_playlists_new", "trg_playlists_rename", "trg_playlist_tracks_add",
+                 "trg_playlist_tracks_del", "trg_playlists_gone")
+_V10_TABLE_COLUMNS = {
+    "deleted_playlists": frozenset({"uuid", "deleted_at"}),
+    "sync_devices": frozenset({"device_id", "name", "token_hash", "created_at", "last_seen"}),
+}
+_V10_OBJECTS = frozenset({"deleted_playlists", "sync_devices", "idx_tracks_uuid", "idx_playlists_uuid", *_V10_TRIGGERS})
+
+
+def _columns(conn: sqlite3.Connection, table: str) -> set[str]:
+    return {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
+
+
+def _v10_complete(conn: sqlite3.Connection) -> bool:
+    """¿Existen todas las tablas, índices, disparadores y columnas del esquema v10 (y con las columnas correctas)?"""
+    marks = ",".join("?" * len(_V10_OBJECTS))
+    found = {r[0] for r in conn.execute(f"SELECT name FROM sqlite_master WHERE name IN ({marks})", tuple(_V10_OBJECTS))}
+    if found != _V10_OBJECTS:
+        return False
+    wanted = (("files", {"content_hash", "hash_size", "hash_mtime_ns"}), ("tracks", {"uuid"}),
+              ("playlists", {"uuid", "updated_at"}), *_V10_TABLE_COLUMNS.items())
+    return all(cols <= _columns(conn, table) for table, cols in wanted)
+
+
+def _set_aside_incompatible_tables(conn: sqlite3.Connection) -> None:
+    """Si ya existe una tabla con el nombre de una de v10 pero con otras columnas (no es la nuestra), se APARTA renombrándola
+    a `<nombre>_incompatible` (sin borrar sus datos) para poder crear la correcta. `CREATE TABLE IF NOT EXISTS` la habría respetado."""
+    for table, wanted in _V10_TABLE_COLUMNS.items():
+        cols = _columns(conn, table)
+        if cols and not wanted <= cols:
+            new, n = f"{table}_incompatible", 0
+            while _columns(conn, new):
+                n += 1
+                new = f"{table}_incompatible{n}"
+            conn.execute(f"ALTER TABLE {table} RENAME TO {new}")
+
+
+# v10 (sincronización con el móvil): identidad estable de pistas y listas.
+# `tracks.uuid` es la identidad entre dispositivos; `files.content_hash` (SHA-256, con caché por tamaño+fecha) detecta
+# cambios de contenido. Las listas llevan `uuid` y `updated_at` (última modificación gana). Todo lo mantienen
+# disparadores de SQLite, así que cualquier ruta de código (escáner, listas, importación) los respeta sin cambios.
+_UUID_SQL = (
+    "lower(hex(randomblob(4)) || '-' || hex(randomblob(2)) || '-4' || substr(hex(randomblob(2)), 2) || '-'"
+    " || substr('89ab', abs(random()) % 4 + 1, 1) || substr(hex(randomblob(2)), 2) || '-' || hex(randomblob(6)))")
+_NOW_SQL = "strftime('%Y-%m-%dT%H:%M:%fZ', 'now')"
+
+SCHEMA_V10_TRIGGERS = (
+    f"""CREATE TRIGGER IF NOT EXISTS trg_tracks_uuid AFTER INSERT ON tracks WHEN NEW.uuid IS NULL
+    BEGIN UPDATE tracks SET uuid = {_UUID_SQL} WHERE id = NEW.id; END""",
+    f"""CREATE TRIGGER IF NOT EXISTS trg_playlists_new AFTER INSERT ON playlists
+    WHEN NEW.uuid IS NULL OR NEW.updated_at IS NULL
+    BEGIN
+        UPDATE playlists SET uuid = COALESCE(NEW.uuid, {_UUID_SQL}),
+                             updated_at = COALESCE(NEW.updated_at, {_NOW_SQL})
+        WHERE id = NEW.id;
+    END""",
+    f"""CREATE TRIGGER IF NOT EXISTS trg_playlists_rename AFTER UPDATE OF name ON playlists
+    WHEN NEW.updated_at IS OLD.updated_at
+    BEGIN UPDATE playlists SET updated_at = {_NOW_SQL} WHERE id = NEW.id; END""",
+    f"""CREATE TRIGGER IF NOT EXISTS trg_playlist_tracks_add AFTER INSERT ON playlist_tracks
+    BEGIN UPDATE playlists SET updated_at = {_NOW_SQL} WHERE id = NEW.playlist_id; END""",
+    f"""CREATE TRIGGER IF NOT EXISTS trg_playlist_tracks_del AFTER DELETE ON playlist_tracks
+    BEGIN UPDATE playlists SET updated_at = {_NOW_SQL} WHERE id = OLD.playlist_id; END""",
+    f"""CREATE TRIGGER IF NOT EXISTS trg_playlists_gone AFTER DELETE ON playlists WHEN OLD.uuid IS NOT NULL
+    BEGIN
+        INSERT OR REPLACE INTO deleted_playlists (uuid, deleted_at) VALUES (OLD.uuid, {_NOW_SQL});
+    END""",
+)
+
+
+def _add_column(conn: sqlite3.Connection, table: str, definition: str) -> None:
+    """ALTER TABLE ... ADD COLUMN solo si falta (así la migración se puede repetir tras una interrupción)."""
+    name = definition.split()[0]
+    if name not in {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {definition}")
+
+
+def _migrate_v10(conn: sqlite3.Connection) -> None:
+    for name in _V10_TRIGGERS:   # propios: se redefinen siempre (así no queda ninguno viejo ni apuntando a una tabla renombrada)
+        conn.execute(f"DROP TRIGGER IF EXISTS {name}")
+    _set_aside_incompatible_tables(conn)
+    for column in ("content_hash TEXT", "hash_size INTEGER", "hash_mtime_ns INTEGER"):
+        _add_column(conn, "files", column)
+    _add_column(conn, "tracks", "uuid TEXT")
+    _add_column(conn, "playlists", "uuid TEXT")
+    _add_column(conn, "playlists", "updated_at TEXT")
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS deleted_playlists ("
+        " uuid TEXT PRIMARY KEY, deleted_at TEXT NOT NULL)")
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS sync_devices ("
+        " device_id TEXT PRIMARY KEY, name TEXT NOT NULL, token_hash TEXT NOT NULL UNIQUE,"
+        " created_at TEXT NOT NULL, last_seen TEXT)")
+    conn.execute(f"UPDATE tracks SET uuid = {_UUID_SQL} WHERE uuid IS NULL")
+    conn.execute(f"UPDATE playlists SET uuid = {_UUID_SQL} WHERE uuid IS NULL")
+    conn.execute(f"UPDATE playlists SET updated_at = {_NOW_SQL} WHERE updated_at IS NULL")
+    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_tracks_uuid ON tracks(uuid)")
+    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_playlists_uuid ON playlists(uuid)")
+    for statement in SCHEMA_V10_TRIGGERS:
+        conn.execute(statement)
+    conn.execute("PRAGMA user_version = 10")
 
 
 def _backfill_library_folders(conn: sqlite3.Connection) -> None:

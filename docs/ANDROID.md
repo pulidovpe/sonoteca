@@ -1,0 +1,44 @@
+# App Android de Sonoteca (carpeta `android/`)
+
+> **Pruebas con el escritorio**: ejecuta `sonoteca sync-serve` solo con `SONOTECA_DATA_DIR` apuntando a un directorio de desarrollo
+> (copia segura de la biblioteca en [`docs/MIGRACIONES.md`](MIGRACIONES.md)), nunca con la biblioteca real.
+
+Kotlin nativo: Jetpack Compose (UI), Room con KSP (base local), Media3 (audio, fase 4). Protocolo con el escritorio: `docs/SYNC.md`.
+Toolchain verificada (2026-11): AGP 9.5.1 con Kotlin integrado (no se aplica el plugin `kotlin-android`), Gradle 9.6.0, Kotlin 2.2.10,
+KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más adelante), compileSdk/targetSdk 37, minSdk 29.
+
+## Estado por fases
+| Fase | Contenido | Estado |
+|---|---|---|
+| 1 | Esquema v10 y servidor de sincronización (Python) | hecha (1.0.1) |
+| 2 | Proyecto Android, Room, cliente HTTPS con huella fijada, emparejado, manifiesto, lista de artistas | hecha y verificada en el POCO (1609 pistas, 11 listas) |
+| 3a | Descarga por artista: motor reanudable con verificación SHA-256, publicación en `Music/Sonoteca/` (MediaStore), resumen y confirmación | **esta** (1.0.9) |
+| 3b | Descargar por álbum y por lista, ofrecer borrar lo que ya no está en el escritorio, descarga en segundo plano (WorkManager) | pendiente |
+| 4 | Reproductor Media3 + UI por artista, álbum y listas (creadas o nuevas) | pendiente |
+| 5 | Wi-Fi y USB pulidos (NSD, QR, permiso de red local) | pendiente |
+| 6 | Windows y Linux | pendiente |
+
+## Estructura (`app/src/main/java/io/github/pulidovpe/sonoteca/`)
+- `net/`: `PairingInfo` (URL `sonoteca-sync://pair?...`), `PinnedTls` (confianza por huella SHA-256 del certificado),
+  `SyncApi` (HttpsURLConnection), `ManifestModel` (parser). Sin clases de Android → se prueban en la JVM.
+- `db/`: entidades Room (`tracks`, `playlists`, `playlist_tracks`), `LibraryDao`, `AppDatabase`.
+- `SyncRepository`, `MainViewModel`, `PairingStore` (SharedPreferences privadas), `MainActivity` (Compose).
+- Pruebas JVM: `app/src/test/.../net/` (usan un certificado y un manifiesto generados por el servidor real).
+
+## Decisiones y salvedades
+- Si el manifiesto trae `pending_hash > 0`, NO se borran pistas locales (las que aún no tienen huella no aparecen en él).
+- El esquema de Room es v1 y no hay migraciones todavía: al cambiarlo durante el desarrollo, desinstala la app del móvil.
+- El token de emparejamiento queda en `SharedPreferences` privadas de la app (almacenamiento protegido por Android, sin cifrado adicional).
+- **Red local (Android 17)**: con `targetSdk = 37` el acceso a la LAN queda bloqueado por defecto en Android 17; hará falta declarar y pedir
+  `ACCESS_LOCAL_NETWORK` (o usar el selector de NSD). En Android 16 (el POCO) la LAN está abierta. Se resuelve en la fase 5. Por USB
+  (`adb reverse`) la app habla con `localhost`.
+
+## Descargas (fase 3a)
+- Se elige un artista (fila de la lista) → resumen (pistas que faltan, tamaño, espacio libre; se deja un margen de 200 MB) → «Descargar».
+- Cada pista se baja a `cache/downloads/<uuid>.part` con `Range` (se **reanuda** si se corta), se comprueba tamaño y SHA-256 contra el catálogo y **solo
+  entonces** se publica en `Música/Sonoteca/<Artista>/<Álbum>/NN - Título.ext` con MediaStore. Nunca queda un archivo a medias en la música del teléfono.
+- Una pista cuenta como descargada si la huella guardada coincide con la del catálogo; si el escritorio la cambió, se baja de nuevo (se borra antes la anterior).
+- Room v2 (`downloads`): migración automática desde v1. Al compilar aparece `app/schemas/.../2.json`: **debe versionarse** (base de futuras migraciones).
+- Salvedades: la descarga vive en la app en primer plano (si Android la detiene, se reanuda al repetir; el segundo plano llega en 3b); no se detecta lo que
+  una instalación anterior dejó en `Música/Sonoteca` (el catálogo de descargas es de Room: desinstalar y reinstalar puede duplicar; **sin verificar** cómo
+  trata Android la propiedad de esos archivos); no se borra nada de lo descargado desde la app todavía.

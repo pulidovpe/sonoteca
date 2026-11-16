@@ -4,6 +4,8 @@
 
 [![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-green.svg)](LICENSE)
 ![Versión: 1.0](https://img.shields.io/badge/versi%C3%B3n-1.0-blue.svg)
+[![CI](https://github.com/pulidovpe/sonoteca/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/pulidovpe/sonoteca/actions/workflows/ci.yml)
+[![Build](https://github.com/pulidovpe/sonoteca/actions/workflows/build.yml/badge.svg)](https://github.com/pulidovpe/sonoteca/actions/workflows/build.yml)
 
 Sonoteca es un reproductor y organizador de **música local** de escritorio: tu biblioteca de mp3, m4a y mp4 (video) organizada por artista, álbum y año, con edición de tags. Funciona **sin conexión por defecto**; internet es opcional y solo se usa para portadas, información de artistas y álbumes, letras y traducción.
 
@@ -18,22 +20,13 @@ Sonoteca es un reproductor y organizador de **música local** de escritorio: tu 
 - Todo se guarda en una base SQLite local; nada se envía a servidores propios.
 
 ## Capturas
-<p align="center"><img src="docs/capturas/01-albumes.png" width="860" alt="Página Álbumes con las portadas de la biblioteca y el panel Reproduciendo a la derecha"></p>
-<p align="center"><em>Álbumes: la biblioteca por portadas, con el panel «Reproduciendo» siempre a la derecha.</em></p>
+![Álbumes](docs/capturas/01-albumes.png)
+![Reproduciendo](docs/capturas/02-reproduciendo.png)
+![Menú de una canción](docs/capturas/03-menu-cancion.png)
+![Descargar portadas e información](docs/capturas/04-descargar-portadas.png)
+![Primer arranque](docs/capturas/05-bienvenida.png)
 
-<p align="center"><img src="docs/capturas/02-reproduciendo.png" width="860" alt="Página de un artista con la canción que suena, la lista Reproduciendo y la barra de reproducción"></p>
-<p align="center"><em>Página de artista, con la lista «Reproduciendo» y la barra de reproducción (aleatorio, repetir, salida de audio, volumen).</em></p>
-
-<p align="center"><img src="docs/capturas/03-menu-cancion.png" width="860" alt="Menú de una canción con las opciones de reproducir, agregar a la lista, ir al artista o álbum, ver letra y editar tags"></p>
-<p align="center"><em>Menú de una canción: reproducir ahora o a continuación, agregar a una lista, ir al artista o álbum, letra y edición de tags.</em></p>
-
-<p align="center"><img src="docs/capturas/04-descargar-portadas.png" width="860" alt="Ventana para descargar portadas e información de artistas con aviso del tiempo estimado"></p>
-<p align="center"><em>Descarga opcional de portadas e información: avisa cuánto puede tardar y no modifica tus archivos de música.</em></p>
-
-<p align="center"><img src="docs/capturas/05-bienvenida.png" width="860" alt="Ventana de bienvenida para elegir las carpetas donde buscar música"></p>
-<p align="center"><em>Primer arranque: eliges las carpetas donde buscar tu música.</em></p>
-
-La música y las portadas de las capturas son obras de terceros descargadas de [Free Music Archive](https://freemusicarchive.org/) con licencia CC BY; los créditos de cada canción están en [`docs/CREDITOS.md`](docs/CREDITOS.md). La licencia MIT de Sonoteca no se aplica a esas obras.
+*La música y las portadas que aparecen en las capturas son de terceros, con licencias Creative Commons; créditos en [`docs/CREDITOS.md`](docs/CREDITOS.md). Las imágenes de `docs/capturas/` no están cubiertas por la licencia MIT del código.*
 
 ## Instalación (desde el código)
 Requiere Python 3.11+ (se prueba con 3.12).
@@ -168,7 +161,21 @@ Si encuentras un error, abre una incidencia con la versión (`sonoteca --version
 ```bash
 ruff check src tests && pytest     # pytest requiere ffmpeg para generar archivos de prueba
 ```
-`.gitlab-ci.yml` ejecuta lint, pruebas y paquetes por sistema operativo. Los cambios se registran en [`CHANGELOG.md`](CHANGELOG.md). El repositorio **no debe contener letras** (tienen copyright; viven solo en la base local). Estado y decisiones del proyecto: `CONTEXT_COMPACT.md`.
+### Datos de desarrollo
+Al desarrollar o probar usa **siempre** un directorio de datos aparte (`export SONOTECA_DATA_DIR="$HOME/sonoteca-dev"`), nunca la biblioteca real.
+Las migraciones de esquema dejan una copia `library.db.v<N>.bak` antes de actuar; reglas y cómo volver atrás en [`docs/MIGRACIONES.md`](docs/MIGRACIONES.md).
+
+### Pipelines (GitHub Actions)
+| Pipeline | Estado | Qué hace | Cuándo corre |
+|---|---|---|---|
+| [CI](.github/workflows/ci.yml) | [![CI](https://github.com/pulidovpe/sonoteca/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/pulidovpe/sonoteca/actions/workflows/ci.yml) | `ruff`, higiene del repositorio (sin bases de datos ni letras versionadas) y `pytest` en Linux con PySide6 fijado; falla solo ante fallos que no estén en [`.github/known-failures.txt`](.github/known-failures.txt) (26 heredados de v1.0.0) | Push a `main`, `feature/**` y `fix/**` (salvo cambios solo de `android/`, `docs/` o `*.md`), PR a `main`, a mano y como paso previo de Build. Detalle: [`docs/CI.md`](docs/CI.md) |
+| [Build](.github/workflows/build.yml) | [![Build](https://github.com/pulidovpe/sonoteca/actions/workflows/build.yml/badge.svg)](https://github.com/pulidovpe/sonoteca/actions/workflows/build.yml) | Compila y empaqueta (PyInstaller) para Linux, Windows y macOS, y publica el release con el CHANGELOG | Al subir un tag `vX.Y.Z` (debe coincidir con `__version__`) o a mano desde *Actions* |
+
+Los workflows viven en `main`; el estado mostrado es el de esa rama. Todavía **no hay pipeline para la app Android** (`android/`): `android.yml` está en la hoja de ruta de [`docs/CI.md`](docs/CI.md).
+`.gitlab-ci.yml` se conserva de una etapa anterior y **nunca se ha ejecutado**. Los agentes que mantienen estos pipelines se comunican en
+[`docs/agentes/`](docs/agentes/README.md).
+
+Los cambios se registran en [`CHANGELOG.md`](CHANGELOG.md). El repositorio **no debe contener letras** (tienen copyright; viven solo en la base local). Estado y decisiones del proyecto: `CONTEXT_COMPACT.md`.
 
 **Actualizando desde `musicapp`** (`zsh: command not found: sonoteca`): el entorno virtual sigue teniendo instalado el paquete antiguo. Dentro del proyecto y con el entorno activado:
 ```bash

@@ -5,6 +5,71 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.9] - 2026-11-15
+**Android, fase 3a: descargar música por artista** (el código Python no cambia). Motor reanudable (`Range`) con verificación SHA-256 y publicación en
+`Música/Sonoteca/<Artista>/<Álbum>/` con MediaStore, resumen y confirmación antes de descargar (pistas, tamaño, espacio libre), progreso y cancelación. Room v2
+(tabla `downloads`, migración automática). 19 pruebas JVM nuevas (nombres, plan, descarga con reanudación, hash, cancelación). Sin compilar ni ejecutar todavía.
+
+## [1.0.8] - 2026-11-15
+- `sync-serve` muestra la **carpeta de datos** en uso (y si es la predeterminada = biblioteca real) para detectar de qué carpeta sale el certificado.
+- Android: mensaje claro cuando el certificado del escritorio no es el fijado al emparejar (pulsar «Olvidar» y emparejar otra vez). `docs/SYNC.md` lo explica.
+- Canal: respuesta al agente de CI sobre `android.yml`, con corrección: el JDK del proyecto es **25** (`gradle-daemon-jvm.properties`), no 21.
+
+## [1.0.7] - 2026-11-14
+- `sonoteca sync-serve --solo-usb` ejecuta **`adb reverse` automáticamente** para cada móvil autorizado (`sync/usb.py`; busca `adb` en el PATH y en el SDK
+  de Android) y lo repite al pulsar Intro. Soluciona el «No se pudo conectar» tras reiniciar adb o reconectar el cable. `--sin-adb` lo desactiva.
+  Pruebas: `tests/test_sync_usb.py`.
+- README: fila de CI con el alcance real descrito en `docs/CI.md`. `.gitignore`: `.DS_Store` y `pytest.log`.
+- El árbol de Pablo (`git archive`) es ahora la base de las entregas: incluye `.github/`, `docs/CI.md` y el proyecto Gradle completo.
+
+## [1.0.6] - 2026-11-14
+- **Migración v10 más robusta** (`core/db.py`): si ya existe una tabla con el nombre de una de v10 (`deleted_playlists`, `sync_devices`) pero con otras
+  columnas, se **aparta** renombrándola a `<nombre>_incompatible` (sin borrar datos) y se crea la correcta; antes `CREATE TABLE IF NOT EXISTS` la respetaba
+  y el manifiesto fallaba con «no such column: uuid». Los disparadores propios se redefinen siempre. `_v10_complete` comprueba también las columnas.
+  Se deja `library.db.v<N>.bak` antes de reparar. Origen de esa tabla ajena: sin determinar.
+- Servidor de sincronización: un error interno responde **500 con JSON** y deja la traza en el registro, en vez de cortar la conexión (el móvil veía
+  «unexpected end of stream»). Android muestra un mensaje claro cuando se corta la conexión.
+- Pruebas nuevas: tabla ajena apartada, v10 con tabla incorrecta reparada al abrir, 500 con traza y servidor vivo.
+- Verificado por Pablo en el POCO: el emparejamiento por USB (TLS con huella fijada, código y token) funciona.
+
+## [1.0.5] - 2026-11-13
+- **Copia de seguridad antes de migrar** (`core/db.py`): `migrate()` crea `library.db.v<N>.bak` con la API de copia de SQLite antes de tocar el
+  esquema; no sobrescribe una copia existente y aborta sin modificar la base si no puede copiar. Corrige que la migración v9→v10 se hiciera sobre
+  la biblioteca real sin copia (las versiones antiguas no abren una base más nueva). Pruebas: `tests/test_db_backup.py`.
+- `docs/MIGRACIONES.md`: reglas (copia, prueba de migración, directorio de desarrollo `SONOTECA_DATA_DIR`) y cómo volver atrás.
+- Dos importaciones sin usar quitadas de las pruebas de sync (lint F401). Ayuda `downgrade_to_v9` movida a `tests/sync_support.py`.
+
+## [1.0.4] - 2026-11-13
+- README: insignias y tabla con el estado de los pipelines de GitHub Actions (`ci.yml`, `build.yml`); aclarado que `.gitlab-ci.yml` nunca se ha ejecutado.
+- Nuevo canal entre agentes en `docs/agentes/` (un archivo por mensaje, zonas de cada agente) con el primer mensaje al agente de CI.
+- Android: la compilación de Kotlin con Room/KSP bajo AGP 9.5.1 se verificó en Android Studio (sin cambios de código).
+
+## [1.0.3] - 2026-11-13
+**Android, fase 2 de 6** (carpeta `android/`; el código Python no cambia). Proyecto Gradle (AGP 9.5.1, Kotlin integrado, KSP 2.3.10,
+Room 2.8.5), cliente HTTPS con huella de certificado fijada, emparejado con la URL de `sonoteca sync-serve`, descarga del manifiesto,
+réplica en Room (pistas, listas y su orden) y pantalla Compose con el catálogo por artista. Pruebas JVM con un certificado y un
+manifiesto generados por el servidor real. Detalles y salvedades en `docs/ANDROID.md`.
+
+## [1.0.2] - 2026-11-12
+- La migración v10 se repara sola: una base que dice ser v10 pero a la que le faltan tablas, índices, disparadores o columnas
+  (`sync_devices`, etc.) se completa al abrirla (`sonoteca sync-devices` fallaba con «no such table: sync_devices» en una base
+  real; la causa exacta sigue sin confirmar). Comprobación barata (~0,1 ms por conexión). Prueba nueva en `test_sync_schema.py`.
+
+## [1.0.1] - 2026-11-12
+**Android, fase 1 de 6: base de sincronización en el escritorio** (esquema **v10**). Todavía no existe la app Android.
+- Esquema v10 (migra solo desde v9, repetible si se interrumpe): `tracks.uuid` y `playlists.uuid` (identidad estable entre
+  dispositivos), `playlists.updated_at`, `files.content_hash` (SHA-256 con caché por tamaño y fecha), tablas
+  `deleted_playlists` (borrados que se propagan) y `sync_devices`. Los uuid y las marcas de tiempo los mantienen
+  disparadores de SQLite: el escáner, las listas y la importación no cambian.
+- `core/content_hash.py`: huella con caché; no relee archivos que no cambiaron.
+- `sync/`: servidor HTTPS (`sonoteca sync-serve [--solo-usb] [--port]`) con certificado autofirmado que el móvil fija por
+  huella, emparejamiento con código de 6 dígitos de un solo uso (5 min, 5 intentos) y token (solo se guarda su SHA-256),
+  manifiesto, descarga de audio con `Range` y verificación por huella, portadas, letras y recepción de listas
+  (última modificación gana). `sonoteca sync-devices [--revocar ID]`.
+- Solo audio, portadas y letras; el video no se sincroniza. Protocolo en `docs/SYNC.md`.
+- Dependencia nueva: `cryptography>=42`.
+- Pruebas: `tests/test_sync_schema.py`, `test_sync_merge.py`, `test_sync_server.py` (servidor HTTPS real en 127.0.0.1).
+
 ## [1.0.0] - 2026-11-10
 **Primera versión estable.** Es la versión 0.15.0 confirmada: se quita la etiqueta «beta» (README, nombres de los paquetes
 `Sonoteca-<versión>-<sistema>-<arq>`). Reúne la tanda 0.14.x:
@@ -16,6 +81,7 @@ datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_ver
 - Linux: arranque sin variables de entorno (sin `libstdc++` empaquetada), mini-reproductor en Wayland, aviso de vídeo sin imagen.
 - Windows: ventana mini con barra de título, escritura de tags de la pista que suena aplazada (0.14.21).
 - Sesión recordada entre ejecuciones (0.15.0). Verificada por el usuario.
+- Capturas de pantalla en el README (`docs/capturas/`) y `docs/CREDITOS.md`. Texto del aviso de descarga de portadas con mayúscula inicial.
 - «Acerca de Sonoteca» muestra la licencia (MIT, copyright), el repositorio y el correo de contacto (enlaces que abren el
   navegador y el cliente de correo). Datos en `sonoteca/__init__.py`; `pyproject.toml` añade correo y `[project.urls]`.
 
