@@ -1,7 +1,6 @@
 """Backend con QtMultimedia (FFmpeg en escritorio)."""
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 from PySide6.QtCore import QTimer, QUrl

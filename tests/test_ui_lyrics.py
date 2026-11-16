@@ -150,7 +150,7 @@ def test_controller_reports_offline_and_busy(qapp, lib, tmp_path, monkeypatch):
 
 def test_lyrics_page_shows_stored_lyrics_and_follows_position(qml_env, tmp_path):
     env = qml_env
-    js_, act, wait = env.js, env.act, env.wait
+    js_, act = env.js, env.act
     conn = connect(env.controller._db_path)
     tid = first_track(env.controller._db_path)
     store.save_lyrics(conn, tid, plain="a\nb\nc", synced=LRC)
