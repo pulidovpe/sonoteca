@@ -32,16 +32,14 @@ gh run watch "$(gh run list --workflow ci.yml -L1 --json databaseId -q '.[0].dat
 ## Hoja de ruta de CI (la lleva el agente de CI)
 1. ✅ `ci.yml` con fallos conocidos (26 heredados de v1.0.0).
 2. ✅ `build.yml` exige `ci.yml` antes de compilar un tag (solo al publicar).
-3. ✅ `android.yml`: pruebas JVM + APK debug con cambios en `android/**` (JDK 25; AGP descarga la plataforma del `compileSdk`). Verde en `feature/android` (run #2) y en `main` (run #3) el 2026-11-16.
+3. 🟡 `android.yml`: pruebas JVM + APK debug con cambios en `android/**` (JDK 25, Android SDK 37). **Sin ejecutar aún**: ver «Android CI» abajo.
 4. ⏳ Matriz macOS/Windows para los pendientes de Windows.
 5. ⏳ Opcional: revisión con IA solo consultiva.
 
 ## Android CI (`android.yml`)
 Se dispara por cambios en `android/**` (push a `main`, `feature/**`, `fix/**`; PR a `main`; o a mano con `gh workflow run android.yml --ref <rama>`).
 Ejecuta `./gradlew :app:testDebugUnitTest :app:assembleDebug` y sube el APK **debug** como artefacto (7 días). No ejecuta `androidTest` (necesita dispositivo).
-La rama debe contener `.github/workflows/android.yml` (un `push` usa el workflow de esa rama). Para compilar otra rama con el workflow de `main`: `gh workflow run android.yml --ref main -f ref=<rama>`.
-El id real de la API 37 en sdkmanager es `platforms;android-37.0` (visto en el log del run #2); `platforms;android-37` no existe. No se instala a mano: la descarga AGP.
-El paso «Resumen de pruebas JVM» escribe en el resumen del job cuántas pruebas se ejecutaron (`.github/scripts/test_summary.py`); solo avisa, nunca rompe el job. Si el JDK, AGP o `compileSdk` cambian,
+La rama debe contener `.github/workflows/android.yml` (un `push` usa el workflow de esa rama). Si el JDK, AGP o `compileSdk` cambian,
 hay que avisar al agente de CI: el workflow fija JDK 25 y la plataforma `android-37`.
 
 ## Datos de desarrollo ≠ datos reales

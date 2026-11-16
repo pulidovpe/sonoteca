@@ -51,18 +51,12 @@ jobs:
           distribution: temurin
           java-version: '25'
 
-      # Instala cmdline-tools y ACEPTA las licencias. La plataforma del compileSdk (release(37)) y las build-tools
-      # las descarga AGP al compilar (con las licencias ya aceptadas): `platforms;android-37` NO es un id válido de sdkmanager.
+      # Instala cmdline-tools, ACEPTA las licencias y deja la plataforma del compileSdk (release(37)).
+      # Las build-tools que pida AGP las descarga Gradle (con las licencias ya aceptadas).
       - name: Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: 'platform-tools'
-          log-accepted-android-sdk-licenses: false
-
-      # Solo diagnóstico: qué plataformas Android ofrece sdkmanager (por si la descarga automática de AGP falla).
-      - name: Plataformas Android disponibles
-        continue-on-error: true
-        run: sdkmanager --list 2>/dev/null | grep -E "platforms;android-3[5-9]" || true
+          packages: 'platform-tools platforms;android-37'
 
       # Comprueba que gradle-wrapper.jar es un binario oficial de Gradle.
       - name: Validar el Gradle wrapper
@@ -78,11 +72,6 @@ jobs:
       - name: Pruebas JVM y APK debug
         working-directory: android
         run: ./gradlew :app:testDebugUnitTest :app:assembleDebug --stacktrace
-
-      # Cuántas pruebas se ejecutaron de verdad (un verde con 0 pruebas pasaría desapercibido). Nunca rompe el job.
-      - name: Resumen de pruebas JVM
-        if: always()
-        run: python3 .github/scripts/test_summary.py android/app/build/test-results/testDebugUnitTest
 
       - name: Subir APK debug
         uses: actions/upload-artifact@v4

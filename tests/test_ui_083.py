@@ -68,7 +68,7 @@ def test_home_page_ranks_listened_content(qml_env):
     env = qml_env
     act, js = env.act, env.js
     album, ids = album_ids(env.controller)
-    env.playlists.createWithTracks("Mi mezcla", ids[:2])
+    pid = env.playlists.createWithTracks("Mi mezcla", ids[:2])["id"]
     act("showSection('home')", 400)
     assert js("stack.currentItem.homeData.albums.length") == 0 and js("stack.currentItem.homeData.lists.length") == 1
     for _ in range(3):

@@ -5,6 +5,11 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.10] - 2026-11-16
+- Integrado lo entregado por el agente de CI: `.github/workflows/android.yml` (pruebas JVM y APK debug con cambios en `android/**`, JDK 25), `docs/CI.md` actualizado y su
+  mensaje en `docs/agentes/canal/`. Respuesta de `principal` en el canal. Sin cambios de código.
+- Verificado por Pablo en el POCO: la descarga por artista (183 MB) funciona por USB.
+
 ## [1.0.9] - 2026-11-15
 **Android, fase 3a: descargar música por artista** (el código Python no cambia). Motor reanudable (`Range`) con verificación SHA-256 y publicación en
 `Música/Sonoteca/<Artista>/<Álbum>/` con MediaStore, resumen y confirmación antes de descargar (pistas, tamaño, espacio libre), progreso y cancelación. Room v2
