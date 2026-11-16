@@ -79,6 +79,11 @@ jobs:
         working-directory: android
         run: ./gradlew :app:testDebugUnitTest :app:assembleDebug --stacktrace
 
+      # Cuántas pruebas se ejecutaron de verdad (un verde con 0 pruebas pasaría desapercibido). Nunca rompe el job.
+      - name: Resumen de pruebas JVM
+        if: always()
+        run: python3 .github/scripts/test_summary.py android/app/build/test-results/testDebugUnitTest
+
       - name: Subir APK debug
         uses: actions/upload-artifact@v4
         with:
