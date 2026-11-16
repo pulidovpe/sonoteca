@@ -4,8 +4,11 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.pulidovpe.sonoteca.db.AppDatabase
+import io.github.pulidovpe.sonoteca.download.DownloadPlan
+import io.github.pulidovpe.sonoteca.download.DownloadProgress
 import io.github.pulidovpe.sonoteca.net.SyncHttpException
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
@@ -18,11 +21,16 @@ import javax.net.ssl.SSLException
 
 class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val store = PairingStore(app)
-    private val repository = SyncRepository(AppDatabase.get(app), store)
+    private val repository = SyncRepository(app, AppDatabase.get(app), store)
 
     val pairing = MutableStateFlow(store.load())
     val busy = MutableStateFlow(false)
     val message = MutableStateFlow<String?>(null)
+
+    /** Selección pendiente de confirmar (resumen antes de descargar) y progreso de la descarga en curso. */
+    val plan = MutableStateFlow<DownloadPlan?>(null)
+    val progress = MutableStateFlow<DownloadProgress?>(null)
+    private var downloadJob: Job? = null
 
     val artists = repository.artists.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val trackCount = repository.trackCount.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
@@ -37,6 +45,48 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun sync() {
         val current = pairing.value ?: return
         launchBusy { repository.sync(current) }
+    }
+
+    fun planArtist(name: String) {
+        if (busy.value) return
+        viewModelScope.launch {
+            try {
+                plan.value = repository.planArtist(name)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                message.value = friendly(e)
+            }
+        }
+    }
+
+    fun dismissPlan() {
+        plan.value = null
+    }
+
+    fun startDownload() {
+        val chosen = plan.value ?: return
+        val paired = pairing.value ?: return
+        if (busy.value) return
+        plan.value = null
+        downloadJob = viewModelScope.launch {
+            busy.value = true
+            try {
+                message.value = repository.download(paired, chosen) { progress.value = it }.text()
+            } catch (e: CancellationException) {
+                message.value = "Descarga cancelada. Lo ya descargado se conserva y puedes reanudar."
+                throw e
+            } catch (e: Exception) {
+                message.value = friendly(e)
+            } finally {
+                progress.value = null
+                busy.value = false
+            }
+        }
+    }
+
+    fun cancelDownload() {
+        downloadJob?.cancel()
     }
 
     fun unpair() {

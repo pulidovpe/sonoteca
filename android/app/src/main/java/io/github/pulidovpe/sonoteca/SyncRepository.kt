@@ -1,17 +1,25 @@
 package io.github.pulidovpe.sonoteca
 
+import android.content.Context
 import android.os.Build
+import android.os.Environment
+import android.os.StatFs
 import io.github.pulidovpe.sonoteca.db.AppDatabase
 import io.github.pulidovpe.sonoteca.db.PlaylistEntity
 import io.github.pulidovpe.sonoteca.db.PlaylistTrackEntity
 import io.github.pulidovpe.sonoteca.db.TrackEntity
+import io.github.pulidovpe.sonoteca.download.DownloadPlan
+import io.github.pulidovpe.sonoteca.download.DownloadProgress
+import io.github.pulidovpe.sonoteca.download.DownloadSummary
+import io.github.pulidovpe.sonoteca.download.TrackDownloader
+import io.github.pulidovpe.sonoteca.download.buildPlan
 import io.github.pulidovpe.sonoteca.net.Manifest
 import io.github.pulidovpe.sonoteca.net.PairingInfo
 import io.github.pulidovpe.sonoteca.net.SyncApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class SyncRepository(private val db: AppDatabase, private val store: PairingStore) {
+class SyncRepository(private val context: Context, private val db: AppDatabase, private val store: PairingStore) {
     val artists = db.library().artists()
     val trackCount = db.library().trackCount()
     val playlistCount = db.library().playlistCount()
@@ -38,6 +46,19 @@ class SyncRepository(private val db: AppDatabase, private val store: PairingStor
         )
         summary(manifest)
     }
+
+    /** Qué falta por descargar de un artista (agrupado por artista del álbum) y cuánto espacio libre hay. */
+    suspend fun planArtist(artist: String): DownloadPlan = withContext(Dispatchers.IO) {
+        val tracks = db.library().tracksOfArtist(artist)
+        val have = db.library().downloadedHashes().associate { it.trackUuid to it.hash }
+        buildPlan(artist.ifEmpty { "(sin artista)" }, tracks, have, freeBytes())
+    }
+
+    suspend fun download(pairing: Pairing, plan: DownloadPlan, onProgress: (DownloadProgress) -> Unit): DownloadSummary =
+        TrackDownloader(context, db).run(pairing, plan, onProgress)
+
+    @Suppress("DEPRECATION")   // el almacenamiento principal; no hay una API más simple para el espacio libre
+    private fun freeBytes(): Long = StatFs(Environment.getExternalStorageDirectory().path).availableBytes
 
     fun unpair() = store.clear()
 

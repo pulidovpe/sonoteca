@@ -4,13 +4,6 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-11-14T13:11:12.785881Z">
-          <Target type="DEFAULT_BOOT">
-            <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=729d2b6f" />
-            </handle>
-          </Target>
-        </DropdownSelection>
         <DialogSelection />
       </SelectionState>
       <SelectionState runConfigName="Tests in 'io.github.pulidovpe.sonoteca'">
@@ -26,7 +19,7 @@
       </SelectionState>
       <SelectionState runConfigName="All Tests">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-11-15T16:46:09.132993Z">
+        <DropdownSelection timestamp="2026-11-14T13:11:12.785881Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="PhysicalDevice" identifier="serial=729d2b6f" />

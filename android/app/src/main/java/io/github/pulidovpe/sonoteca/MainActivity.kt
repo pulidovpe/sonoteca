@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -15,9 +16,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -35,6 +38,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.github.pulidovpe.sonoteca.db.ArtistRow
+import io.github.pulidovpe.sonoteca.download.DownloadPlan
+import io.github.pulidovpe.sonoteca.download.DownloadProgress
+import io.github.pulidovpe.sonoteca.download.formatBytes
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
@@ -58,6 +64,8 @@ fun SonotecaApp(viewModel: MainViewModel) {
     val artists by viewModel.artists.collectAsState()
     val tracks by viewModel.trackCount.collectAsState()
     val playlists by viewModel.playlistCount.collectAsState()
+    val plan by viewModel.plan.collectAsState()
+    val progress by viewModel.progress.collectAsState()
 
     Scaffold { padding ->
         Column(
@@ -73,6 +81,7 @@ fun SonotecaApp(viewModel: MainViewModel) {
                     }
                 }
             }
+            progress?.let { DownloadCard(it, onCancel = viewModel::cancelDownload) }
             val current = pairing
             if (current == null) {
                 PairScreen(busy = busy, onPair = viewModel::pair)
@@ -85,8 +94,46 @@ fun SonotecaApp(viewModel: MainViewModel) {
                     busy = busy,
                     onSync = viewModel::sync,
                     onUnpair = viewModel::unpair,
+                    onArtist = viewModel::planArtist,
                 )
             }
+        }
+    }
+    plan?.let { chosen ->
+        AlertDialog(
+            onDismissRequest = viewModel::dismissPlan,
+            title = { Text(chosen.label) },
+            text = { Text(planText(chosen)) },
+            confirmButton = {
+                TextButton(onClick = viewModel::startDownload, enabled = chosen.pending.isNotEmpty() && chosen.fits) {
+                    Text("Descargar")
+                }
+            },
+            dismissButton = { TextButton(onClick = viewModel::dismissPlan) { Text("Cancelar") } },
+        )
+    }
+}
+
+private fun planText(plan: DownloadPlan): String = when {
+    plan.pending.isEmpty() -> "Las ${plan.totalTracks} pistas ya están descargadas."
+    else -> buildString {
+        append("Faltan ${plan.pending.size} de ${plan.totalTracks} pistas (${formatBytes(plan.pendingBytes)}).")
+        if (plan.replacing > 0) append(" ${plan.replacing} cambiaron en el escritorio y se bajarán de nuevo.")
+        append("\nEspacio libre en el teléfono: ${formatBytes(plan.freeBytes)}.")
+        if (!plan.fits) append("\nNo hay espacio suficiente (se deja un margen de 200 MB).")
+        append("\nSe guardarán en Música/Sonoteca.")
+    }
+}
+
+@Composable
+private fun DownloadCard(progress: DownloadProgress, onCancel: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            val position = (progress.doneTracks + 1).coerceAtMost(progress.totalTracks)
+            Text("Descargando $position de ${progress.totalTracks}: ${progress.currentTitle}")
+            LinearProgressIndicator(progress = { progress.fraction }, modifier = Modifier.fillMaxWidth())
+            Text("${formatBytes(progress.bytesDone)} de ${formatBytes(progress.bytesTotal)}")
+            TextButton(onClick = onCancel) { Text("Cancelar") }
         }
     }
 }
@@ -126,6 +173,7 @@ private fun LibraryScreen(
     busy: Boolean,
     onSync: () -> Unit,
     onUnpair: () -> Unit,
+    onArtist: (String) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Escritorio: $server")
@@ -138,11 +186,11 @@ private fun LibraryScreen(
         LazyColumn(modifier = Modifier.weight(1f)) {
             items(artists, key = { it.name }) { artist ->
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    modifier = Modifier.fillMaxWidth().clickable(enabled = !busy) { onArtist(artist.name) }.padding(vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(artist.name.ifEmpty { "(sin artista)" })
-                    Text("${artist.tracks}")
+                    Text("${artist.downloaded}/${artist.tracks}")
                 }
             }
         }

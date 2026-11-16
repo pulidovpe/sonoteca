@@ -5,6 +5,11 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.9] - 2026-11-15
+**Android, fase 3a: descargar música por artista** (el código Python no cambia). Motor reanudable (`Range`) con verificación SHA-256 y publicación en
+`Música/Sonoteca/<Artista>/<Álbum>/` con MediaStore, resumen y confirmación antes de descargar (pistas, tamaño, espacio libre), progreso y cancelación. Room v2
+(tabla `downloads`, migración automática). 19 pruebas JVM nuevas (nombres, plan, descarga con reanudación, hash, cancelación). Sin compilar ni ejecutar todavía.
+
 ## [1.0.8] - 2026-11-15
 - `sync-serve` muestra la **carpeta de datos** en uso (y si es la predeterminada = biblioteca real) para detectar de qué carpeta sale el certificado.
 - Android: mensaje claro cuando el certificado del escritorio no es el fijado al emparejar (pulsar «Olvidar» y emparejar otra vez). `docs/SYNC.md` lo explica.

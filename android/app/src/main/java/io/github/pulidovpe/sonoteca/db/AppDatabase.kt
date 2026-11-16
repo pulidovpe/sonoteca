@@ -1,14 +1,16 @@
 package io.github.pulidovpe.sonoteca.db
 
 import android.content.Context
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [TrackEntity::class, PlaylistEntity::class, PlaylistTrackEntity::class],
-    version = 1,
+    entities = [TrackEntity::class, PlaylistEntity::class, PlaylistTrackEntity::class, DownloadEntity::class],
+    version = 2,
     exportSchema = true,
+    autoMigrations = [AutoMigration(from = 1, to = 2)],
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun library(): LibraryDao

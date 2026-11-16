@@ -1,5 +1,6 @@
 package io.github.pulidovpe.sonoteca.net
 
+import io.github.pulidovpe.sonoteca.download.RemoteFile
 import org.json.JSONObject
 import java.io.IOException
 import java.net.URI
@@ -29,6 +30,30 @@ class SyncApi(
     }
 
     fun manifest(): Manifest = parseManifest(request("GET", "/v1/manifest", null))
+
+    /** Abre el audio de una pista (desde `offset` si > 0). Quien la use debe cerrar el `RemoteFile`. */
+    fun openFile(uuid: String, offset: Long): RemoteFile {
+        val connection = open("GET", "/v1/tracks/$uuid/file")
+        connection.setRequestProperty("Accept-Encoding", "identity")
+        if (offset > 0) connection.setRequestProperty("Range", "bytes=$offset-")
+        try {
+            val status = connection.responseCode
+            if (status !in 200..299) {
+                val text = connection.errorStream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+                throw SyncHttpException(status, errorMessage(text, status))
+            }
+            return RemoteFile(
+                status = status,
+                contentRange = connection.getHeaderField("Content-Range"),
+                hash = connection.getHeaderField("X-Sonoteca-Hash"),
+                body = connection.inputStream,
+                onClose = { connection.disconnect() },
+            )
+        } catch (e: IOException) {
+            connection.disconnect()
+            throw e
+        }
+    }
 
     private fun open(method: String, path: String): HttpsURLConnection {
         val url = URI("https", null, host, port, path, null, null).toURL()

@@ -39,4 +39,16 @@ data class PlaylistTrackEntity(
     val trackUuid: String,
 )
 
-data class ArtistRow(val name: String, val tracks: Int)
+/** Lo ya descargado al teléfono: `hash` es el del archivo guardado (si cambia en el catálogo, hay que bajarlo de nuevo). */
+@Entity(tableName = "downloads")
+data class DownloadEntity(
+    @PrimaryKey val trackUuid: String,
+    val hash: String,
+    val uri: String,
+    val sizeBytes: Long,
+    val downloadedAt: Long,
+)
+
+data class DownloadedHash(val trackUuid: String, val hash: String)
+
+data class ArtistRow(val name: String, val tracks: Int, val downloaded: Int)

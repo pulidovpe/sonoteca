@@ -11,8 +11,9 @@ KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más
 | Fase | Contenido | Estado |
 |---|---|---|
 | 1 | Esquema v10 y servidor de sincronización (Python) | hecha (1.0.1) |
-| 2 | Proyecto Android, Room, cliente HTTPS con huella fijada, emparejado, manifiesto, lista de artistas | **esta** (1.0.3) |
-| 3 | Descarga de música (MediaStore `Music/Sonoteca/`, reanudable, SHA-256) | pendiente |
+| 2 | Proyecto Android, Room, cliente HTTPS con huella fijada, emparejado, manifiesto, lista de artistas | hecha y verificada en el POCO (1609 pistas, 11 listas) |
+| 3a | Descarga por artista: motor reanudable con verificación SHA-256, publicación en `Music/Sonoteca/` (MediaStore), resumen y confirmación | **esta** (1.0.9) |
+| 3b | Descargar por álbum y por lista, ofrecer borrar lo que ya no está en el escritorio, descarga en segundo plano (WorkManager) | pendiente |
 | 4 | Reproductor Media3 + UI por artista, álbum y listas (creadas o nuevas) | pendiente |
 | 5 | Wi-Fi y USB pulidos (NSD, QR, permiso de red local) | pendiente |
 | 6 | Windows y Linux | pendiente |
@@ -31,3 +32,13 @@ KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más
 - **Red local (Android 17)**: con `targetSdk = 37` el acceso a la LAN queda bloqueado por defecto en Android 17; hará falta declarar y pedir
   `ACCESS_LOCAL_NETWORK` (o usar el selector de NSD). En Android 16 (el POCO) la LAN está abierta. Se resuelve en la fase 5. Por USB
   (`adb reverse`) la app habla con `localhost`.
+
+## Descargas (fase 3a)
+- Se elige un artista (fila de la lista) → resumen (pistas que faltan, tamaño, espacio libre; se deja un margen de 200 MB) → «Descargar».
+- Cada pista se baja a `cache/downloads/<uuid>.part` con `Range` (se **reanuda** si se corta), se comprueba tamaño y SHA-256 contra el catálogo y **solo
+  entonces** se publica en `Música/Sonoteca/<Artista>/<Álbum>/NN - Título.ext` con MediaStore. Nunca queda un archivo a medias en la música del teléfono.
+- Una pista cuenta como descargada si la huella guardada coincide con la del catálogo; si el escritorio la cambió, se baja de nuevo (se borra antes la anterior).
+- Room v2 (`downloads`): migración automática desde v1. Al compilar aparece `app/schemas/.../2.json`: **debe versionarse** (base de futuras migraciones).
+- Salvedades: la descarga vive en la app en primer plano (si Android la detiene, se reanuda al repetir; el segundo plano llega en 3b); no se detecta lo que
+  una instalación anterior dejó en `Música/Sonoteca` (el catálogo de descargas es de Room: desinstalar y reinstalar puede duplicar; **sin verificar** cómo
+  trata Android la propiedad de esos archivos); no se borra nada de lo descargado desde la app todavía.

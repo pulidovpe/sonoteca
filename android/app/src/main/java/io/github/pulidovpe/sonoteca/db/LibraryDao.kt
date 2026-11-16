@@ -31,10 +31,26 @@ abstract class LibraryDao {
     abstract suspend fun insertPlaylistLinks(links: List<PlaylistTrackEntity>)
 
     @Query(
-        "SELECT albumArtist AS name, COUNT(*) AS tracks FROM tracks " +
-            "GROUP BY albumArtist ORDER BY albumArtist COLLATE NOCASE",
+        "SELECT t.albumArtist AS name, COUNT(*) AS tracks, COUNT(d.trackUuid) AS downloaded FROM tracks t " +
+            "LEFT JOIN downloads d ON d.trackUuid = t.uuid AND d.hash = t.hash " +
+            "GROUP BY t.albumArtist ORDER BY t.albumArtist COLLATE NOCASE",
     )
     abstract fun artists(): Flow<List<ArtistRow>>
+
+    @Query(
+        "SELECT * FROM tracks WHERE albumArtist = :artist " +
+            "ORDER BY album COLLATE NOCASE, discNo, trackNo, title COLLATE NOCASE",
+    )
+    abstract suspend fun tracksOfArtist(artist: String): List<TrackEntity>
+
+    @Query("SELECT trackUuid, hash FROM downloads")
+    abstract suspend fun downloadedHashes(): List<DownloadedHash>
+
+    @Query("SELECT * FROM downloads WHERE trackUuid = :uuid")
+    abstract suspend fun downloadFor(uuid: String): DownloadEntity?
+
+    @Upsert
+    abstract suspend fun upsertDownload(download: DownloadEntity)
 
     @Query("SELECT COUNT(*) FROM tracks")
     abstract fun trackCount(): Flow<Int>
