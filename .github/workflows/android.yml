@@ -1,0 +1,93 @@
+name: Android CI
+
+# Compila la app de Android y ejecuta sus pruebas JVM (sin emulador) cuando cambia android/**.
+# Complementa a ci.yml (que ignora android/**). No firma ni publica nada: el APK es de DEPURACIÓN.
+on:
+  push:
+    branches: [main, 'feature/**', 'fix/**']
+    paths:
+      - 'android/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'android/**'
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Rama, tag o commit a compilar (vacío = el seleccionado arriba)'
+        required: false
+        default: ''
+        type: string
+
+# Solo lectura y sin secretos: es seguro con PRs de terceros (pull_request, NO pull_request_target).
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Pruebas JVM y APK debug
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Comprobar que existe el proyecto Gradle
+        run: |
+          for f in android/gradlew android/settings.gradle.kts android/gradle/wrapper/gradle-wrapper.jar; do
+            [ -e "$f" ] || { echo "::error::Falta $f en esta ref: el proyecto Android no está completo en git."; exit 1; }
+          done
+
+      # El proyecto fija JDK 25 en android/gradle/gradle-daemon-jvm.properties (toolchainVersion=25).
+      - name: JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      # Instala cmdline-tools, ACEPTA las licencias y deja la plataforma del compileSdk (release(37)).
+      # Las build-tools que pida AGP las descarga Gradle (con las licencias ya aceptadas).
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-37'
+
+      # Comprueba que gradle-wrapper.jar es un binario oficial de Gradle.
+      - name: Validar el Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v6
+
+      # `basic` = caché de código abierto basada en actions/cache (sin el componente de caché avanzada).
+      - name: Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      # Sin pruebas androidTest: necesitan dispositivo o emulador.
+      - name: Pruebas JVM y APK debug
+        working-directory: android
+        run: ./gradlew :app:testDebugUnitTest :app:assembleDebug --stacktrace
+
+      - name: Subir APK debug
+        uses: actions/upload-artifact@v4
+        with:
+          name: sonoteca-android-debug
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Subir informes de pruebas (si fallan)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-informes
+          path: |
+            android/app/build/reports/tests/
+            android/app/build/test-results/
+          if-no-files-found: ignore
+          retention-days: 7

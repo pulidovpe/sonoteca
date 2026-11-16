@@ -14,4 +14,5 @@ dist/
 library.db*
 # Restos de macOS y registros de pruebas locales
 .DS_Store
+**/.DS_Store
 pytest.log
