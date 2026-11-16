@@ -51,12 +51,18 @@ jobs:
           distribution: temurin
           java-version: '25'
 
-      # Instala cmdline-tools, ACEPTA las licencias y deja la plataforma del compileSdk (release(37)).
-      # Las build-tools que pida AGP las descarga Gradle (con las licencias ya aceptadas).
+      # Instala cmdline-tools y ACEPTA las licencias. La plataforma del compileSdk (release(37)) y las build-tools
+      # las descarga AGP al compilar (con las licencias ya aceptadas): `platforms;android-37` NO es un id válido de sdkmanager.
       - name: Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: 'platform-tools platforms;android-37'
+          packages: 'platform-tools'
+          log-accepted-android-sdk-licenses: false
+
+      # Solo diagnóstico: qué plataformas Android ofrece sdkmanager (por si la descarga automática de AGP falla).
+      - name: Plataformas Android disponibles
+        continue-on-error: true
+        run: sdkmanager --list 2>/dev/null | grep -E "platforms;android-3[5-9]" || true
 
       # Comprueba que gradle-wrapper.jar es un binario oficial de Gradle.
       - name: Validar el Gradle wrapper
