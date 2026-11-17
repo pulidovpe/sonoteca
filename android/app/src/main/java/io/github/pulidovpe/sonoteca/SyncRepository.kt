@@ -9,7 +9,6 @@ import io.github.pulidovpe.sonoteca.db.AppDatabase
 import io.github.pulidovpe.sonoteca.db.PlaylistEntity
 import io.github.pulidovpe.sonoteca.db.PlaylistTrackEntity
 import io.github.pulidovpe.sonoteca.db.TrackEntity
-import io.github.pulidovpe.sonoteca.db.TrackEntity
 import io.github.pulidovpe.sonoteca.download.DownloadPlan
 import io.github.pulidovpe.sonoteca.download.DownloadProgress
 import io.github.pulidovpe.sonoteca.download.DownloadSummary
