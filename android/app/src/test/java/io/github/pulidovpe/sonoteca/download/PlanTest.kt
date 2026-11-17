@@ -22,6 +22,7 @@ class PlanTest {
         assertEquals(1, plan.alreadyDone)
         assertEquals(500L, plan.pendingBytes)
         assertEquals(3, plan.totalTracks)
+        assertEquals(2, plan.onPhone)            // u1 (al día) y u2 (desactualizada) están en el teléfono; u3 no
     }
 
     @Test
@@ -30,6 +31,13 @@ class PlanTest {
         assertTrue(plan.pending.isEmpty())
         assertEquals(3, plan.alreadyDone)
         assertEquals(0L, plan.pendingBytes)
+    }
+
+    @Test
+    fun onPhoneCountsEveryDownloadedTrackOfTheSelectionOnly() {
+        val plan = buildPlan("A", tracks.take(2), mapOf("u1" to "h1", "u3" to "h3", "otra" to "x"), freeBytes = 0)
+        assertEquals(1, plan.onPhone)            // u3 y «otra» no pertenecen a la selección
+        assertEquals(0, buildPlan("A", tracks, emptyMap(), freeBytes = 0).onPhone)
     }
 
     @Test

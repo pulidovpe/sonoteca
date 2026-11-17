@@ -5,6 +5,13 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.11] - 2026-11-17
+**Android, fase 3b: álbumes, listas y borrado** (el código Python no cambia). Pestañas Artistas / Álbumes / Listas con descarga en cada nivel; «Borrar del teléfono» con confirmación
+(MediaStore + registro de Room); `onPhone` en el resumen. 3 pruebas JVM nuevas (34 en total). Sin compilar ni ejecutar todavía.
+- `CONTEXT_COMPACT.md` reescrito y consolidado para un chat nuevo; el historial antiguo pasa a `docs/HISTORIAL_CONTEXTO.md`; contexto del agente de CI en `docs/agentes/CONTEXT_COMPACT_AGENTES.md`.
+- Mis zips dejan de incluir `.github/` y `docs/CI.md` (una copia vieja pisaba la buena de `main`: se vio con `android.yml`).
+- Canal: respuesta a `ci` (CI de Android en verde; `feature/android` fusionada en `main`).
+
 ## [1.0.10] - 2026-11-16
 - Integrado lo entregado por el agente de CI: `.github/workflows/android.yml` (pruebas JVM y APK debug con cambios en `android/**`, JDK 25), `docs/CI.md` actualizado y su
   mensaje en `docs/agentes/canal/`. Respuesta de `principal` en el canal. Sin cambios de código.

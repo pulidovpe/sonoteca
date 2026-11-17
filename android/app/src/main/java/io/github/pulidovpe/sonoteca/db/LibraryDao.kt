@@ -43,6 +43,37 @@ abstract class LibraryDao {
     )
     abstract suspend fun tracksOfArtist(artist: String): List<TrackEntity>
 
+    @Query(
+        "SELECT t.albumArtist AS artist, t.album AS album, COUNT(*) AS tracks, COUNT(d.trackUuid) AS downloaded FROM tracks t " +
+            "LEFT JOIN downloads d ON d.trackUuid = t.uuid AND d.hash = t.hash " +
+            "GROUP BY t.albumArtist, t.album ORDER BY t.album COLLATE NOCASE, t.albumArtist COLLATE NOCASE",
+    )
+    abstract fun albums(): Flow<List<AlbumRow>>
+
+    @Query(
+        "SELECT p.uuid AS uuid, p.name AS name, COUNT(t.uuid) AS tracks, COUNT(d.trackUuid) AS downloaded FROM playlists p " +
+            "LEFT JOIN playlist_tracks pt ON pt.playlistUuid = p.uuid " +
+            "LEFT JOIN tracks t ON t.uuid = pt.trackUuid " +
+            "LEFT JOIN downloads d ON d.trackUuid = t.uuid AND d.hash = t.hash " +
+            "GROUP BY p.uuid ORDER BY p.name COLLATE NOCASE",
+    )
+    abstract fun playlistRows(): Flow<List<PlaylistRow>>
+
+    @Query(
+        "SELECT * FROM tracks WHERE albumArtist = :artist AND album = :album " +
+            "ORDER BY discNo, trackNo, title COLLATE NOCASE",
+    )
+    abstract suspend fun tracksOfAlbum(artist: String, album: String): List<TrackEntity>
+
+    @Query(
+        "SELECT * FROM tracks WHERE uuid IN (SELECT trackUuid FROM playlist_tracks WHERE playlistUuid = :uuid) " +
+            "ORDER BY album COLLATE NOCASE, discNo, trackNo, title COLLATE NOCASE",
+    )
+    abstract suspend fun tracksOfPlaylist(uuid: String): List<TrackEntity>
+
+    @Query("DELETE FROM downloads WHERE trackUuid = :uuid")
+    abstract suspend fun deleteDownload(uuid: String)
+
     @Query("SELECT trackUuid, hash FROM downloads")
     abstract suspend fun downloadedHashes(): List<DownloadedHash>
 

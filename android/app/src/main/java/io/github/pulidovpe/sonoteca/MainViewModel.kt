@@ -30,11 +30,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     /** Selección pendiente de confirmar (resumen antes de descargar) y progreso de la descarga en curso. */
     val plan = MutableStateFlow<DownloadPlan?>(null)
     val progress = MutableStateFlow<DownloadProgress?>(null)
+    val deleteAsk = MutableStateFlow<DeleteAsk?>(null)
+    private var planSelection: Selection? = null
     private var downloadJob: Job? = null
 
     val artists = repository.artists.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val trackCount = repository.trackCount.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
     val playlistCount = repository.playlistCount.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+    val albums = repository.albums.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val playlistRows = repository.playlistRows.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun pair(url: String, deviceName: String) = launchBusy {
         val paired = repository.pair(url, deviceName)
@@ -47,11 +51,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         launchBusy { repository.sync(current) }
     }
 
-    fun planArtist(name: String) {
+    fun choose(selection: Selection) {
         if (busy.value) return
         viewModelScope.launch {
             try {
-                plan.value = repository.planArtist(name)
+                planSelection = selection
+                plan.value = repository.plan(selection)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -62,6 +67,38 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun dismissPlan() {
         plan.value = null
+    }
+
+    /** Pasa del resumen a la confirmación de borrado (solo si hay algo descargado de esa selección). */
+    fun askDelete() {
+        val current = plan.value ?: return
+        val selection = planSelection ?: return
+        if (current.onPhone <= 0) return
+        plan.value = null
+        deleteAsk.value = DeleteAsk(selection, current.onPhone)
+    }
+
+    fun dismissDelete() {
+        deleteAsk.value = null
+    }
+
+    fun confirmDelete() {
+        val ask = deleteAsk.value ?: return
+        deleteAsk.value = null
+        if (busy.value) return
+        viewModelScope.launch {
+            busy.value = true
+            try {
+                val (deleted, failed) = repository.deleteDownloads(ask.selection)
+                message.value = "Borradas $deleted pistas del teléfono." + if (failed > 0) " No se pudieron borrar $failed." else ""
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                message.value = friendly(e)
+            } finally {
+                busy.value = false
+            }
+        }
     }
 
     fun startDownload() {

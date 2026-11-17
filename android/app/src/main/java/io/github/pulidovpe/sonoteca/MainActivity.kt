@@ -37,7 +37,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import io.github.pulidovpe.sonoteca.db.AlbumRow
 import io.github.pulidovpe.sonoteca.db.ArtistRow
+import io.github.pulidovpe.sonoteca.db.PlaylistRow
 import io.github.pulidovpe.sonoteca.download.DownloadPlan
 import io.github.pulidovpe.sonoteca.download.DownloadProgress
 import io.github.pulidovpe.sonoteca.download.formatBytes
@@ -64,6 +66,9 @@ fun SonotecaApp(viewModel: MainViewModel) {
     val artists by viewModel.artists.collectAsState()
     val tracks by viewModel.trackCount.collectAsState()
     val playlists by viewModel.playlistCount.collectAsState()
+    val albums by viewModel.albums.collectAsState()
+    val playlistRows by viewModel.playlistRows.collectAsState()
+    val deleteAsk by viewModel.deleteAsk.collectAsState()
     val plan by viewModel.plan.collectAsState()
     val progress by viewModel.progress.collectAsState()
 
@@ -91,10 +96,12 @@ fun SonotecaApp(viewModel: MainViewModel) {
                     tracks = tracks,
                     playlists = playlists,
                     artists = artists,
+                    albums = albums,
+                    playlistRows = playlistRows,
                     busy = busy,
                     onSync = viewModel::sync,
                     onUnpair = viewModel::unpair,
-                    onArtist = viewModel::planArtist,
+                    onSelect = viewModel::choose,
                 )
             }
         }
@@ -103,13 +110,31 @@ fun SonotecaApp(viewModel: MainViewModel) {
         AlertDialog(
             onDismissRequest = viewModel::dismissPlan,
             title = { Text(chosen.label) },
-            text = { Text(planText(chosen)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(planText(chosen))
+                    if (chosen.onPhone > 0) {
+                        TextButton(onClick = viewModel::askDelete) { Text("Borrar ${chosen.onPhone} descargadas del teléfono") }
+                    }
+                }
+            },
             confirmButton = {
                 TextButton(onClick = viewModel::startDownload, enabled = chosen.pending.isNotEmpty() && chosen.fits) {
                     Text("Descargar")
                 }
             },
             dismissButton = { TextButton(onClick = viewModel::dismissPlan) { Text("Cancelar") } },
+        )
+    }
+    deleteAsk?.let { ask ->
+        AlertDialog(
+            onDismissRequest = viewModel::dismissDelete,
+            title = { Text("¿Borrar del teléfono?") },
+            text = {
+                Text("Se borrarán ${ask.count} pistas de «${ask.selection.label}» de Música/Sonoteca. Tu escritorio y tu catálogo no se tocan.")
+            },
+            confirmButton = { TextButton(onClick = viewModel::confirmDelete) { Text("Borrar") } },
+            dismissButton = { TextButton(onClick = viewModel::dismissDelete) { Text("Cancelar") } },
         )
     }
 }
@@ -170,29 +195,75 @@ private fun LibraryScreen(
     tracks: Int,
     playlists: Int,
     artists: List<ArtistRow>,
+    albums: List<AlbumRow>,
+    playlistRows: List<PlaylistRow>,
     busy: Boolean,
     onSync: () -> Unit,
     onUnpair: () -> Unit,
-    onArtist: (String) -> Unit,
+    onSelect: (Selection) -> Unit,
 ) {
+    var tab by rememberSaveable { mutableStateOf(0) }
     Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Escritorio: $server")
-        Text("$tracks pistas · $playlists listas · ${artists.size} artistas")
+        Text("$tracks pistas · $playlists listas · ${artists.size} artistas · ${albums.size} álbumes")
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = onSync, enabled = !busy) { Text(if (busy) "Sincronizando…" else "Sincronizar catálogo") }
             TextButton(onClick = onUnpair, enabled = !busy) { Text("Olvidar") }
         }
-        HorizontalDivider()
-        LazyColumn(modifier = Modifier.weight(1f)) {
-            items(artists, key = { it.name }) { artist ->
-                Row(
-                    modifier = Modifier.fillMaxWidth().clickable(enabled = !busy) { onArtist(artist.name) }.padding(vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    Text(artist.name.ifEmpty { "(sin artista)" })
-                    Text("${artist.downloaded}/${artist.tracks}")
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            listOf("Artistas", "Álbumes", "Listas").forEachIndexed { index, title ->
+                if (tab == index) {
+                    Button(onClick = { tab = index }) { Text(title) }
+                } else {
+                    TextButton(onClick = { tab = index }) { Text(title) }
                 }
             }
         }
+        HorizontalDivider()
+        LazyColumn(modifier = Modifier.weight(1f)) {
+            when (tab) {
+                0 -> items(artists, key = { it.name }) { artist ->
+                    SelectableRow(
+                        title = artist.name.ifEmpty { "(sin artista)" },
+                        subtitle = null,
+                        right = "${artist.downloaded}/${artist.tracks}",
+                        enabled = !busy,
+                        onClick = { onSelect(Selection.Artist(artist.name)) },
+                    )
+                }
+                1 -> items(albums, key = { it.artist + "||" + it.album }) { album ->
+                    SelectableRow(
+                        title = album.album.ifEmpty { "(sin álbum)" },
+                        subtitle = album.artist.ifEmpty { "(sin artista)" },
+                        right = "${album.downloaded}/${album.tracks}",
+                        enabled = !busy,
+                        onClick = { onSelect(Selection.Album(album.artist, album.album)) },
+                    )
+                }
+                else -> items(playlistRows, key = { it.uuid }) { list ->
+                    SelectableRow(
+                        title = list.name,
+                        subtitle = null,
+                        right = "${list.downloaded}/${list.tracks}",
+                        enabled = !busy,
+                        onClick = { onSelect(Selection.Playlist(list.uuid, list.name)) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SelectableRow(title: String, subtitle: String?, right: String, enabled: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable(enabled = enabled) { onClick() }.padding(vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title)
+            if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall)
+        }
+        Text(right)
     }
 }

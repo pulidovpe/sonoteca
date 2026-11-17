@@ -16,6 +16,8 @@ data class DownloadPlan(
     val pending: List<TrackEntity>,
     val replacing: Int,
     val freeBytes: Long,
+    /** Pistas de la selección que tienen alguna descarga en el teléfono (aunque esté desactualizada): lo que se puede borrar. */
+    val onPhone: Int = 0,
 ) {
     val pendingBytes: Long = pending.sumOf { it.size }
     val alreadyDone: Int = totalTracks - pending.size
@@ -30,7 +32,8 @@ fun buildPlan(
 ): DownloadPlan {
     val pending = tracks.filter { downloadedHashes[it.uuid] != it.hash }
     val replacing = pending.count { downloadedHashes.containsKey(it.uuid) }
-    return DownloadPlan(label, tracks.size, pending, replacing, freeBytes)
+    val onPhone = tracks.count { downloadedHashes.containsKey(it.uuid) }
+    return DownloadPlan(label, tracks.size, pending, replacing, freeBytes, onPhone)
 }
 
 fun formatBytes(bytes: Long): String {
