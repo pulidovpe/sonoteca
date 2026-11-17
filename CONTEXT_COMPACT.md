@@ -1,4 +1,4 @@
-# Sonoteca — CONTEXTO COMPACTO (v1.0.12)
+# Sonoteca — CONTEXTO COMPACTO (v1.0.13)
 
 > Pégalo al inicio de un chat nuevo del **agente principal** (app, sincronización, Android). Va **junto con el árbol del repo**: lo más seguro es
 > `git archive --format=zip -o ~/Desktop/sonoteca-arbol.zip HEAD` desde la rama de trabajo, ya fusionada con `origin/main` (el zip de mis entregas
@@ -26,7 +26,7 @@
   (`java Archivo.java`) contra el servidor Python. Usa rutas absolutas y `bash -c` (el shell por defecto es `sh`: sin `<( )`).
 
 ## Estado (2026-11-17)
-- **App de escritorio** (Python 3.12 + PySide6/QML, SQLite **esquema v10**): ver «Qué es / Mapa / UI / Trampas» abajo. Versión actual **1.0.12**. `feature/android` ya se fusionó en `main` (PR #5).
+- **App de escritorio** (Python 3.12 + PySide6/QML, SQLite **esquema v10**): ver «Qué es / Mapa / UI / Trampas» abajo. Versión actual **1.0.13**. `feature/android` ya se fusionó en `main` (PR #5).
 - **Sincronización con Android** (HECHA y verificada por USB con tu biblioteca): servidor HTTPS en `src/sonoteca/sync/` (`manifest, merge, pairing, tls, server, usb`), comandos `sonoteca sync-serve [--solo-usb]
   [--sin-adb]` y `sync-devices`. Protocolo en `docs/SYNC.md`. Decisiones: identidad estable `tracks.uuid` + `files.content_hash` (SHA-256 con caché); **HTTPS autofirmado con la huella fijada** al
   emparejar (código de 6 dígitos de un solo uso → token); listas con `uuid`/`updated_at` y «última modificación gana» + `deleted_playlists`; manifiesto con `pending_hash` (si > 0, **no se borra nada local**);
@@ -39,7 +39,8 @@
   `Selection`, `SyncRepository`, `MainViewModel`, `MainActivity` (pestañas Artistas/Álbumes/Listas). **Toolchain verificada**: AGP 9.5.1 (Kotlin integrado: SIN plugin `kotlin-android`), Gradle 9.6.0, KSP 2.3.10,
   Room 2.8.5 (`androidx.room`; Room 3 existe, sin usar), Compose BOM 2026.02.01, **JDK 25** (`gradle-daemon-jvm.properties`), compileSdk/targetSdk 37, minSdk 29. Avisar al agente de CI si cambia compileSdk, JDK o AGP.
 - **Fases Android**: 1 servidor+v10 ✅ · 2 proyecto, Room, TLS fijado, emparejado, manifiesto ✅ (1609 pistas y 11 listas en el POCO) · 3a descarga por artista ✅ (183 MB reales) · 3b álbum/listas/borrar del teléfono ✅ (1.0.11: Pablo verificó en el POCO por USB álbum, artista, lista, borrar y volver a descargar; CI Android verde, 34 pruebas JVM) ·
-  **1.0.12 = catálogo se renueva solo al emparejar (SIN verificar en el móvil)** · 4 reproductor Media3 + UI, crear/editar listas en el móvil y subirlas con `PUT` · 5 Wi-Fi/USB pulidos (NSD, QR, permiso `ACCESS_LOCAL_NETWORK` de Android 17
+  1.0.12 catálogo se renueva solo al emparejar ✅ (pipelines verdes, probado en el POCO) ·
+  **1.0.13 = `adb reverse` automático al reconectar el cable (`UsbWatcher`; SIN verificar con adb real)** · 4 reproductor Media3 + UI, crear/editar listas en el móvil y subirlas con `PUT` · 5 Wi-Fi/USB pulidos (NSD, QR, permiso `ACCESS_LOCAL_NETWORK` de Android 17
   por `targetSdk 37`) · 6 Windows/Linux · cierre **1.1.0** (etiqueta `v1.1.0`; APK firmado y PyInstaller con `cryptography`, aún sin probar).
 - **Huecos conocidos**: descarga en segundo plano (WorkManager: versión sin verificar), limpiar descargas huérfanas, portadas/letras en el móvil, qué hace Android con los archivos de `Música/Sonoteca` tras desinstalar y reinstalar
   (sin verificar), pruebas de instrumentación (no hacen falta y fallan en Xiaomi).
@@ -57,14 +58,15 @@
 - Pablo no responde siempre a todas las preguntas de un mensaje: confirmar lo crítico una a una. Pega marcadores como `<TU_BASE_V10>` literalmente si no se le avisa: dar comandos sin marcadores.
 
 ## Agentes y CI (resumen; detalle en `docs/agentes/` y `docs/CI.md`)
-- Dos agentes: **principal** (yo: `src/ tests/ android/ packaging/` y el resto de `docs/`) y **ci** (`.github/**`, `docs/CI.md`, la sección «Pipelines» del README). No se ven: **Pablo copia los archivos**. Canal: un archivo por mensaje en
-  `docs/agentes/canal/` (`AAAA-MM-DD_de-X_a-Y_asunto.md`, secciones Verificado/Supuesto/Pedido). **Al empezar una sesión, leer el canal y atender lo dirigido a `principal`.**
+- Dos agentes: **principal** (yo: `src/ tests/ android/ packaging/` y el resto de `docs/`) y **ci** (`.github/**`, `docs/CI.md`, la sección «Pipelines» del README). No se ven: **Pablo copia los archivos**. **Desde 2026-11-17 (orden de Pablo) NO se crean más archivos en
+  `docs/agentes/canal/`**: toda actualización para el agente de CI va SOLO en `docs/agentes/CONTEXT_COMPACT_AGENTES.md` (sección «Novedades de principal»; se actualiza ese archivo, no se crean otros).
+  Al empezar una sesión, leer lo último del canal (histórico, hasta 2026-11-17) y atender lo dirigido a `principal` que siga abierto.
 - CI verde en GitHub: `ci.yml` (ruff E4/E7/E9/F, higiene, pytest con 26 fallos heredados de v1.0.0 en `.github/known-failures.txt`: no añadir ninguno), `android.yml` (JDK 25; pruebas JVM + APK debug), `build.yml` (tag `v*`; compiló en los 3 sistemas a mano,
   la rama de publicar con tag NO se ha ejercitado; riesgo abierto: `sync/`/`cryptography` en PyInstaller, arreglo en `packaging/sonoteca.spec`, que es mío).
 - Corregir los 26 tests viejos se aplazó (rama `fix/…` aparte, sin tocar `tests/test_sync_*`).
 
 ## Qué NO se ha verificado nunca (no afirmarlo)
-Kotlin de 1.0.12 (auto-sincronizar tras emparejar); ejecución de las pruebas Python con pytest real/ruff en mis entregas (las verifica la CI); GUI/Qt; PyInstaller con `sync/`; Wi-Fi (solo USB probado); Android 17; WorkManager.
+`UsbWatcher` con adb real (formato de `adb reverse --list`); ejecución de las pruebas Python con pytest real/ruff en mis entregas (las verifica la CI); GUI/Qt; PyInstaller con `sync/`; Wi-Fi (solo USB probado); Android 17; WorkManager.
 
 
 ## Qué es

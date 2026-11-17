@@ -10,8 +10,10 @@ o por USB. Solo audio, portadas y letras (el video no se sincroniza).
 - **Wi-Fi**: el móvil se conecta a `https://<ip-del-equipo>:8765`.
 - **USB**: el móvil usa `https://localhost:8765` y hace falta `adb reverse tcp:8765 tcp:8765`. Con `--solo-usb` el servidor escucha solo en
   127.0.0.1 (nada expuesto en la red) y **ejecuta `adb reverse` por ti** para cada móvil autorizado (`--sin-adb` lo desactiva). El redireccionamiento
-  **se pierde al reiniciar adb (p. ej. Android Studio) o al reconectar el cable**: el móvil dirá «No se pudo conectar»; pulsa Intro en la terminal del
-  servidor (repite `adb reverse` y genera un código nuevo). Con varios dispositivos conectados, adb necesita `-s <serie>` (el servidor ya lo hace).
+  **se pierde al reiniciar adb (p. ej. Android Studio) o al reconectar el cable**; desde 1.0.13 el servidor lo detecta (sondeo de `adb devices` y
+  `adb reverse --list` cada ~2,5 s) y **lo rehace solo**, avisando «adb reverse <serie>: listo (túnel rehecho)». Si aun así el móvil dice «No se pudo
+  conectar», pulsa Intro en la terminal del servidor (repite `adb reverse` y genera un código nuevo). El emparejamiento NO se pierde al reconectar:
+  el código solo hace falta la primera vez o tras «Olvidar». Con varios dispositivos conectados, adb necesita `-s <serie>` (el servidor ya lo hace).
 - **Certificado**: autofirmado (ECDSA P-256, 10 años) en `<datos>/sync/`. El móvil NO valida contra autoridades: compara la
   huella SHA-256 del certificado DER con la recibida al emparejar (TrustManager propio, sin comprobar el nombre de host).
 

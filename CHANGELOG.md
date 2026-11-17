@@ -5,6 +5,13 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.13] - 2026-11-17
+**USB: el túnel `adb reverse` se rehace solo** al reconectar el cable o reiniciar adb (antes había que pulsar Intro en el servidor). Nueva clase `UsbWatcher` en `sync/usb.py`
+(sondeo cada ~2,5 s de `adb devices` y `adb reverse --list`; actúa solo con móviles recién conectados o sin el túnel; un fallo se avisa una vez); `sync-serve --solo-usb` la arranca en un hilo
+(`--sin-adb` la desactiva). 6 pruebas Python nuevas en `tests/test_sync_usb.py` con un adb simulado con estado (corridas aquí con corredor propio; pytest real lo verifica la CI).
+El formato exacto de `adb reverse --list` en Android 16/adb actual no se ha comprobado con adb real: Pablo debe probar desconectar y reconectar el POCO.
+- Las actualizaciones para el agente de CI pasan a vivir SOLO en `docs/agentes/CONTEXT_COMPACT_AGENTES.md` (sección «Novedades de principal»); se deja de crear archivos nuevos en `docs/agentes/canal/`.
+
 ## [1.0.12] - 2026-11-17
 **Android: el catálogo se renueva solo al emparejar** (el código Python no cambia). Antes, «Olvidar → emparejar con otro escritorio → descargar» fallaba con «pista desconocida»
 (404) porque el catálogo de Room seguía siendo el del escritorio anterior (UUID distintos). Ahora `pair()` sincroniza el catálogo justo después de emparejar; si esa sincronización

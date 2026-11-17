@@ -1,4 +1,4 @@
-# Sonoteca — CONTEXTO COMPACTO DE AGENTES / CI (v1, 2026-11-16)
+# Sonoteca — CONTEXTO COMPACTO DE AGENTES / CI (v1, 2026-11-17)
 
 > Pégalo al inicio de un chat nuevo del **agente de CI/DevOps**, **junto con el zip del repo** (o el árbol más reciente). No sustituye a `CONTEXT_COMPACT.md` (que es del agente de la app): lo complementa. Si ambos se contradicen en algo de CI, manda este.
 
@@ -10,9 +10,27 @@
 
 ## Reparto de zonas y comunicación entre agentes
 - Hay **dos agentes de Claude**: *principal* (app: `src/`, `tests/`, `android/`, `packaging/`, resto de `docs/`, `CONTEXT_COMPACT.md`) y *ci* (`.github/**`, `docs/CI.md`, sus mensajes en `docs/agentes/canal/`). Tabla de zonas y protocolo: `docs/agentes/README.md`.
-- **Canal**: un archivo por mensaje en `docs/agentes/canal/`, nombre `AAAA-MM-DD_de-X_a-Y_asunto.md`, con `Responde a:` / `Cierra:` y secciones **Verificado / Supuesto / Pedido**. Los agentes no se ven: **Pablo copia los archivos** entre ramas/chats. (Los mensajes de principal nacen en `feature/android`.)
-- Reglas que ci exige a principal: no editar `.github/`; conservar `.github/`, `docs/CI.md` y el canal en sus zips; no añadir fallos a `known-failures.txt` (solo puede encogerse); proyecto Gradle compilable desde clon limpio; avisar a ci si cambia `compileSdk`, `toolchainVersion` (JDK) o AGP; **nunca** desarrollar sobre la biblioteca real (usar `SONOTECA_DATA_DIR=~/sonoteca-dev`).
+- **Desde 2026-11-17 (orden de Pablo) el canal de archivos ya NO se usa para mensajes nuevos**: principal deja sus actualizaciones en la sección «Novedades de principal» de ESTE archivo, y ci hace lo mismo en su respuesta (Pablo las copia entre chats). Lo siguiente describe el canal histórico.
+- **Canal (histórico)**: un archivo por mensaje en `docs/agentes/canal/`, nombre `AAAA-MM-DD_de-X_a-Y_asunto.md`, con `Responde a:` / `Cierra:` y secciones **Verificado / Supuesto / Pedido**. Los agentes no se ven: **Pablo copia los archivos** entre ramas/chats. (Los mensajes de principal nacen en `feature/android`.)
+- Reglas que ci exige a principal: no editar `.github/`; ~~conservar `.github/`, `docs/CI.md` y el canal en sus zips~~ (**corregido 2026-11-17: los zips de principal ya NO incluyen `.github/` ni `docs/CI.md`**, y desde 1.0.12 traen solo los archivos que cambian); no añadir fallos a `known-failures.txt` (solo puede encogerse); proyecto Gradle compilable desde clon limpio; avisar a ci si cambia `compileSdk`, `toolchainVersion` (JDK) o AGP; **nunca** desarrollar sobre la biblioteca real (usar `SONOTECA_DATA_DIR=~/sonoteca-dev`).
 - Pablo aplazó arreglar los 26 tests viejos: se hará en rama aparte desde `main`, sin tocar `tests/test_sync_*`.
+
+## Novedades de principal (2026-11-17, v1.0.13) — leer primero
+**Verificado**
+- **Android 3b (1.0.11) probada por Pablo en el POCO por USB**: descargar álbum, artista y lista (23 pistas, 144 MB), borrar cada uno y volver a descargar. Todo bien. Pruebas JVM: 34 (antes 31).
+- 1.0.11 no compilaba por un `import` duplicado de `TrackEntity` en `SyncRepository.kt` (error de principal): corregido en `ee1b4a1`; con él, Android CI #5 quedó verde. No sé si `android.yml` corrió sobre el commit anterior.
+- **1.0.12** (catálogo de Room se renueva al emparejar; solo `MainViewModel.kt` y textos): los 3 pipelines en verde y probado en el móvil.
+- **Lint pisado por un zip de principal**: «CI Tests #17» falló en ruff (10 avisos E702/F401/E741/F541; GitHub muestra máx. 10 anotaciones por paso) en 9 archivos de `tests/` y `src/sonoteca/player/qt_backend.py`.
+  Esas correcciones ya estaban en `main` (`5f0d02f`, `ci/lint-f`) pero `feature/android` tenía las versiones viejas: un `unzip -o` de un zip de principal (con foto vieja de `tests/` y `src/`) las pisó.
+  Se arregló con `git checkout origin/main -- tests src/sonoteca/player/qt_backend.py` y volvió a verde. Misma familia que lo de `android.yml`. **Nuevo en principal**: sus zips traen SOLO los archivos que cambian; tu lint cazó el problema a tiempo, no hace falta tocar `ci.yml`.
+- **1.0.13 (en curso, pendiente de que Pablo la aplique)**: `sync/usb.py` (clase `UsbWatcher`), `cli.py` y `tests/test_sync_usb.py` (+6 pruebas): rehace `adb reverse` solo al reconectar el móvil. Solo Python: disparará `ci.yml` (no `android.yml`). No añade fallos a `known-failures.txt`.
+- Anotaciones leídas en el run #17 (no investigadas más): Node 20 en desuso (`checkout@v4`, `setup-python@v5`, `upload-artifact@v4` forzados a Node 24) y `ubuntu-latest` migra a Ubuntu 26 desde el 19-oct-2026.
+**Supuesto (sin verificar)**
+- Que `ruff>=0.6` sin fijar versión no dé sorpresas (esta vez el fallo fue un pisado de archivos, no una versión nueva).
+**Pedido a ci** (zona suya; principal no ha tocado nada)
+1. Valorar los avisos de Node 20 (subir acciones a una versión que corra en Node 24 cuando exista y esté documentada) y de `ubuntu-latest` → Ubuntu 26: ¿fijar `ubuntu-24.04` en `ci.yml`/`android.yml`/`build.yml` o probar en 26 antes (JDK 25 y Qt offscreen podrían comportarse distinto)?
+2. Actualizar la tabla «Pipelines» del README (aún dice que `android.yml` está en la hoja de ruta).
+3. Cuando Pablo lance `build.yml` sin publicar y falle algo con `cryptography` en PyInstaller, pasar a principal las últimas líneas del log (arreglo en `packaging/sonoteca.spec`, que es de principal).
 
 ## Estado de la CI (verificado por Pablo en GitHub salvo lo marcado)
 Acciones fijadas: `checkout@v4`, `setup-python@v5`, `setup-java@v5`, `setup-gradle@v6` (`cache-provider: basic`), `wrapper-validation@v6`, `setup-android@v3`, `upload-artifact@v4`.
@@ -59,6 +77,6 @@ cd - && git worktree remove ../sonoteca-ci --force
 5. Revisión con IA consultiva (opcional, al final).
 
 ## Primeros pasos en un chat nuevo
-1. Leer `docs/CI.md`, `docs/agentes/README.md` y los últimos archivos de `docs/agentes/canal/`.
+1. Leer `docs/CI.md`, `docs/agentes/README.md`, la sección «Novedades de principal» de este archivo y los últimos archivos de `docs/agentes/canal/` (histórico).
 2. Pedir a Pablo el último resultado de las ejecuciones relevantes (`gh run list -L 10`) antes de proponer cambios.
 3. Nunca declarar «probado» un workflow que no se ejecutó.

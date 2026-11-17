@@ -398,7 +398,10 @@ def _sync_serve(args, out) -> int:
     auto_usb = args.solo_usb and not args.sin_adb
     if auto_usb:
         _apply_adb_reverse(srv.port, out)
-    print("Ctrl+C para detener." + ("  Intro = código nuevo y repetir `adb reverse`." if auto_usb else ""), file=out, flush=True)
+    print("Ctrl+C para detener." + ("  Intro = código nuevo y repetir `adb reverse`. Al reconectar el móvil el túnel se rehace solo." if auto_usb else ""),
+          file=out, flush=True)
+    if auto_usb:
+        _watch_adb_reverse(srv.port, out, threading)
 
     def _renew() -> None:
         while True:
@@ -441,6 +444,31 @@ def _apply_adb_reverse(port: int, out) -> None:
               file=out, flush=True)
     for serial, ok, message in results:
         print(f"adb reverse {serial}: " + ("listo" if ok else f"FALLÓ ({message})"), file=out, flush=True)
+
+
+def _watch_adb_reverse(port: int, out, threading) -> None:
+    """Hilo que rehace `adb reverse` al reconectar el móvil o reiniciar adb (sondeo cada pocos segundos). Sin adb no hace nada."""
+    import subprocess
+
+    from .sync import usb
+
+    adb = usb.find_adb()
+    if adb is None:
+        return
+    watcher = usb.UsbWatcher(port, adb)
+
+    def loop() -> None:
+        import time
+
+        while True:
+            try:
+                for serial, ok, message in watcher.step():
+                    print(f"adb reverse {serial}: " + ("listo (túnel rehecho)" if ok else f"FALLÓ ({message})"), file=out, flush=True)
+            except (OSError, subprocess.SubprocessError):
+                pass   # adb se está reiniciando: se reintenta en el siguiente sondeo
+            time.sleep(2.5)
+
+    threading.Thread(target=loop, daemon=True).start()
 
 
 def _sync_devices(args, out) -> int:

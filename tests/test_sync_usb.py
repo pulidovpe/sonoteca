@@ -64,3 +64,85 @@ def test_find_adb_prefers_path_then_sdk_locations():
     assert usb.find_adb({"HOME": "/h", "ANDROID_HOME": "/opt/sdk"}, which=lambda name: None,
                         is_file=lambda p: p == "/opt/sdk/platform-tools/adb") == "/opt/sdk/platform-tools/adb"
     assert usb.find_adb(env, which=lambda name: None, is_file=lambda p: False) is None
+
+
+class FakeAdb:
+    """adb simulado con estado: móviles conectados y túneles activos (se pierden como en la vida real)."""
+
+    def __init__(self, port=8765):
+        self.port, self.devices, self.tunnels, self.fail, self.list_fails, self.calls = port, [], set(), set(), False, []
+
+    def __call__(self, cmd, **kwargs):
+        self.calls.append(cmd)
+        if cmd[1] == "devices":
+            out = "List of devices attached\n" + "".join(f"{serial}\tdevice\n" for serial in self.devices)
+            return SimpleNamespace(stdout=out, stderr="", returncode=0)
+        serial = cmd[2]
+        if cmd[4] == "--list":
+            if self.list_fails:
+                return SimpleNamespace(stdout="", stderr="error", returncode=1)
+            lines = "".join(f"host-1 tcp:{port} tcp:{port}\n" for s, port in self.tunnels if s == serial)
+            return SimpleNamespace(stdout=lines, stderr="", returncode=0)
+        if serial in self.fail:
+            return SimpleNamespace(stdout="", stderr="error: closed", returncode=1)
+        self.tunnels.add((serial, self.port))
+        return SimpleNamespace(stdout="", stderr="", returncode=0)
+
+    def reverse_calls(self):
+        return [c for c in self.calls if len(c) > 4 and c[3] == "reverse" and c[4].startswith("tcp:")]
+
+
+def test_watcher_does_nothing_when_the_tunnel_is_already_there():
+    adb = FakeAdb()
+    adb.devices, adb.tunnels = ["729d2b6f"], {("729d2b6f", 8765)}
+    watcher = usb.UsbWatcher(8765, "adb", adb)
+    assert watcher.step() == [] and watcher.step() == []
+    assert adb.reverse_calls() == []
+
+
+def test_watcher_rebuilds_the_tunnel_when_the_phone_is_plugged_back_in():
+    adb = FakeAdb()
+    adb.devices, adb.tunnels = ["729d2b6f"], {("729d2b6f", 8765)}
+    watcher = usb.UsbWatcher(8765, "adb", adb)
+    watcher.step()
+    adb.devices, adb.tunnels = [], set()          # se desconecta el cable: el túnel se pierde
+    assert watcher.step() == []
+    adb.devices = ["729d2b6f"]                    # se vuelve a conectar
+    assert watcher.step() == [("729d2b6f", True, "")]
+    assert adb.reverse_calls() == [["adb", "-s", "729d2b6f", "reverse", "tcp:8765", "tcp:8765"]]
+    assert watcher.step() == []                   # ya está: no se repite
+
+
+def test_watcher_first_step_fixes_a_phone_that_has_no_tunnel():
+    adb = FakeAdb()
+    adb.devices = ["729d2b6f"]
+    assert usb.UsbWatcher(8765, "adb", adb).step() == [("729d2b6f", True, "")]
+
+
+def test_watcher_restores_a_tunnel_lost_while_still_connected():
+    adb = FakeAdb()
+    adb.devices, adb.tunnels = ["729d2b6f"], {("729d2b6f", 8765)}
+    watcher = usb.UsbWatcher(8765, "adb", adb)
+    watcher.step()
+    adb.tunnels.clear()                           # adb reiniciado: el móvil sigue conectado pero sin túnel
+    assert watcher.step() == [("729d2b6f", True, "")]
+
+
+def test_watcher_reports_a_failure_once_and_recovers():
+    adb = FakeAdb()
+    adb.devices, adb.fail = ["729d2b6f"], {"729d2b6f"}
+    watcher = usb.UsbWatcher(8765, "adb", adb)
+    first = watcher.step()
+    assert first[0][:2] == ("729d2b6f", False) and "closed" in first[0][2]
+    assert watcher.step() == [] and watcher.step() == []   # sigue fallando: no se repite el aviso
+    adb.fail = set()
+    assert watcher.step() == [("729d2b6f", True, "")]
+
+
+def test_watcher_does_not_act_when_adb_cannot_list_tunnels():
+    adb = FakeAdb()
+    adb.devices, adb.list_fails = ["729d2b6f"], True
+    watcher = usb.UsbWatcher(8765, "adb", adb)
+    adb.tunnels = {("729d2b6f", 8765)}
+    watcher.step()
+    assert watcher.step() == [] and adb.reverse_calls() == []
