@@ -30,12 +30,13 @@ def test_play_counts_after_listening_half_and_not_on_seek(env):  # noqa: F811
     be.positionChanged.emit(6900)
     assert ctrl.playsOf(tid) == 1          # una sola vez por reproducción
     ctrl.playAlbum(album, 0)               # volver a empezar la pista cuenta otra
-    be.positionChanged.emit(0); be.positionChanged.emit(500); be.positionChanged.emit(1000); be.positionChanged.emit(1500)
+    for position in (0, 500, 1000, 1500):
+        be.positionChanged.emit(position)
     assert ctrl.playsOf(tid) == 2
 
 
 def test_menu_says_reproduciendo_and_badge_toggles_offline(qml_env):
-    env = qml_env
+    env = qml_env  # noqa: F811  (la fixture `env` importada es la de otros tests)
     assert env.js("actQueue.text") == "Reproduciendo"
     start = env.js("online.offline")
     env.act("badgeMouse.clicked(null)", 100)   # clic en la frase «En línea»
