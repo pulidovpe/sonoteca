@@ -18,6 +18,14 @@ on:
         required: false
         default: ''
         type: string
+      runner:
+        description: 'Imagen de Ubuntu (24.04 = la fijada; 26.04 = a la que migra ubuntu-latest)'
+        required: false
+        default: 'ubuntu-24.04'
+        type: choice
+        options:
+          - ubuntu-24.04
+          - ubuntu-26.04
 
 # Solo lectura y sin secretos: es seguro con PRs de terceros (pull_request, NO pull_request_target).
 permissions:
@@ -30,11 +38,11 @@ concurrency:
 jobs:
   android:
     name: Pruebas JVM y APK debug
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'ubuntu-24.04' }}
     timeout-minutes: 45
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref }}
 
@@ -85,7 +93,7 @@ jobs:
         run: python3 .github/scripts/test_summary.py android/app/build/test-results/testDebugUnitTest
 
       - name: Subir APK debug
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sonoteca-android-debug
           path: android/app/build/outputs/apk/debug/*.apk
@@ -94,7 +102,7 @@ jobs:
 
       - name: Subir informes de pruebas (si fallan)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: android-informes
           path: |

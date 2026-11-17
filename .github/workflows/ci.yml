@@ -19,6 +19,10 @@ on:
         type: string
         required: false
         default: ''
+      runner:
+        type: string
+        required: false
+        default: ''
   workflow_dispatch:
     inputs:
       ref:
@@ -26,6 +30,14 @@ on:
         required: false
         default: ''
         type: string
+      runner:
+        description: 'Imagen de Ubuntu (24.04 = la fijada; 26.04 = a la que migra ubuntu-latest)'
+        required: false
+        default: 'ubuntu-24.04'
+        type: choice
+        options:
+          - ubuntu-24.04
+          - ubuntu-26.04
 
 # Sin secretos, solo lectura: es seguro con PRs de terceros (se usa pull_request, NO pull_request_target).
 permissions:
@@ -44,13 +56,13 @@ env:
 jobs:
   lint:
     name: Lint (ruff)
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'ubuntu-24.04' }}
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref }}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - run: pip install "ruff>=0.6"
@@ -61,10 +73,10 @@ jobs:
 
   hygiene:
     name: Higiene del repositorio
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'ubuntu-24.04' }}
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref }}
       # Las letras tienen copyright y las bases son datos personales: no deben versionarse.
@@ -79,23 +91,23 @@ jobs:
 
   test:
     name: Pruebas (Linux)
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'ubuntu-24.04' }}
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref }}
 
       # El script y la lista de fallos conocidos se toman SIEMPRE de la versión del workflow
       # (no de la ref probada): así funciona también al probar un tag antiguo sin .github/.
       - name: Checkout de las herramientas de CI
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           path: ci-tools
           sparse-checkout: .github
           sparse-checkout-cone-mode: true
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: 'pip'
@@ -139,7 +151,7 @@ jobs:
 
       - name: Subir log de pytest
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pytest-log
           path: pytest.log

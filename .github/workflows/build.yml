@@ -35,13 +35,13 @@ jobs:
   # (Un `if:` a nivel de job no puede leer `matrix`, por eso la matriz se arma aquí.)
   plan:
     name: Plan de compilación
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       matrix: ${{ steps.m.outputs.matrix }}
     steps:
       # Solo se baja el archivo de la versión, para comprobar que el tag coincide con ella.
       - name: Checkout (solo la versión)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           sparse-checkout: src/sonoteca/__init__.py
           sparse-checkout-cone-mode: false
@@ -86,7 +86,7 @@ jobs:
 
           # Runners gratuitos de GitHub (repos públicos: uso ilimitado)
           cloud = {
-              "linux": "ubuntu-latest",
+              "linux": "ubuntu-24.04",
               "windows": "windows-latest",
               "macos": "macos-latest",  # arm64 (M1)
           }
@@ -125,14 +125,14 @@ jobs:
       # checkout limpia el workspace (borra .venv-build, build/, dist/ de corridas previas),
       # importante en runners propios que reutilizan la carpeta.
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Linux compila dentro de Docker (Debian 12), no necesita Python en el host.
       # En runners propios no se usa setup-python: se espera Python 3.12 ya instalado
       # (en macOS setup-python puede pedir sudo, que el usuario dedicado no tiene).
       - name: Set up Python 3.12
         if: matrix.os_key != 'linux' && !contains(matrix.runner, 'self-hosted')
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: 'pip'
@@ -172,7 +172,7 @@ jobs:
         run: powershell -ExecutionPolicy Bypass -File .\packaging\build_win.ps1
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sonoteca-${{ matrix.os_key }}
           path: |
@@ -183,7 +183,7 @@ jobs:
 
       - name: Upload build log (si falló)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-log-${{ matrix.os_key }}
           path: |
@@ -204,19 +204,19 @@ jobs:
       !cancelled() &&
       (needs.build.result == 'success' || needs.build.result == 'failure') &&
       (startsWith(github.ref, 'refs/tags/v') || inputs.release_tag != '')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
       # Solo se baja CHANGELOG.md, no el repo entero.
       - name: Checkout (solo CHANGELOG.md)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           sparse-checkout: CHANGELOG.md
           sparse-checkout-cone-mode: false
 
       - name: Descargar binarios
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: sonoteca-*
           path: release_files
