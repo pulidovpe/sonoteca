@@ -13,7 +13,7 @@ KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más
 | 1 | Esquema v10 y servidor de sincronización (Python) | hecha (1.0.1) |
 | 2 | Proyecto Android, Room, cliente HTTPS con huella fijada, emparejado, manifiesto, lista de artistas | hecha y verificada en el POCO (1609 pistas, 11 listas) |
 | 3a | Descarga por artista: motor reanudable con verificación SHA-256, publicación en `Music/Sonoteca/` (MediaStore), resumen y confirmación | hecha y verificada en el POCO (183 MB) |
-| 3b | Pestañas Artistas / Álbumes / Listas con descarga en cada nivel y «Borrar del teléfono» con confirmación | **esta** (1.0.11), sin verificar |
+| 3b | Pestañas Artistas / Álbumes / Listas con descarga en cada nivel y «Borrar del teléfono» con confirmación | 1.0.11, **verificada** en el POCO por USB (álbum, artista, lista, borrar); 1.0.12 renueva el catálogo al emparejar, sin verificar |
 | 3c | Descarga en segundo plano (WorkManager), limpiar descargas huérfanas, portadas y letras | pendiente |
 | 4 | Reproductor Media3 + UI por artista, álbum y listas (creadas o nuevas) | pendiente |
 | 5 | Wi-Fi y USB pulidos (NSD, QR, permiso de red local) | pendiente |

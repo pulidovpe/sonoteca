@@ -5,6 +5,13 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.12] - 2026-11-17
+**Android: el catálogo se renueva solo al emparejar** (el código Python no cambia). Antes, «Olvidar → emparejar con otro escritorio → descargar» fallaba con «pista desconocida»
+(404) porque el catálogo de Room seguía siendo el del escritorio anterior (UUID distintos). Ahora `pair()` sincroniza el catálogo justo después de emparejar; si esa sincronización
+falla, el emparejamiento se conserva y se avisa. El mensaje de «Olvidar» explica qué se conserva. Sin pruebas nuevas (`MainViewModel` no tiene pruebas JVM). Sin compilar aquí.
+- Verificado por Pablo en el POCO (por USB, con 1.0.11): descargar álbum, artista y lista, borrar cada uno y volver a descargar la lista. 1.0.11 queda verificada.
+- Corregido un import duplicado de `TrackEntity` en `SyncRepository.kt` que rompía la compilación de 1.0.11 (commit aparte, ya en la rama).
+
 ## [1.0.11] - 2026-11-17
 **Android, fase 3b: álbumes, listas y borrado** (el código Python no cambia). Pestañas Artistas / Álbumes / Listas con descarga en cada nivel; «Borrar del teléfono» con confirmación
 (MediaStore + registro de Room); `onPhone` en el resumen. 3 pruebas JVM nuevas (34 en total). Sin compilar ni ejecutar todavía.

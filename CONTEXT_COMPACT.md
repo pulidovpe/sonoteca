@@ -1,4 +1,4 @@
-# Sonoteca — CONTEXTO COMPACTO (v1.0.11)
+# Sonoteca — CONTEXTO COMPACTO (v1.0.12)
 
 > Pégalo al inicio de un chat nuevo del **agente principal** (app, sincronización, Android). Va **junto con el árbol del repo**: lo más seguro es
 > `git archive --format=zip -o ~/Desktop/sonoteca-arbol.zip HEAD` desde la rama de trabajo, ya fusionada con `origin/main` (el zip de mis entregas
@@ -14,16 +14,19 @@
 - **Zips**: construirlos con lista explícita de rutas (`src tests docs packaging android assets README.md CHANGELOG.md CONTEXT_COMPACT.md pyproject.toml LICENSE .gitignore
   .gitlab-ci.yml`), **sin `.github/` ni `docs/CI.md`** (mi copia queda vieja y `unzip -o` pisaría la buena de `main`: pasó con `android.yml`), sin `__pycache__`, `.DS_Store`,
   `pytest.log`, carpetas `tmp*`/`hsperfdata_*` ni `build/`.
-- **Orden de aplicación de un zip (decírselo siempre)**: commit de lo pendiente → `git fetch origin && git merge origin/main` → `unzip -o` → `git status` (revisar que no cambie
+- **Orden de aplicación de un zip (decírselo siempre)**: commit de lo pendiente → `git fetch origin && git merge origin/main` → `unzip -o` → `git status` y `git diff --stat` (revisar que no cambie
   nada de `.github`/`docs/CI.md`; si cambia, `git checkout origin/main -- .github docs/CI.md`) → commit. Nunca copiar carpetas con Finder (reemplaza y borra: ya pasó).
+- **Zips = SOLO los archivos que cambian en esa entrega** (más CHANGELOG, `__init__.py` y este contexto), no el árbol entero: mi copia de `tests/` y `src/` puede estar vieja y un `unzip -o` pisó
+  las correcciones de lint de `main` (2026-11-17, 9 archivos; arreglado con `git checkout origin/main -- tests src/sonoteca/player/qt_backend.py`). Si `git diff --stat` muestra archivos que la entrega no menciona, restaurarlos desde `origin/main`.
+  Pablo debe pasarme un árbol fresco (`git archive` tras fusionar `origin/main`) al empezar un chat nuevo.
 - Nada se cambia en archivos/tags de música sin confirmar.
 - **Entorno de Claude (limitado)**: bash sin red, Python con `cryptography`, `java` 21 (sin `javac`/Kotlin/Android SDK). **No hay pytest, PySide6, mutagen, ruff.** Se prueba la lógica pura de
   Python con un corredor propio (no está en el repo): módulo `pytest` falso (`fixture`, `raises(match=)`, `mark.parametrize`, `tmp_path`, `monkeypatch`) + `MagicMock` para los módulos de
   `mutagen`, con `PYTHONPATH=src:tests`. El Kotlin **nunca** se compila aquí: lo compila Pablo en Android Studio (y la CI). Se pueden validar protocolos con un programa Java de un solo archivo
   (`java Archivo.java`) contra el servidor Python. Usa rutas absolutas y `bash -c` (el shell por defecto es `sh`: sin `<( )`).
 
-## Estado (2026-11-16)
-- **App de escritorio** (Python 3.12 + PySide6/QML, SQLite **esquema v10**): ver «Qué es / Mapa / UI / Trampas» abajo. Versión actual **1.0.11**. `feature/android` ya se fusionó en `main` (PR #5).
+## Estado (2026-11-17)
+- **App de escritorio** (Python 3.12 + PySide6/QML, SQLite **esquema v10**): ver «Qué es / Mapa / UI / Trampas» abajo. Versión actual **1.0.12**. `feature/android` ya se fusionó en `main` (PR #5).
 - **Sincronización con Android** (HECHA y verificada por USB con tu biblioteca): servidor HTTPS en `src/sonoteca/sync/` (`manifest, merge, pairing, tls, server, usb`), comandos `sonoteca sync-serve [--solo-usb]
   [--sin-adb]` y `sync-devices`. Protocolo en `docs/SYNC.md`. Decisiones: identidad estable `tracks.uuid` + `files.content_hash` (SHA-256 con caché); **HTTPS autofirmado con la huella fijada** al
   emparejar (código de 6 dígitos de un solo uso → token); listas con `uuid`/`updated_at` y «última modificación gana» + `deleted_playlists`; manifiesto con `pending_hash` (si > 0, **no se borra nada local**);
@@ -35,8 +38,8 @@
   `AutoMigration(1,2)`: tracks, playlists, playlist_tracks, downloads), `download/` (Naming, Plan, FileDownloader reanudable con `Range` + SHA-256, TrackDownloader → MediaStore `Music/Sonoteca/<Artista>/<Álbum>/`),
   `Selection`, `SyncRepository`, `MainViewModel`, `MainActivity` (pestañas Artistas/Álbumes/Listas). **Toolchain verificada**: AGP 9.5.1 (Kotlin integrado: SIN plugin `kotlin-android`), Gradle 9.6.0, KSP 2.3.10,
   Room 2.8.5 (`androidx.room`; Room 3 existe, sin usar), Compose BOM 2026.02.01, **JDK 25** (`gradle-daemon-jvm.properties`), compileSdk/targetSdk 37, minSdk 29. Avisar al agente de CI si cambia compileSdk, JDK o AGP.
-- **Fases Android**: 1 servidor+v10 ✅ · 2 proyecto, Room, TLS fijado, emparejado, manifiesto ✅ (1609 pistas y 11 listas en el POCO) · 3a descarga por artista ✅ (183 MB reales) · **3b álbum/listas/borrar del teléfono = 1.0.11,
-  SIN verificar** (34 pruebas JVM: 31 verdes en CI + 3 nuevas) · 4 reproductor Media3 + UI, crear/editar listas en el móvil y subirlas con `PUT` · 5 Wi-Fi/USB pulidos (NSD, QR, permiso `ACCESS_LOCAL_NETWORK` de Android 17
+- **Fases Android**: 1 servidor+v10 ✅ · 2 proyecto, Room, TLS fijado, emparejado, manifiesto ✅ (1609 pistas y 11 listas en el POCO) · 3a descarga por artista ✅ (183 MB reales) · 3b álbum/listas/borrar del teléfono ✅ (1.0.11: Pablo verificó en el POCO por USB álbum, artista, lista, borrar y volver a descargar; CI Android verde, 34 pruebas JVM) ·
+  **1.0.12 = catálogo se renueva solo al emparejar (SIN verificar en el móvil)** · 4 reproductor Media3 + UI, crear/editar listas en el móvil y subirlas con `PUT` · 5 Wi-Fi/USB pulidos (NSD, QR, permiso `ACCESS_LOCAL_NETWORK` de Android 17
   por `targetSdk 37`) · 6 Windows/Linux · cierre **1.1.0** (etiqueta `v1.1.0`; APK firmado y PyInstaller con `cryptography`, aún sin probar).
 - **Huecos conocidos**: descarga en segundo plano (WorkManager: versión sin verificar), limpiar descargas huérfanas, portadas/letras en el móvil, qué hace Android con los archivos de `Música/Sonoteca` tras desinstalar y reinstalar
   (sin verificar), pruebas de instrumentación (no hacen falta y fallan en Xiaomi).
@@ -61,7 +64,7 @@
 - Corregir los 26 tests viejos se aplazó (rama `fix/…` aparte, sin tocar `tests/test_sync_*`).
 
 ## Qué NO se ha verificado nunca (no afirmarlo)
-Kotlin de 3b; ejecución de las pruebas Python con pytest real/ruff en mis entregas (las verifica la CI); GUI/Qt; PyInstaller con `sync/`; Wi-Fi (solo USB probado); Android 17; WorkManager.
+Kotlin de 1.0.12 (auto-sincronizar tras emparejar); ejecución de las pruebas Python con pytest real/ruff en mis entregas (las verifica la CI); GUI/Qt; PyInstaller con `sync/`; Wi-Fi (solo USB probado); Android 17; WorkManager.
 
 
 ## Qué es

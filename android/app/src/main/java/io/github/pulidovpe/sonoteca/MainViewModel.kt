@@ -43,7 +43,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun pair(url: String, deviceName: String) = launchBusy {
         val paired = repository.pair(url, deviceName)
         pairing.value = paired
-        "Emparejado con ${paired.host}:${paired.port}."
+        val head = "Emparejado con ${paired.host}:${paired.port}."
+        // El catálogo guardado puede ser de otro escritorio (otros UUID): se renueva al emparejar para que las descargas no den «pista desconocida».
+        try {
+            "$head ${repository.sync(paired)}"
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            "$head No se pudo sincronizar el catálogo: ${friendly(e)} Pulsa «Sincronizar catálogo» para reintentar."
+        }
     }
 
     fun sync() {
@@ -129,7 +137,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun unpair() {
         repository.unpair()
         pairing.value = null
-        message.value = "Emparejamiento olvidado. Los datos descargados se conservan."
+        message.value = "Emparejamiento olvidado. Se conservan el catálogo y lo descargado; el catálogo se renueva al emparejar de nuevo."
     }
 
     fun dismissMessage() {
