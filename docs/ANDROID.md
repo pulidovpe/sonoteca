@@ -15,7 +15,8 @@ KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más
 | 3a | Descarga por artista: motor reanudable con verificación SHA-256, publicación en `Music/Sonoteca/` (MediaStore), resumen y confirmación | hecha y verificada en el POCO (183 MB) |
 | 3b | Pestañas Artistas / Álbumes / Listas con descarga en cada nivel y «Borrar del teléfono» con confirmación | 1.0.11, **verificada** en el POCO por USB (álbum, artista, lista, borrar); 1.0.12 renueva el catálogo al emparejar, sin verificar |
 | 3c | Descarga en segundo plano (WorkManager), limpiar descargas huérfanas, portadas y letras | pendiente |
-| 4 | Reproductor Media3 + UI por artista, álbum y listas (creadas o nuevas) | pendiente |
+| 4a | **Reproductor local** (Media3 1.11.0): toca lo descargado en el teléfono, sin servidor ni cable; mini reproductor, notificación y segundo plano | 1.0.14: compila y reproduce en el POCO (pestaña Descargado, sin servidor, pantalla apagada y bloqueada); sin verificar: notificación y controles de bloqueo, auriculares, llamadas |
+| 4b | Crear/editar listas en el móvil y subirlas al escritorio con `PUT` | pendiente |
 | 5 | Wi-Fi y USB pulidos (NSD, QR, permiso de red local) | pendiente |
 | 6 | Windows y Linux | pendiente |
 
@@ -23,6 +24,8 @@ KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más
 - `net/`: `PairingInfo` (URL `sonoteca-sync://pair?...`), `PinnedTls` (confianza por huella SHA-256 del certificado),
   `SyncApi` (HttpsURLConnection), `ManifestModel` (parser). Sin clases de Android → se prueban en la JVM.
 - `db/`: entidades Room (`tracks`, `playlists`, `playlist_tracks`), `LibraryDao`, `AppDatabase`.
+- `playback/`: `PlaybackQueue` (lógica pura: recorte de la cola, URI permitidas, formato de tiempo; se prueba en la JVM), `PlaybackService` (`MediaSessionService` + ExoPlayer) y
+  `PlayerController` (MediaController + estado para la UI).
 - `SyncRepository`, `MainViewModel`, `PairingStore` (SharedPreferences privadas), `MainActivity` (Compose).
 - Pruebas JVM: `app/src/test/.../net/` (usan un certificado y un manifiesto generados por el servidor real).
 
@@ -33,6 +36,18 @@ KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más
 - **Red local (Android 17)**: con `targetSdk = 37` el acceso a la LAN queda bloqueado por defecto en Android 17; hará falta declarar y pedir
   `ACCESS_LOCAL_NETWORK` (o usar el selector de NSD). En Android 16 (el POCO) la LAN está abierta. Se resuelve en la fase 5. Por USB
   (`adb reverse`) la app habla con `localhost`.
+
+## Reproductor (fase 4a)
+- Solo reproduce **lo descargado en el teléfono** (entradas de MediaStore que la app publicó) y **no necesita servidor, cable ni Wi-Fi**. Sin streaming.
+- Cuatro pestañas: Artistas, Álbumes, Listas y **Descargado** (todas las pistas bajadas, en orden de artista/álbum/pista; tocar una la reproduce y sigue con las siguientes).
+  Desde el resumen de un artista/álbum/lista, **«Reproducir las N descargadas»** (las listas suenan en su orden).
+- Mini reproductor abajo: título, artista, barra de avance con salto, anterior/pausa/siguiente. El servicio (`PlaybackService`) sigue sonando con la pantalla apagada o la app en segundo plano,
+  con notificación y controles de pantalla de bloqueo/auriculares; se pausa solo con llamadas y al desconectar los auriculares. En Android 13+ se pide el permiso de notificaciones al primer «reproducir».
+- La cola se recorta a 500 pistas alrededor de la elegida (los mensajes entre la app y el servicio no deben ser enormes).
+- Sin emparejamiento: con catálogo guardado la biblioteca se muestra igual («Sin emparejar») y se puede reproducir; «Descargar» queda desactivado y aparece «Emparejar».
+- El servicio solo abre URIs `content://media/…` (la sesión puede recibir peticiones de otras apps).
+- Salvedades (sin verificar): Xiaomi/HyperOS puede cerrar el servicio con la batería «optimizada» (ajusta la app a «Sin restricciones»); si borras del teléfono lo que está sonando, el reproductor
+  mostrará un error de reproducción; no hay aleatorio, repetir, ni cola editable todavía.
 
 ## Descargas (fase 3a)
 - Se elige un artista (fila de la lista) → resumen (pistas que faltan, tamaño, espacio libre; se deja un margen de 200 MB) → «Descargar».

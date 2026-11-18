@@ -7,6 +7,7 @@ import io.github.pulidovpe.sonoteca.db.AppDatabase
 import io.github.pulidovpe.sonoteca.download.DownloadPlan
 import io.github.pulidovpe.sonoteca.download.DownloadProgress
 import io.github.pulidovpe.sonoteca.net.SyncHttpException
+import io.github.pulidovpe.sonoteca.playback.PlayerController
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,6 +40,41 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val playlistCount = repository.playlistCount.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
     val albums = repository.albums.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val playlistRows = repository.playlistRows.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Reproductor local (fase 4a): toca lo descargado en el teléfono, sin servidor ni cable. */
+    val player = PlayerController(app)
+    val playerState = player.state
+    val playable = repository.playable.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    init {
+        player.connect()
+    }
+
+    /** Toca la lista «Descargado» entera empezando por la pista `index`. */
+    fun playFromList(index: Int) {
+        val list = playable.value
+        if (index in list.indices) player.play(list, index)
+    }
+
+    /** Toca lo ya descargado de la selección del diálogo (artista, álbum o lista). */
+    fun playSelection() {
+        val selection = planSelection ?: return
+        plan.value = null
+        viewModelScope.launch {
+            try {
+                val tracks = repository.playableOf(selection)
+                if (tracks.isEmpty()) message.value = "No hay pistas descargadas de «${selection.label}»." else player.play(tracks, 0)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                message.value = friendly(e)
+            }
+        }
+    }
+
+    override fun onCleared() {
+        player.release()
+    }
 
     fun pair(url: String, deviceName: String) = launchBusy {
         val paired = repository.pair(url, deviceName)

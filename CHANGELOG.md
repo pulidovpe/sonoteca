@@ -5,11 +5,23 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.14] - 2026-11-17
+**Android fase 4a: reproductor local con Media3 1.11.0** (solo Kotlin/Android; el Python no cambia). Reproduce lo descargado en el teléfono, sin servidor ni cable.
+- Nuevo `playback/`: `PlaybackService` (`MediaSessionService` + ExoPlayer: segundo plano, notificación, pantalla de bloqueo, pausa al desconectar auriculares y en llamadas), `PlayerController`
+  (MediaController, estado para la UI) y `PlaybackQueue` (lógica pura con 6 pruebas JVM nuevas: recorte de cola a 500, URI permitidas, formato de tiempo).
+- Room: consultas nuevas `playableAll/OfArtist/OfAlbum/OfPlaylist` (POJO `PlayableTrack`; las listas en su orden). **El esquema no cambia** (sigue v2).
+- UI: pestaña «Descargado», botón «Reproducir las N descargadas» en el resumen, mini reproductor con barra de avance, permiso de notificaciones (Android 13+) al primer «reproducir».
+- **La biblioteca ya no desaparece al «Olvidar»**: con catálogo guardado se muestra «Sin emparejar», se puede reproducir y hay un botón «Emparejar»; «Descargar» exige emparejamiento.
+- Gradle: `media3-exoplayer` y `media3-session` 1.11.0 (catálogo de versiones); manifiesto: servicio `mediaPlayback` y permisos `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, `POST_NOTIFICATIONS`, `WAKE_LOCK`.
+- Verificado por Pablo en el POCO: compila, pestaña «Descargado», «Olvidar» y reproducción sin servidor ni cable con la pantalla apagada y bloqueada. Sin verificar: controles de la notificación y del bloqueo, auriculares, llamadas.
+- Ajuste tras la primera prueba: las cuatro pestañas ocupan el ancho a partes iguales (con el ancho natural de los botones «Descargado» no cabía y se veía amontonado a la derecha).
+- Corregido en esta copia: `SyncRepository.kt` traía otra vez el import duplicado de `TrackEntity` (ya estaba arreglado en el repositorio de Pablo).
+
 ## [1.0.13] - 2026-11-17
 **USB: el túnel `adb reverse` se rehace solo** al reconectar el cable o reiniciar adb (antes había que pulsar Intro en el servidor). Nueva clase `UsbWatcher` en `sync/usb.py`
 (sondeo cada ~2,5 s de `adb devices` y `adb reverse --list`; actúa solo con móviles recién conectados o sin el túnel; un fallo se avisa una vez); `sync-serve --solo-usb` la arranca en un hilo
 (`--sin-adb` la desactiva). 6 pruebas Python nuevas en `tests/test_sync_usb.py` con un adb simulado con estado (corridas aquí con corredor propio; pytest real lo verifica la CI).
-El formato exacto de `adb reverse --list` en Android 16/adb actual no se ha comprobado con adb real: Pablo debe probar desconectar y reconectar el POCO.
+Verificado por Pablo con adb real en el POCO: desconectar y reconectar el cable rehízo el túnel solo (sin repeticiones).
 - Las actualizaciones para el agente de CI pasan a vivir SOLO en `docs/agentes/CONTEXT_COMPACT_AGENTES.md` (sección «Novedades de principal»); se deja de crear archivos nuevos en `docs/agentes/canal/`.
 
 ## [1.0.12] - 2026-11-17
