@@ -7,6 +7,12 @@ import androidx.room.Transaction
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
+// Pistas descargadas con la versión actual del catálogo (mismo hash), con la URI de MediaStore.
+private const val PLAYABLE_SELECT =
+    "SELECT t.uuid AS uuid, t.title AS title, t.artist AS artist, t.albumArtist AS albumArtist, t.album AS album, " +
+        "t.trackNo AS trackNo, t.discNo AS discNo, t.duration AS duration, d.uri AS uri " +
+        "FROM tracks t JOIN downloads d ON d.trackUuid = t.uuid AND d.hash = t.hash "
+
 @Dao
 abstract class LibraryDao {
     @Upsert
@@ -82,6 +88,34 @@ abstract class LibraryDao {
 
     @Upsert
     abstract suspend fun upsertDownload(download: DownloadEntity)
+
+    @Query(
+        PLAYABLE_SELECT +
+            "ORDER BY t.albumArtist COLLATE NOCASE, t.album COLLATE NOCASE, t.discNo, t.trackNo, t.title COLLATE NOCASE",
+    )
+    abstract fun playableAll(): Flow<List<PlayableTrack>>
+
+    @Query(
+        PLAYABLE_SELECT + "WHERE t.albumArtist = :artist " +
+            "ORDER BY t.album COLLATE NOCASE, t.discNo, t.trackNo, t.title COLLATE NOCASE",
+    )
+    abstract suspend fun playableOfArtist(artist: String): List<PlayableTrack>
+
+    @Query(
+        PLAYABLE_SELECT + "WHERE t.albumArtist = :artist AND t.album = :album " +
+            "ORDER BY t.discNo, t.trackNo, t.title COLLATE NOCASE",
+    )
+    abstract suspend fun playableOfAlbum(artist: String, album: String): List<PlayableTrack>
+
+    /** En el orden de la lista (no por álbum), como se creó en el escritorio. */
+    @Query(
+        "SELECT t.uuid AS uuid, t.title AS title, t.artist AS artist, t.albumArtist AS albumArtist, t.album AS album, " +
+            "t.trackNo AS trackNo, t.discNo AS discNo, t.duration AS duration, d.uri AS uri " +
+            "FROM playlist_tracks pt JOIN tracks t ON t.uuid = pt.trackUuid " +
+            "JOIN downloads d ON d.trackUuid = t.uuid AND d.hash = t.hash " +
+            "WHERE pt.playlistUuid = :uuid ORDER BY pt.position",
+    )
+    abstract suspend fun playableOfPlaylist(uuid: String): List<PlayableTrack>
 
     @Query("SELECT COUNT(*) FROM tracks")
     abstract fun trackCount(): Flow<Int>

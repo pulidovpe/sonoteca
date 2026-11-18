@@ -1,4 +1,4 @@
-# Sonoteca — CONTEXTO COMPACTO (v1.0.13)
+# Sonoteca — CONTEXTO COMPACTO (v1.0.14)
 
 > Pégalo al inicio de un chat nuevo del **agente principal** (app, sincronización, Android). Va **junto con el árbol del repo**: lo más seguro es
 > `git archive --format=zip -o ~/Desktop/sonoteca-arbol.zip HEAD` desde la rama de trabajo, ya fusionada con `origin/main` (el zip de mis entregas
@@ -26,7 +26,7 @@
   (`java Archivo.java`) contra el servidor Python. Usa rutas absolutas y `bash -c` (el shell por defecto es `sh`: sin `<( )`).
 
 ## Estado (2026-11-17)
-- **App de escritorio** (Python 3.12 + PySide6/QML, SQLite **esquema v10**): ver «Qué es / Mapa / UI / Trampas» abajo. Versión actual **1.0.13**. `feature/android` ya se fusionó en `main` (PR #5).
+- **App de escritorio** (Python 3.12 + PySide6/QML, SQLite **esquema v10**): ver «Qué es / Mapa / UI / Trampas» abajo. Versión actual **1.0.14**. `feature/android` ya se fusionó en `main` (PR #5).
 - **Sincronización con Android** (HECHA y verificada por USB con tu biblioteca): servidor HTTPS en `src/sonoteca/sync/` (`manifest, merge, pairing, tls, server, usb`), comandos `sonoteca sync-serve [--solo-usb]
   [--sin-adb]` y `sync-devices`. Protocolo en `docs/SYNC.md`. Decisiones: identidad estable `tracks.uuid` + `files.content_hash` (SHA-256 con caché); **HTTPS autofirmado con la huella fijada** al
   emparejar (código de 6 dígitos de un solo uso → token); listas con `uuid`/`updated_at` y «última modificación gana» + `deleted_playlists`; manifiesto con `pending_hash` (si > 0, **no se borra nada local**);
@@ -34,13 +34,13 @@
 - **Migraciones** (`docs/MIGRACIONES.md`): `migrate()` copia a `library.db.v<N>.bak` (API de copia de SQLite) ANTES de subir el esquema; aparta tablas ajenas con nombre de v10 a `<nombre>_incompatible`;
   v10 se autorrepara. **Desarrollo siempre con `SONOTECA_DATA_DIR=$HOME/sonoteca-dev`**, nunca la biblioteca real (la real quedó en v10 por un descuido mío: el binario 1.0.0 ya no la abre;
   `~/Library/Application Support/sonoteca/library.db.v9.bak` es la vía de vuelta; hay otras copias manuales de Pablo y del otro agente: no tocar).
-- **App Android** (`android/`, Kotlin 2.2.10 + Compose + Room; paquete `io.github.pulidovpe.sonoteca`): `net/` (PairingInfo, PinnedTls, SyncApi con HttpsURLConnection, ManifestModel), `db/` (Room **v2**,
+- **App Android** (`android/`, Kotlin 2.2.10 + Compose + Room; paquete `io.github.pulidovpe.sonoteca`): `net/` (PairingInfo, PinnedTls, SyncApi con HttpsURLConnection, ManifestModel), `playback/` (PlaybackQueue pura, PlaybackService, PlayerController), `db/` (Room **v2**,
   `AutoMigration(1,2)`: tracks, playlists, playlist_tracks, downloads), `download/` (Naming, Plan, FileDownloader reanudable con `Range` + SHA-256, TrackDownloader → MediaStore `Music/Sonoteca/<Artista>/<Álbum>/`),
   `Selection`, `SyncRepository`, `MainViewModel`, `MainActivity` (pestañas Artistas/Álbumes/Listas). **Toolchain verificada**: AGP 9.5.1 (Kotlin integrado: SIN plugin `kotlin-android`), Gradle 9.6.0, KSP 2.3.10,
   Room 2.8.5 (`androidx.room`; Room 3 existe, sin usar), Compose BOM 2026.02.01, **JDK 25** (`gradle-daemon-jvm.properties`), compileSdk/targetSdk 37, minSdk 29. Avisar al agente de CI si cambia compileSdk, JDK o AGP.
 - **Fases Android**: 1 servidor+v10 ✅ · 2 proyecto, Room, TLS fijado, emparejado, manifiesto ✅ (1609 pistas y 11 listas en el POCO) · 3a descarga por artista ✅ (183 MB reales) · 3b álbum/listas/borrar del teléfono ✅ (1.0.11: Pablo verificó en el POCO por USB álbum, artista, lista, borrar y volver a descargar; CI Android verde, 34 pruebas JVM) ·
   1.0.12 catálogo se renueva solo al emparejar ✅ (pipelines verdes, probado en el POCO) ·
-  **1.0.13 = `adb reverse` automático al reconectar el cable (`UsbWatcher`; SIN verificar con adb real)** · 4 reproductor Media3 + UI, crear/editar listas en el móvil y subirlas con `PUT` · 5 Wi-Fi/USB pulidos (NSD, QR, permiso `ACCESS_LOCAL_NETWORK` de Android 17
+  1.0.13 `adb reverse` automático al reconectar el cable (`UsbWatcher`) ✅ (verificado con adb real) · **4a reproductor local Media3 1.11.0 = 1.0.14: compila y funciona en el POCO** (Pablo: pestaña «Descargado», «Olvidar» sin servidor ni cable, reproducción con pantalla apagada y bloqueada; solo lo descargado). Sin verificar: notificación y controles de bloqueo, auriculares, llamadas, batería de HyperOS · 4b crear/editar listas en el móvil y subirlas con `PUT` · 5 Wi-Fi/USB pulidos (NSD, QR, permiso `ACCESS_LOCAL_NETWORK` de Android 17
   por `targetSdk 37`) · 6 Windows/Linux · cierre **1.1.0** (etiqueta `v1.1.0`; APK firmado y PyInstaller con `cryptography`, aún sin probar).
 - **Huecos conocidos**: descarga en segundo plano (WorkManager: versión sin verificar), limpiar descargas huérfanas, portadas/letras en el móvil, qué hace Android con los archivos de `Música/Sonoteca` tras desinstalar y reinstalar
   (sin verificar), pruebas de instrumentación (no hacen falta y fallan en Xiaomi).
@@ -66,7 +66,7 @@
 - Corregir los 26 tests viejos se aplazó (rama `fix/…` aparte, sin tocar `tests/test_sync_*`).
 
 ## Qué NO se ha verificado nunca (no afirmarlo)
-`UsbWatcher` con adb real (formato de `adb reverse --list`); ejecución de las pruebas Python con pytest real/ruff en mis entregas (las verifica la CI); GUI/Qt; PyInstaller con `sync/`; Wi-Fi (solo USB probado); Android 17; WorkManager.
+controles de notificación/bloqueo y auriculares de 4a; ejecución de las pruebas Python con pytest real/ruff en mis entregas (las verifica la CI); GUI/Qt; PyInstaller con `sync/`; Wi-Fi (solo USB probado); Android 17; WorkManager.
 
 
 ## Qué es

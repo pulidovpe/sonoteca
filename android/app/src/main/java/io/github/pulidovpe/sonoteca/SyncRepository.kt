@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.Environment
 import android.os.StatFs
 import io.github.pulidovpe.sonoteca.db.AppDatabase
+import io.github.pulidovpe.sonoteca.db.PlayableTrack
 import io.github.pulidovpe.sonoteca.db.PlaylistEntity
 import io.github.pulidovpe.sonoteca.db.PlaylistTrackEntity
 import io.github.pulidovpe.sonoteca.db.TrackEntity
@@ -26,6 +27,7 @@ class SyncRepository(private val context: Context, private val db: AppDatabase, 
     val playlistCount = db.library().playlistCount()
     val albums = db.library().albums()
     val playlistRows = db.library().playlistRows()
+    val playable = db.library().playableAll()
 
     /** Empareja con el escritorio usando la URL de `sonoteca sync-serve`. Devuelve el emparejamiento guardado. */
     suspend fun pair(rawUrl: String, deviceName: String): Pairing = withContext(Dispatchers.IO) {
@@ -54,6 +56,16 @@ class SyncRepository(private val context: Context, private val db: AppDatabase, 
         is Selection.Artist -> db.library().tracksOfArtist(selection.name)
         is Selection.Album -> db.library().tracksOfAlbum(selection.artist, selection.album)
         is Selection.Playlist -> db.library().tracksOfPlaylist(selection.uuid)
+    }
+
+    /** Las pistas YA descargadas de una selección, listas para reproducir (en orden de álbum; las listas, en su orden). */
+    suspend fun playableOf(selection: Selection): List<PlayableTrack> = withContext(Dispatchers.IO) {
+        val dao = db.library()
+        when (selection) {
+            is Selection.Artist -> dao.playableOfArtist(selection.name)
+            is Selection.Album -> dao.playableOfAlbum(selection.artist, selection.album)
+            is Selection.Playlist -> dao.playableOfPlaylist(selection.uuid)
+        }
     }
 
     /** Qué falta por descargar de una selección (artista, álbum o lista) y cuánto espacio libre hay. */
