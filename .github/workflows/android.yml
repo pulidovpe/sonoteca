@@ -62,7 +62,7 @@ jobs:
       # Instala cmdline-tools y ACEPTA las licencias. La plataforma del compileSdk (release(37)) y las build-tools
       # las descarga AGP al compilar (con las licencias ya aceptadas): `platforms;android-37` NO es un id válido de sdkmanager.
       - name: Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
         with:
           packages: 'platform-tools'
           log-accepted-android-sdk-licenses: false
