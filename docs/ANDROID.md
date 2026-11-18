@@ -12,8 +12,9 @@ KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más
 |---|---|---|
 | 1 | Esquema v10 y servidor de sincronización (Python) | hecha (1.0.1) |
 | 2 | Proyecto Android, Room, cliente HTTPS con huella fijada, emparejado, manifiesto, lista de artistas | hecha y verificada en el POCO (1609 pistas, 11 listas) |
-| 3a | Descarga por artista: motor reanudable con verificación SHA-256, publicación en `Music/Sonoteca/` (MediaStore), resumen y confirmación | **esta** (1.0.9) |
-| 3b | Descargar por álbum y por lista, ofrecer borrar lo que ya no está en el escritorio, descarga en segundo plano (WorkManager) | pendiente |
+| 3a | Descarga por artista: motor reanudable con verificación SHA-256, publicación en `Music/Sonoteca/` (MediaStore), resumen y confirmación | hecha y verificada en el POCO (183 MB) |
+| 3b | Pestañas Artistas / Álbumes / Listas con descarga en cada nivel y «Borrar del teléfono» con confirmación | 1.0.11, **verificada** en el POCO por USB (álbum, artista, lista, borrar); 1.0.12 renueva el catálogo al emparejar, sin verificar |
+| 3c | Descarga en segundo plano (WorkManager), limpiar descargas huérfanas, portadas y letras | pendiente |
 | 4 | Reproductor Media3 + UI por artista, álbum y listas (creadas o nuevas) | pendiente |
 | 5 | Wi-Fi y USB pulidos (NSD, QR, permiso de red local) | pendiente |
 | 6 | Windows y Linux | pendiente |
@@ -42,3 +43,9 @@ KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más
 - Salvedades: la descarga vive en la app en primer plano (si Android la detiene, se reanuda al repetir; el segundo plano llega en 3b); no se detecta lo que
   una instalación anterior dejó en `Música/Sonoteca` (el catálogo de descargas es de Room: desinstalar y reinstalar puede duplicar; **sin verificar** cómo
   trata Android la propiedad de esos archivos); no se borra nada de lo descargado desde la app todavía.
+
+## Pestañas y borrado (fase 3b)
+- Tres pestañas: **Artistas** (agrupa por artista del álbum), **Álbumes** y **Listas**. Cada fila muestra `descargadas/total`; tocarla abre el mismo resumen de la fase 3a.
+- Una lista descarga sus pistas **sin repetir** y solo las que ya están en el catálogo (una pista aún sin huella en el escritorio no cuenta hasta la próxima sincronización).
+- Si hay algo descargado de la selección, el resumen ofrece **«Borrar N descargadas del teléfono»** → confirmación → borra la entrada de MediaStore y el registro de Room. **No toca el escritorio ni el
+  catálogo.** Una pista cuenta «en el teléfono» aunque su descarga esté desactualizada. Si Android no deja borrar un archivo, se informa cuántos fallaron y se conserva su registro.

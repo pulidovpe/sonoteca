@@ -5,6 +5,32 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.13] - 2026-11-17
+**USB: el túnel `adb reverse` se rehace solo** al reconectar el cable o reiniciar adb (antes había que pulsar Intro en el servidor). Nueva clase `UsbWatcher` en `sync/usb.py`
+(sondeo cada ~2,5 s de `adb devices` y `adb reverse --list`; actúa solo con móviles recién conectados o sin el túnel; un fallo se avisa una vez); `sync-serve --solo-usb` la arranca en un hilo
+(`--sin-adb` la desactiva). 6 pruebas Python nuevas en `tests/test_sync_usb.py` con un adb simulado con estado (corridas aquí con corredor propio; pytest real lo verifica la CI).
+El formato exacto de `adb reverse --list` en Android 16/adb actual no se ha comprobado con adb real: Pablo debe probar desconectar y reconectar el POCO.
+- Las actualizaciones para el agente de CI pasan a vivir SOLO en `docs/agentes/CONTEXT_COMPACT_AGENTES.md` (sección «Novedades de principal»); se deja de crear archivos nuevos en `docs/agentes/canal/`.
+
+## [1.0.12] - 2026-11-17
+**Android: el catálogo se renueva solo al emparejar** (el código Python no cambia). Antes, «Olvidar → emparejar con otro escritorio → descargar» fallaba con «pista desconocida»
+(404) porque el catálogo de Room seguía siendo el del escritorio anterior (UUID distintos). Ahora `pair()` sincroniza el catálogo justo después de emparejar; si esa sincronización
+falla, el emparejamiento se conserva y se avisa. El mensaje de «Olvidar» explica qué se conserva. Sin pruebas nuevas (`MainViewModel` no tiene pruebas JVM). Sin compilar aquí.
+- Verificado por Pablo en el POCO (por USB, con 1.0.11): descargar álbum, artista y lista, borrar cada uno y volver a descargar la lista. 1.0.11 queda verificada.
+- Corregido un import duplicado de `TrackEntity` en `SyncRepository.kt` que rompía la compilación de 1.0.11 (commit aparte, ya en la rama).
+
+## [1.0.11] - 2026-11-17
+**Android, fase 3b: álbumes, listas y borrado** (el código Python no cambia). Pestañas Artistas / Álbumes / Listas con descarga en cada nivel; «Borrar del teléfono» con confirmación
+(MediaStore + registro de Room); `onPhone` en el resumen. 3 pruebas JVM nuevas (34 en total). Sin compilar ni ejecutar todavía.
+- `CONTEXT_COMPACT.md` reescrito y consolidado para un chat nuevo; el historial antiguo pasa a `docs/HISTORIAL_CONTEXTO.md`; contexto del agente de CI en `docs/agentes/CONTEXT_COMPACT_AGENTES.md`.
+- Mis zips dejan de incluir `.github/` y `docs/CI.md` (una copia vieja pisaba la buena de `main`: se vio con `android.yml`).
+- Canal: respuesta a `ci` (CI de Android en verde; `feature/android` fusionada en `main`).
+
+## [1.0.10] - 2026-11-16
+- Integrado lo entregado por el agente de CI: `.github/workflows/android.yml` (pruebas JVM y APK debug con cambios en `android/**`, JDK 25), `docs/CI.md` actualizado y su
+  mensaje en `docs/agentes/canal/`. Respuesta de `principal` en el canal. Sin cambios de código.
+- Verificado por Pablo en el POCO: la descarga por artista (183 MB) funciona por USB.
+
 ## [1.0.9] - 2026-11-15
 **Android, fase 3a: descargar música por artista** (el código Python no cambia). Motor reanudable (`Range`) con verificación SHA-256 y publicación en
 `Música/Sonoteca/<Artista>/<Álbum>/` con MediaStore, resumen y confirmación antes de descargar (pistas, tamaño, espacio libre), progreso y cancelación. Room v2

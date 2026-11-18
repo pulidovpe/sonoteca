@@ -52,3 +52,7 @@ data class DownloadEntity(
 data class DownloadedHash(val trackUuid: String, val hash: String)
 
 data class ArtistRow(val name: String, val tracks: Int, val downloaded: Int)
+
+data class AlbumRow(val artist: String, val album: String, val tracks: Int, val downloaded: Int)
+
+data class PlaylistRow(val uuid: String, val name: String, val tracks: Int, val downloaded: Int)

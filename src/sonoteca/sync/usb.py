@@ -47,15 +47,57 @@ def list_devices(adb: str, run: Callable = subprocess.run) -> list[str]:
     return serials
 
 
+def _reverse_one(adb: str, serial: str, port: int, run: Callable = subprocess.run) -> tuple[str, bool, str]:
+    proc = run([adb, "-s", serial, "reverse", f"tcp:{port}", f"tcp:{port}"], capture_output=True, text=True, timeout=20)
+    return serial, proc.returncode == 0, ((proc.stdout or "") + (proc.stderr or "")).strip()
+
+
 def reverse_all(port: int, adb: str | None = None, run: Callable = subprocess.run) -> list[tuple[str, bool, str]]:
     """Aplica `adb -s <serie> reverse tcp:<puerto> tcp:<puerto>` a cada dispositivo autorizado.
     Devuelve [(serie, ok, mensaje)]. Lanza FileNotFoundError si no encuentra `adb`."""
     adb = adb or find_adb()
     if adb is None:
         raise FileNotFoundError("No se encontró adb (ni en el PATH ni en el SDK de Android).")
-    results = []
-    for serial in list_devices(adb, run):
-        proc = run([adb, "-s", serial, "reverse", f"tcp:{port}", f"tcp:{port}"],
-                   capture_output=True, text=True, timeout=20)
-        results.append((serial, proc.returncode == 0, ((proc.stdout or "") + (proc.stderr or "")).strip()))
-    return results
+    return [_reverse_one(adb, serial, port, run) for serial in list_devices(adb, run)]
+
+
+def tunnel_state(adb: str, serial: str, port: int, run: Callable = subprocess.run) -> bool | None:
+    """¿Tiene ese móvil el túnel del puerto? True/False según `adb reverse --list`; None si adb no lo pudo decir (no se actúa)."""
+    proc = run([adb, "-s", serial, "reverse", "--list"], capture_output=True, text=True, timeout=20)
+    if proc.returncode != 0:
+        return None
+    return f"tcp:{port}" in (proc.stdout or "")
+
+
+class UsbWatcher:
+    """Rehace `adb reverse` solo cuando un móvil se conecta de nuevo o pierde el túnel (cable, reinicio de adb/Android Studio).
+
+    `step()` es un sondeo: devuelve [(serie, ok, mensaje)] solo de lo que HIZO. El primer sondeo solo toma nota de los móviles ya
+    conectados (el arranque ya aplicó el túnel) y actúa únicamente si alguno no lo tiene. Un fallo se informa una sola vez por móvil
+    hasta que vuelva a funcionar, para no repetirlo en cada sondeo.
+    """
+
+    def __init__(self, port: int, adb: str, run: Callable = subprocess.run) -> None:
+        self.port, self.adb, self.run = port, adb, run
+        self._known: set[str] | None = None
+        self._failing: set[str] = set()
+
+    def step(self) -> list[tuple[str, bool, str]]:
+        serials = list_devices(self.adb, self.run)
+        first = self._known is None
+        known = self._known or set()
+        events: list[tuple[str, bool, str]] = []
+        for serial in serials:
+            new = serial not in known and not first
+            if not new and tunnel_state(self.adb, serial, self.port, self.run) is not False:
+                continue
+            serial, ok, message = _reverse_one(self.adb, serial, self.port, self.run)
+            if ok:
+                self._failing.discard(serial)
+                events.append((serial, True, message))
+            elif serial not in self._failing:
+                self._failing.add(serial)
+                events.append((serial, False, message))
+        self._known = set(serials)
+        self._failing &= self._known
+        return events
