@@ -24,6 +24,14 @@ data class TrackEntity(
     val hasLyrics: Boolean,
 )
 
+/** Una reproducción anotada en el teléfono, pendiente de subir al escritorio (`POST /v1/plays`). Se borra al recibir el 200. */
+@Entity(tableName = "play_events")
+data class PlayEventEntity(
+    @PrimaryKey val eventId: String,
+    val trackUuid: String,
+    val playedAt: String,
+)
+
 @Entity(tableName = "playlists")
 data class PlaylistEntity(
     @PrimaryKey val uuid: String,

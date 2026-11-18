@@ -5,6 +5,17 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.16] - 2026-11-18
+**Android: el móvil anota las reproducciones y las sube al escritorio** (segunda mitad de «estadísticas»; el servidor llegó en 1.0.15). Solo Kotlin/Android + versión Python.
+- `PlayCounter` (lógica pura, 9 pruebas JVM nuevas en `PlayCounterTest`): misma regla que `stats.threshold_ms` del escritorio: 3 s de avance normal; saltar, retroceder y pausar no suman; una vez por reproducción.
+- `PlaybackService` cuenta (sondeo de 500 ms solo mientras suena) y guarda cada reproducción en Room aunque la app esté cerrada. Room **v3**: tabla `play_events`, `AutoMigration(2, 3)`.
+- `SyncApi.plays` (`POST /v1/plays`) y `SyncRepository.uploadPlays`: lotes de 500, se borran solo al recibir 200; si falla, quedan guardadas. `sync()` las sube antes del catálogo y lo anota en el mensaje
+  («Subidas N reproducciones…»); un fallo al subirlas no impide sincronizar el catálogo. Al abrir la app, si hay emparejamiento, intenta subirlas en silencio.
+- La pantalla principal muestra «N reproducciones por subir al escritorio».
+- **Tras compilar aparece `android/app/schemas/.../3.json`: hay que versionarlo** (`git add android/app/schemas`).
+- **SIN compilar ni probar el Kotlin** (lo hacen Android Studio y `android.yml`); sin probar contra el escritorio real. El Python solo sube la versión.
+- Verificado por Pablo: 1.0.15 (servidor de estadísticas) aplicada con `ci.yml` en verde (CI Tests #29).
+
 ## [1.0.15] - 2026-11-18
 **Escritorio/servidor: recibe las estadísticas de reproducción del móvil** (primera mitad de «estadísticas»; el lado Android llega en la siguiente entrega). Solo Python.
 - Nueva ruta `POST /v1/plays` (`sync/plays.py`): eventos `{id, track_uuid, played_at}` idempotentes por `id`; cada uno suma 1 a `play_stats` y adelanta `last_played`. Responde

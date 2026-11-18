@@ -46,8 +46,26 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val playerState = player.state
     val playable = repository.playable.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    /** Reproducciones anotadas en el teléfono que aún no se han subido al escritorio. */
+    val pendingPlays = repository.pendingPlays.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
     init {
         player.connect()
+        uploadPlaysQuietly()
+    }
+
+    /** Al abrir la app, si el escritorio está al alcance, sube las reproducciones pendientes sin molestar; si no, se reintenta luego. */
+    private fun uploadPlaysQuietly() {
+        val current = pairing.value ?: return
+        viewModelScope.launch {
+            try {
+                repository.uploadPlays(current)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // sin escritorio al alcance (sin cable ni Wi-Fi): es lo normal; las reproducciones siguen guardadas
+            }
+        }
     }
 
     /** Toca la lista «Descargado» entera empezando por la pista `index`. */

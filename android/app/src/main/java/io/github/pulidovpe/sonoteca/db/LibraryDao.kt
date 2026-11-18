@@ -117,6 +117,19 @@ abstract class LibraryDao {
     )
     abstract suspend fun playableOfPlaylist(uuid: String): List<PlayableTrack>
 
+    @Insert
+    abstract suspend fun insertPlay(event: PlayEventEntity)
+
+    /** Las más antiguas primero; lotes pequeños (SQLite limita las variables de una consulta). */
+    @Query("SELECT * FROM play_events ORDER BY playedAt, eventId LIMIT :limit")
+    abstract suspend fun pendingPlays(limit: Int): List<PlayEventEntity>
+
+    @Query("DELETE FROM play_events WHERE eventId IN (:ids)")
+    abstract suspend fun deletePlays(ids: List<String>)
+
+    @Query("SELECT COUNT(*) FROM play_events")
+    abstract fun pendingPlayCount(): Flow<Int>
+
     @Query("SELECT COUNT(*) FROM tracks")
     abstract fun trackCount(): Flow<Int>
 
