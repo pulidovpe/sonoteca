@@ -18,7 +18,7 @@ from urllib.parse import urlencode
 
 from ..core import content_hash
 from ..core.db import connect
-from . import API_VERSION, DEFAULT_PORT, merge, pairing, tls
+from . import API_VERSION, DEFAULT_PORT, merge, pairing, plays, tls
 from .manifest import build_manifest
 
 MAX_BODY = 2 * 1024 * 1024
@@ -202,9 +202,11 @@ class _Handler(BaseHTTPRequestHandler):
     def _authenticated(self, conn) -> bool:
         header = self.headers.get("Authorization", "")
         token = header[7:].strip() if header.lower().startswith("bearer ") else ""
-        if pairing.authenticate(conn, token) is None:
+        device = pairing.authenticate(conn, token)
+        if device is None:
             self._error(401, "token inválido; vuelve a emparejar el dispositivo")
             return False
+        self.device_id, self.device_name = device["device_id"], device["name"]
         return True
 
     # --- enrutado ---------------------------------------------------------------------------------------------------
@@ -234,7 +236,11 @@ class _Handler(BaseHTTPRequestHandler):
 
     @_guarded
     def do_POST(self) -> None:   # noqa: N802
-        if self.path.split("?", 1)[0] != "/v1/pair":
+        path = self.path.split("?", 1)[0]
+        if path == "/v1/plays":
+            self._receive_plays()
+            return
+        if path != "/v1/pair":
             self._error(404, "ruta desconocida")
             return
         body = self._read_json()
@@ -255,6 +261,26 @@ class _Handler(BaseHTTPRequestHandler):
             conn.close()
         self.server.log(f"dispositivo emparejado: {name.strip()[:80]}")
         self._json(200, {"token": token, "fingerprint": self.server.fingerprint, "api": API_VERSION})
+
+    def _receive_plays(self) -> None:
+        """Estadísticas de reproducción del móvil (eventos con id único: reenviar un lote no cuenta dos veces)."""
+        conn = connect(self.server.db_path)
+        try:
+            if not self._authenticated(conn):
+                return
+            body = self._read_json()
+            if body is None:
+                return
+            try:
+                result = plays.apply_plays(conn, self.device_id, body)
+            except plays.PlaysError as exc:
+                self._error(400, str(exc))
+                return
+            if result["accepted"]:
+                self.server.log(f"estadísticas de {self.device_name}: {result['accepted']} reproducciones nuevas")
+            self._json(200, result)
+        finally:
+            conn.close()
 
     @_guarded
     def do_PUT(self) -> None:   # noqa: N802

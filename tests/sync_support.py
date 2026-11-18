@@ -36,6 +36,7 @@ def downgrade_to_v9(conn: sqlite3.Connection) -> None:
     conn.execute("DROP INDEX idx_playlists_uuid")
     conn.execute("DROP TABLE deleted_playlists")
     conn.execute("DROP TABLE sync_devices")
+    conn.execute("DROP TABLE IF EXISTS sync_play_events")
     for col in ("content_hash", "hash_size", "hash_mtime_ns"):
         conn.execute(f"ALTER TABLE files DROP COLUMN {col}")
     conn.execute("ALTER TABLE tracks DROP COLUMN uuid")

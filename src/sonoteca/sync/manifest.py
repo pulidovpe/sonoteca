@@ -11,6 +11,7 @@ _TRACKS = """
     SELECT t.uuid, f.content_hash AS hash, f.hash_size AS size, f.format, t.title,
            ar.name AS artist, aa.name AS album_artist, al.title AS album,
            t.track_no, t.disc_no, COALESCE(t.year, al.year) AS year, t.duration, t.genre, t.has_cover,
+           COALESCE((SELECT ps.plays FROM play_stats ps WHERE ps.track_id = t.id), 0) AS plays,
            EXISTS (SELECT 1 FROM lyrics l WHERE l.track_id = t.id AND l.instrumental = 0
                    AND (COALESCE(l.synced_lrc, '') <> '' OR COALESCE(l.original_text, '') <> '')) AS has_lyrics
     FROM tracks t

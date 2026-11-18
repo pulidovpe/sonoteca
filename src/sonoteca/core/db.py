@@ -236,8 +236,9 @@ _V10_TRIGGERS = ("trg_tracks_uuid", "trg_playlists_new", "trg_playlists_rename",
 _V10_TABLE_COLUMNS = {
     "deleted_playlists": frozenset({"uuid", "deleted_at"}),
     "sync_devices": frozenset({"device_id", "name", "token_hash", "created_at", "last_seen"}),
+    "sync_play_events": frozenset({"event_id", "device_id", "track_uuid", "played_at", "received_at"}),
 }
-_V10_OBJECTS = frozenset({"deleted_playlists", "sync_devices", "idx_tracks_uuid", "idx_playlists_uuid", *_V10_TRIGGERS})
+_V10_OBJECTS = frozenset({"deleted_playlists", "sync_devices", "sync_play_events", "idx_tracks_uuid", "idx_playlists_uuid", *_V10_TRIGGERS})
 
 
 def _columns(conn: sqlite3.Connection, table: str) -> set[str]:
@@ -324,6 +325,12 @@ def _migrate_v10(conn: sqlite3.Connection) -> None:
         "CREATE TABLE IF NOT EXISTS sync_devices ("
         " device_id TEXT PRIMARY KEY, name TEXT NOT NULL, token_hash TEXT NOT NULL UNIQUE,"
         " created_at TEXT NOT NULL, last_seen TEXT)")
+    # reproducciones anotadas por el móvil: el id del evento hace idempotente el reenvío (docs/SYNC.md). Se añadió a v10 sin subir
+    # el esquema: `_v10_complete` la exige y `migrate()` hace la copia previa antes de crearla en bases v10 que no la tienen.
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS sync_play_events ("
+        " event_id TEXT PRIMARY KEY, device_id TEXT NOT NULL, track_uuid TEXT NOT NULL,"
+        " played_at TEXT NOT NULL, received_at TEXT NOT NULL)")
     conn.execute(f"UPDATE tracks SET uuid = {_UUID_SQL} WHERE uuid IS NULL")
     conn.execute(f"UPDATE playlists SET uuid = {_UUID_SQL} WHERE uuid IS NULL")
     conn.execute(f"UPDATE playlists SET updated_at = {_NOW_SQL} WHERE updated_at IS NULL")

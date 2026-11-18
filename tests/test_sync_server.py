@@ -259,3 +259,26 @@ def test_internal_error_returns_json_500_and_keeps_the_server_alive(tmp_path):
         server.shutdown()
         server.server_close()
         conn.close()
+
+
+def test_plays_endpoint_needs_a_token_and_a_valid_body(env):
+    server, conn, t1, _ = env
+    assert Client(server).json("POST", "/v1/plays", {"events": []})[0] == 401
+    token = _pair(server)
+    client = Client(server, token)
+    assert client.json("POST", "/v1/plays", {})[0] == 400
+    assert client.json("POST", "/v1/plays", {"events": "x"})[0] == 400
+
+
+def test_plays_endpoint_counts_once_even_if_the_batch_is_resent(env):
+    server, conn, t1, _ = env
+    client = Client(server, _pair(server))
+    uuid = conn.execute("SELECT uuid FROM tracks WHERE id = ?", (t1,)).fetchone()[0]
+    batch = {"events": [{"id": "evento-0001", "track_uuid": uuid, "played_at": "2026-11-18T10:00:00.000Z"},
+                        {"id": "evento-0002", "track_uuid": uuid, "played_at": "2026-11-18T10:05:00.000Z"}]}
+    status, first = client.json("POST", "/v1/plays", batch)
+    assert status == 200 and first["accepted"] == 2 and first["duplicates"] == 0
+    status, again = client.json("POST", "/v1/plays", batch)   # se cortó la respuesta y el móvil reenvía
+    assert status == 200 and again["accepted"] == 0 and again["duplicates"] == 2
+    assert conn.execute("SELECT plays FROM play_stats WHERE track_id = ?", (t1,)).fetchone()[0] == 2
+    assert conn.execute("SELECT device_id FROM sync_play_events LIMIT 1").fetchone()[0] == "poco-x6-0001"
