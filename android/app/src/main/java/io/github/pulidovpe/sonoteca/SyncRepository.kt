@@ -17,7 +17,9 @@ import io.github.pulidovpe.sonoteca.download.TrackDownloader
 import io.github.pulidovpe.sonoteca.download.buildPlan
 import io.github.pulidovpe.sonoteca.net.Manifest
 import io.github.pulidovpe.sonoteca.net.PairingInfo
+import io.github.pulidovpe.sonoteca.net.PlayEvent
 import io.github.pulidovpe.sonoteca.net.SyncApi
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -28,6 +30,7 @@ class SyncRepository(private val context: Context, private val db: AppDatabase, 
     val albums = db.library().albums()
     val playlistRows = db.library().playlistRows()
     val playable = db.library().playableAll()
+    val pendingPlays = db.library().pendingPlayCount()
 
     /** Empareja con el escritorio usando la URL de `sonoteca sync-serve`. Devuelve el emparejamiento guardado. */
     suspend fun pair(rawUrl: String, deviceName: String): Pairing = withContext(Dispatchers.IO) {
@@ -40,6 +43,14 @@ class SyncRepository(private val context: Context, private val db: AppDatabase, 
 
     /** Descarga el manifiesto y lo aplica a la base local. Devuelve un resumen para mostrar. */
     suspend fun sync(pairing: Pairing): String = withContext(Dispatchers.IO) {
+        // primero se suben las reproducciones anotadas sin conexión; si falla, no impide sincronizar el catálogo (quedan guardadas)
+        val uploaded = try {
+            uploadPlays(pairing)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            null
+        }
         val manifest = SyncApi(pairing.host, pairing.port, pairing.fingerprint, pairing.token).manifest()
         db.library().applyManifest(
             tracks = manifest.tracks.map { it.toEntity() },
@@ -49,7 +60,28 @@ class SyncRepository(private val context: Context, private val db: AppDatabase, 
             },
             allowDeletes = manifest.pendingHash == 0,
         )
-        summary(manifest)
+        summary(manifest) + when {
+            uploaded == null -> " No se pudieron subir las reproducciones: se reintentará."
+            uploaded > 0 -> " Subidas $uploaded reproducciones al escritorio."
+            else -> ""
+        }
+    }
+
+    /**
+     * Sube al escritorio las reproducciones anotadas en el teléfono (en lotes) y las borra al recibir el 200. Devuelve cuántas envió.
+     * Si falla, lanza y NO borra nada: se reintenta la próxima vez (el escritorio ignora las repetidas).
+     */
+    suspend fun uploadPlays(pairing: Pairing): Int = withContext(Dispatchers.IO) {
+        val api = SyncApi(pairing.host, pairing.port, pairing.fingerprint, pairing.token)
+        var sent = 0
+        while (true) {
+            val batch = db.library().pendingPlays(PLAY_BATCH)
+            if (batch.isEmpty()) break
+            api.plays(batch.map { PlayEvent(it.eventId, it.trackUuid, it.playedAt) })
+            db.library().deletePlays(batch.map { it.eventId })
+            sent += batch.size
+        }
+        sent
     }
 
     private suspend fun tracksFor(selection: Selection): List<TrackEntity> = when (selection) {
@@ -118,3 +150,5 @@ class SyncRepository(private val context: Context, private val db: AppDatabase, 
         year = year, duration = duration, genre = genre, hasCover = hasCover, hasLyrics = hasLyrics,
     )
 }
+
+private const val PLAY_BATCH = 500   // reproducciones por petición (y por consulta de borrado)

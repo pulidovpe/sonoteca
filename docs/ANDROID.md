@@ -16,7 +16,8 @@ KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más
 | 3b | Pestañas Artistas / Álbumes / Listas con descarga en cada nivel y «Borrar del teléfono» con confirmación | 1.0.11, **verificada** en el POCO por USB (álbum, artista, lista, borrar); 1.0.12 renueva el catálogo al emparejar, sin verificar |
 | 3c | Descarga en segundo plano (WorkManager), limpiar descargas huérfanas, portadas y letras | pendiente |
 | 4a | **Reproductor local** (Media3 1.11.0): toca lo descargado en el teléfono, sin servidor ni cable; mini reproductor, notificación y segundo plano | 1.0.14: compila y reproduce en el POCO (pestaña Descargado, sin servidor, pantalla apagada y bloqueada); sin verificar: notificación y controles de bloqueo, auriculares, llamadas |
-| 4b | Crear/editar listas en el móvil y subirlas al escritorio con `PUT` | pendiente |
+| ~~4b~~ | ~~Crear/editar listas en el móvil~~ | aplazada por decisión de Pablo (2026-11-18) |
+| 4c | **Estadísticas**: el móvil anota las reproducciones sin conexión y las sube al escritorio al conectar | servidor 1.0.15 ✅ (CI verde); móvil 1.0.16, **sin verificar** |
 | 5 | Wi-Fi y USB pulidos (NSD, QR, permiso de red local) | pendiente |
 | 6 | Windows y Linux | pendiente |
 
@@ -24,7 +25,7 @@ KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más
 - `net/`: `PairingInfo` (URL `sonoteca-sync://pair?...`), `PinnedTls` (confianza por huella SHA-256 del certificado),
   `SyncApi` (HttpsURLConnection), `ManifestModel` (parser). Sin clases de Android → se prueban en la JVM.
 - `db/`: entidades Room (`tracks`, `playlists`, `playlist_tracks`), `LibraryDao`, `AppDatabase`.
-- `playback/`: `PlaybackQueue` (lógica pura: recorte de la cola, URI permitidas, formato de tiempo; se prueba en la JVM), `PlaybackService` (`MediaSessionService` + ExoPlayer) y
+- `playback/`: `PlaybackQueue` y `PlayCounter` (lógica pura: recorte de la cola, URI permitidas, formato de tiempo, cuándo cuenta una reproducción; se prueban en la JVM), `PlaybackService` (`MediaSessionService` + ExoPlayer) y
   `PlayerController` (MediaController + estado para la UI).
 - `SyncRepository`, `MainViewModel`, `PairingStore` (SharedPreferences privadas), `MainActivity` (Compose).
 - Pruebas JVM: `app/src/test/.../net/` (usan un certificado y un manifiesto generados por el servidor real).
@@ -49,12 +50,20 @@ KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más
 - Salvedades (sin verificar): Xiaomi/HyperOS puede cerrar el servicio con la batería «optimizada» (ajusta la app a «Sin restricciones»); si borras del teléfono lo que está sonando, el reproductor
   mostrará un error de reproducción; no hay aleatorio, repetir, ni cola editable todavía.
 
+## Estadísticas de reproducción (fase 4c)
+- El servicio de reproducción cuenta una reproducción **a los 3 s de avance normal** (misma regla que el escritorio: saltar con la barra, retroceder o pausar no suma; una pista de menos de 3 s cuenta entera;
+  como mucho una vez por reproducción; repetir la misma pista cuenta otra). Cuenta aunque la app esté cerrada. Cada una se guarda en Room (`play_events`: id único, pista, fecha UTC) sin necesidad de red.
+- Se suben al escritorio (`POST /v1/plays`, docs/SYNC.md) **al abrir la app** si el escritorio está al alcance (en silencio), al **sincronizar** (antes del catálogo) y al **emparejar**. Se borran del móvil solo al recibir el 200;
+  si falla, quedan guardadas y se reintentan (el escritorio ignora las repetidas: no se cuenta doble). La pantalla principal muestra «N reproducciones por subir».
+- Aún sin verificar en el móvil. El total de reproducciones por pista que trae el manifiesto (`plays`) no se usa todavía: servirá para el «Inicio» («más escuchado»).
+
 ## Descargas (fase 3a)
 - Se elige un artista (fila de la lista) → resumen (pistas que faltan, tamaño, espacio libre; se deja un margen de 200 MB) → «Descargar».
 - Cada pista se baja a `cache/downloads/<uuid>.part` con `Range` (se **reanuda** si se corta), se comprueba tamaño y SHA-256 contra el catálogo y **solo
   entonces** se publica en `Música/Sonoteca/<Artista>/<Álbum>/NN - Título.ext` con MediaStore. Nunca queda un archivo a medias en la música del teléfono.
 - Una pista cuenta como descargada si la huella guardada coincide con la del catálogo; si el escritorio la cambió, se baja de nuevo (se borra antes la anterior).
 - Room v2 (`downloads`): migración automática desde v1. Al compilar aparece `app/schemas/.../2.json`: **debe versionarse** (base de futuras migraciones).
+- Room v3 (`play_events`, 1.0.16): `AutoMigration(2, 3)` (solo una tabla nueva; usa el `2.json` versionado). Al compilar aparece `app/schemas/.../3.json`: **hay que versionarlo** (`git add android/app/schemas`).
 - Salvedades: la descarga vive en la app en primer plano (si Android la detiene, se reanuda al repetir; el segundo plano llega en 3b); no se detecta lo que
   una instalación anterior dejó en `Música/Sonoteca` (el catálogo de descargas es de Room: desinstalar y reinstalar puede duplicar; **sin verificar** cómo
   trata Android la propiedad de esos archivos); no se borra nada de lo descargado desde la app todavía.

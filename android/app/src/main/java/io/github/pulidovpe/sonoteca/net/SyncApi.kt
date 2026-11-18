@@ -1,6 +1,7 @@
 package io.github.pulidovpe.sonoteca.net
 
 import io.github.pulidovpe.sonoteca.download.RemoteFile
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 import java.net.URI
@@ -11,6 +12,12 @@ import javax.net.ssl.HttpsURLConnection
 class SyncHttpException(val status: Int, message: String) : IOException(message)
 
 data class PairResult(val token: String, val fingerprint: String)
+
+/** Una reproducción para subir (docs/SYNC.md, «Estadísticas»). */
+data class PlayEvent(val id: String, val trackUuid: String, val playedAt: String)
+
+/** Respuesta del escritorio: nuevas, repetidas (ya contadas) y cuántas no se pudieron aplicar (pista desconocida o evento inválido). */
+data class PlaysResult(val accepted: Int, val duplicates: Int, val unknown: Int, val invalid: Int)
 
 /**
  * Cliente del protocolo de docs/SYNC.md. Bloqueante: llamar siempre fuera del hilo principal.
@@ -27,6 +34,19 @@ class SyncApi(
         val body = JSONObject().put("code", code).put("device_id", deviceId).put("device_name", deviceName)
         val response = JSONObject(request("POST", "/v1/pair", body))
         return PairResult(response.getString("token"), response.getString("fingerprint"))
+    }
+
+    /** Sube un lote de reproducciones (idempotente por id: reenviar no cuenta dos veces). */
+    fun plays(events: List<PlayEvent>): PlaysResult {
+        val list = JSONArray()
+        events.forEach { list.put(JSONObject().put("id", it.id).put("track_uuid", it.trackUuid).put("played_at", it.playedAt)) }
+        val response = JSONObject(request("POST", "/v1/plays", JSONObject().put("events", list)))
+        return PlaysResult(
+            accepted = response.optInt("accepted"),
+            duplicates = response.optInt("duplicates"),
+            unknown = response.optJSONArray("unknown")?.length() ?: 0,
+            invalid = response.optJSONArray("invalid")?.length() ?: 0,
+        )
     }
 
     fun manifest(): Manifest = parseManifest(request("GET", "/v1/manifest", null))

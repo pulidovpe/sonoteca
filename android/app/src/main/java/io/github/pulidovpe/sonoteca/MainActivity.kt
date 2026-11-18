@@ -96,6 +96,7 @@ fun SonotecaApp(viewModel: MainViewModel, onBeforePlay: () -> Unit) {
     val plan by viewModel.plan.collectAsState()
     val progress by viewModel.progress.collectAsState()
     val playable by viewModel.playable.collectAsState()
+    val pendingPlays by viewModel.pendingPlays.collectAsState()
     val playerState by viewModel.playerState.collectAsState()
     var showPair by rememberSaveable { mutableStateOf(false) }
 
@@ -135,6 +136,7 @@ fun SonotecaApp(viewModel: MainViewModel, onBeforePlay: () -> Unit) {
                 LibraryScreen(
                     server = current?.let { "${it.host}:${it.port}" },
                     playable = playable,
+                    pendingPlays = pendingPlays,
                     onPlay = { index ->
                         onBeforePlay()
                         viewModel.playFromList(index)
@@ -255,6 +257,7 @@ private fun PairScreen(busy: Boolean, onPair: (String, String) -> Unit) {
 private fun LibraryScreen(
     server: String?,
     playable: List<PlayableTrack>,
+    pendingPlays: Int,
     onPlay: (Int) -> Unit,
     onPairRequest: () -> Unit,
     tracks: Int,
@@ -270,6 +273,9 @@ private fun LibraryScreen(
     var tab by rememberSaveable { mutableStateOf(0) }
     Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(if (server != null) "Escritorio: $server" else "Sin emparejar: lo descargado se reproduce igual, sin servidor.")
+        if (pendingPlays > 0) {
+            Text("$pendingPlays reproducciones por subir al escritorio (se envían al conectar).", style = MaterialTheme.typography.bodySmall)
+        }
         Text("$tracks pistas · $playlists listas · ${artists.size} artistas · ${albums.size} álbumes")
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (server != null) {
