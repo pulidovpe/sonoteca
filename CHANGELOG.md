@@ -5,6 +5,17 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.15] - 2026-11-18
+**Escritorio/servidor: recibe las estadísticas de reproducción del móvil** (primera mitad de «estadísticas»; el lado Android llega en la siguiente entrega). Solo Python.
+- Nueva ruta `POST /v1/plays` (`sync/plays.py`): eventos `{id, track_uuid, played_at}` idempotentes por `id`; cada uno suma 1 a `play_stats` y adelanta `last_played`. Responde
+  `{accepted, duplicates, unknown, invalid}`. Protocolo en `docs/SYNC.md`.
+- Nueva tabla `sync_play_events` **dentro de v10, sin subir el esquema**: las bases v10 que no la tienen (la de desarrollo y la real) se reparan solas al abrir, con copia previa `library.db.v10.bak`
+  (documentado en `docs/MIGRACIONES.md`). Primera vez que se abra una base existente con esta versión: **hacerlo con `SONOTECA_DATA_DIR=$HOME/sonoteca-dev`**, no con la biblioteca real.
+- El manifiesto trae `plays` por pista (total en el escritorio), para el «Inicio» del móvil. Campo nuevo y opcional: la API sigue en v1 y el móvil actual lo ignora.
+- 12 pruebas nuevas (`tests/test_sync_plays.py`: suma, reenvío idempotente, solapes, desconocidos/inválidos, límites, `last_played`, reloj adelantado, manifiesto, reparación con copia; y 2 de servidor de
+  punta a punta con TLS real). `tests/sync_support.py::downgrade_to_v9` también borra la tabla nueva. Corridas aquí con corredor propio: sync_plays, sync_server (26), sync_schema, sync_merge, sync_usb, db_backup, columns; pytest real y ruff los ejecuta la CI.
+- Verificado por Pablo: 1.0.14 completa (notificación, bloqueo, auriculares, llamadas; HyperOS no cerró el reproductor) y pipelines en verde. Decidido: estilo visual «Neón» fiel al escritorio sobre Material 3 estable.
+
 ## [1.0.14] - 2026-11-17
 **Android fase 4a: reproductor local con Media3 1.11.0** (solo Kotlin/Android; el Python no cambia). Reproduce lo descargado en el teléfono, sin servidor ni cable.
 - Nuevo `playback/`: `PlaybackService` (`MediaSessionService` + ExoPlayer: segundo plano, notificación, pantalla de bloqueo, pausa al desconectar auriculares y en llamadas), `PlayerController`
