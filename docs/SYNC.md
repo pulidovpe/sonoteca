@@ -63,8 +63,7 @@ manifiesto. Las descargas se reanudan con `Range`.
 
 ### Estadísticas de reproducción (móvil → escritorio)
 El móvil anota cada reproducción SIN conexión como un **evento** `{id, track_uuid, played_at}` (`id`: 8–64 caracteres, único por evento; `played_at`: UTC ISO 8601 con
-milisegundos) y los sube con `POST /v1/plays` la próxima vez que se conecta (máx. 5000 por petición; el cuerpo, 2 MB). Una reproducción cuenta cuando la pista suena 3 s,
-igual que en el escritorio.
+milisegundos) y los sube con `POST /v1/plays` la próxima vez que se conecta (máx. 5000 por petición; el cuerpo, 2 MB). Cuándo cuenta una reproducción lo decide cada app (escritorio: 3 s de escucha; móvil: 5 s); el protocolo solo transporta las ya contadas.
 - **Idempotente**: el escritorio guarda cada `id` en `sync_play_events`; si el móvil reenvía un lote (se cortó antes de recibir la respuesta) los repetidos salen en `duplicates` y no suman.
 - Cada evento nuevo suma 1 a `play_stats.plays` (el contador que ya usa la app de escritorio) y adelanta `last_played` si es más reciente (hora local, como el escritorio).
   Una fecha más de 1 día en el futuro se recorta a «ahora».

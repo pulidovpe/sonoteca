@@ -16,11 +16,11 @@ class PlayCounterTest {
     }
 
     @Test
-    fun countsAfterThreeSecondsOfNormalPlayback() {
+    fun countsAfterFiveSecondsOfNormalPlayback() {
         counter.startItem("u1")
-        play(0, 2_500)
+        play(0, 4_500)
         assertEquals(emptyList<String>(), counted)
-        play(3_000, 3_000)
+        play(5_000, 5_000)
         assertEquals(listOf("u1"), counted)
     }
 
@@ -58,9 +58,9 @@ class PlayCounterTest {
     }
 
     @Test
-    fun theThresholdIsThreeSecondsOrTheDurationIfShorter() {
-        assertEquals(3_000L, PlayCounter.threshold(0))
-        assertEquals(3_000L, PlayCounter.threshold(200_000))
+    fun theThresholdIsFiveSecondsOrTheDurationIfShorter() {
+        assertEquals(5_000L, PlayCounter.threshold(0))
+        assertEquals(5_000L, PlayCounter.threshold(200_000))
         assertEquals(1_500L, PlayCounter.threshold(1_500))
         assertEquals(1L, PlayCounter.threshold(1))
     }
@@ -68,12 +68,12 @@ class PlayCounterTest {
     @Test
     fun startingAnotherTrackOrTheSameAgainStartsOver() {
         counter.startItem("u1")
-        play(0, 3_000)
+        play(0, 5_000)
         counter.startItem("u2")
-        play(0, 2_500)
+        play(0, 4_500)
         assertEquals(listOf("u1"), counted)
         counter.startItem("u1")   // repetir la misma pista cuenta otra reproducción
-        play(0, 3_000)
+        play(0, 5_000)
         assertEquals(listOf("u1", "u1"), counted)
     }
 
