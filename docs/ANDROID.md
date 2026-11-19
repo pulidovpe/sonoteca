@@ -15,7 +15,7 @@ KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más
 | 3a | Descarga por artista: motor reanudable con verificación SHA-256, publicación en `Music/Sonoteca/` (MediaStore), resumen y confirmación | hecha y verificada en el POCO (183 MB) |
 | 3b | Pestañas Artistas / Álbumes / Listas con descarga en cada nivel y «Borrar del teléfono» con confirmación | 1.0.11, **verificada** en el POCO por USB (álbum, artista, lista, borrar); 1.0.12 renueva el catálogo al emparejar, sin verificar |
 | 3c | Descarga en segundo plano (WorkManager), limpiar descargas huérfanas, portadas y letras | pendiente |
-| 4a | **Reproductor local** (Media3 1.11.0): toca lo descargado en el teléfono, sin servidor ni cable; mini reproductor, notificación y segundo plano | 1.0.14: compila y reproduce en el POCO (pestaña Descargado, sin servidor, pantalla apagada y bloqueada); sin verificar: notificación y controles de bloqueo, auriculares, llamadas |
+| 4a | **Reproductor local** (Media3 1.11.0): toca lo descargado en el teléfono, sin servidor ni cable; mini reproductor, notificación y segundo plano | 1.0.14: compila y reproduce en el POCO (pestaña Descargado, sin servidor, pantalla apagada y bloqueada); notificación, bloqueo, auriculares y llamadas ✅; **1.0.18** añade aleatorio, repetir y cola, sin verificar |
 | ~~4b~~ | ~~Crear/editar listas en el móvil~~ | aplazada por decisión de Pablo (2026-11-18) |
 | 4c | **Estadísticas**: el móvil anota las reproducciones sin conexión y las sube al escritorio al conectar | servidor 1.0.15 ✅ (CI verde); móvil 1.0.16, **sin verificar** |
 | 5 | Wi-Fi y USB pulidos (NSD, QR, permiso de red local) | pendiente |
@@ -42,16 +42,20 @@ KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más
 - Solo reproduce **lo descargado en el teléfono** (entradas de MediaStore que la app publicó) y **no necesita servidor, cable ni Wi-Fi**. Sin streaming.
 - Cuatro pestañas: Artistas, Álbumes, Listas y **Descargado** (todas las pistas bajadas, en orden de artista/álbum/pista; tocar una la reproduce y sigue con las siguientes).
   Desde el resumen de un artista/álbum/lista, **«Reproducir las N descargadas»** (las listas suenan en su orden).
-- Mini reproductor abajo: título, artista, barra de avance con salto, anterior/pausa/siguiente. El servicio (`PlaybackService`) sigue sonando con la pantalla apagada o la app en segundo plano,
+- Mini reproductor abajo: título, artista, barra de avance con salto, anterior/pausa/siguiente, y (1.0.18) **Aleatorio**, **Repetir** (sin repetir → todas → una, como en el escritorio) y **Cola (N)**.
+  Aleatorio y repetir se recuerdan entre sesiones. El servicio (`PlaybackService`) sigue sonando con la pantalla apagada o la app en segundo plano,
   con notificación y controles de pantalla de bloqueo/auriculares; se pausa solo con llamadas y al desconectar los auriculares. En Android 13+ se pide el permiso de notificaciones al primer «reproducir».
+- **Cola** (hoja inferior «Reproduciendo»): toda la lista con la pista que suena resaltada; tocar una pista salta a ella; «Quitar» saca una (no la que suena); «Vaciar» deja solo la que suena (como en el escritorio).
+  En la pestaña «Descargado», el menú ⋮ de cada pista ofrece «Reproducir a continuación» y «Agregar al final de la cola»; el resumen de un artista/álbum/lista, lo mismo con todo lo descargado.
+  **Diferencia con el escritorio:** aquí lo ya reproducido NO sale de la lista (queda en la cola y se puede volver a ella); y todavía no se reordena arrastrando.
 - La cola se recorta a 500 pistas alrededor de la elegida (los mensajes entre la app y el servicio no deben ser enormes).
 - Sin emparejamiento: con catálogo guardado la biblioteca se muestra igual («Sin emparejar») y se puede reproducir; «Descargar» queda desactivado y aparece «Emparejar».
 - El servicio solo abre URIs `content://media/…` (la sesión puede recibir peticiones de otras apps).
 - Salvedades (sin verificar): Xiaomi/HyperOS puede cerrar el servicio con la batería «optimizada» (ajusta la app a «Sin restricciones»); si borras del teléfono lo que está sonando, el reproductor
-  mostrará un error de reproducción; no hay aleatorio, repetir, ni cola editable todavía.
+  mostrará un error de reproducción; no se reordena la cola arrastrando todavía.
 
 ## Estadísticas de reproducción (fase 4c)
-- El servicio de reproducción cuenta una reproducción **a los 5 s de avance normal** (decisión de Pablo; el escritorio cuenta a los 3 s; saltar con la barra, retroceder o pausar no suma; una pista de menos de 5 s cuenta entera;
+- El servicio de reproducción cuenta una reproducción **a los 5 s de avance normal** (decisión de Pablo, igual que el escritorio desde 1.0.17; saltar con la barra, retroceder o pausar no suma; una pista de menos de 5 s cuenta entera;
   como mucho una vez por reproducción; repetir la misma pista cuenta otra). Cuenta aunque la app esté cerrada. Cada una se guarda en Room (`play_events`: id único, pista, fecha UTC) sin necesidad de red.
 - Se suben al escritorio (`POST /v1/plays`, docs/SYNC.md) **al abrir la app** si el escritorio está al alcance (en silencio), al **sincronizar** (antes del catálogo) y al **emparejar**. Se borran del móvil solo al recibir el 200;
   si falla, quedan guardadas y se reintentan (el escritorio ignora las repetidas: no se cuenta doble). La pantalla principal muestra «N reproducciones por subir».

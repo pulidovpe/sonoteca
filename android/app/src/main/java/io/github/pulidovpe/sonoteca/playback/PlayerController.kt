@@ -34,8 +34,15 @@ data class PlayerUi(
     val positionMs: Long = 0,
     val durationMs: Long = 0,
     val hasNext: Boolean = false,
+    val shuffle: Boolean = false,
+    val repeatMode: Int = PlaybackModes.REPEAT_OFF,
+    val queue: List<QueueItem> = emptyList(),
+    val currentIndex: Int = -1,
     val error: String? = null,
 )
+
+/** Una pista de la cola de reproducción (id = UUID de la pista). */
+data class QueueItem(val uuid: String, val title: String, val artist: String)
 
 /**
  * Habla con [PlaybackService] mediante un MediaController. Todo se llama desde el hilo principal.
@@ -47,6 +54,7 @@ class PlayerController(private val context: Context) {
     private var controller: MediaController? = null
     private var pending: PlaybackQueue.Window? = null
     private var ticker: Job? = null
+    private val prefs = context.getSharedPreferences("player", Context.MODE_PRIVATE)
     private val mutableState = MutableStateFlow(PlayerUi())
 
     val state: StateFlow<PlayerUi> = mutableState.asStateFlow()
@@ -73,6 +81,10 @@ class PlayerController(private val context: Context) {
                 val connected = request.get()
                 controller = connected
                 connected.addListener(listener)
+                if (connected.mediaItemCount == 0) {   // servicio recién creado: se recuperan aleatorio y repetir de la última vez
+                    connected.shuffleModeEnabled = prefs.getBoolean(KEY_SHUFFLE, false)
+                    connected.repeatMode = prefs.getInt(KEY_REPEAT, PlaybackModes.REPEAT_OFF)
+                }
                 refresh(connected)
                 pending?.let { queued ->
                     pending = null
@@ -104,6 +116,63 @@ class PlayerController(private val context: Context) {
         } else {
             start(connected, window)
         }
+    }
+
+    /** «Reproducir a continuación»: justo detrás de la pista que suena (si no suena nada, empieza a reproducir). */
+    fun playNext(tracks: List<PlayableTrack>) {
+        val connected = controller
+        if (connected == null || connected.mediaItemCount == 0) {
+            play(tracks, 0)
+        } else if (tracks.isNotEmpty()) {
+            connected.addMediaItems(connected.currentMediaItemIndex + 1, tracks.take(PlaybackQueue.MAX_ITEMS).map(::mediaItemOf))
+        }
+    }
+
+    /** «Agregar al final de la cola» (si no suena nada, empieza a reproducir). */
+    fun addToEnd(tracks: List<PlayableTrack>) {
+        val connected = controller
+        if (connected == null || connected.mediaItemCount == 0) {
+            play(tracks, 0)
+        } else if (tracks.isNotEmpty()) {
+            connected.addMediaItems(tracks.take(PlaybackQueue.MAX_ITEMS).map(::mediaItemOf))
+        }
+    }
+
+    /** Salta a la pista `index` de la cola y la reproduce. */
+    fun jumpTo(index: Int) {
+        val connected = controller ?: return
+        if (index in 0 until connected.mediaItemCount) {
+            connected.seekToDefaultPosition(index)
+            connected.play()
+        }
+    }
+
+    fun removeAt(index: Int) {
+        val connected = controller ?: return
+        if (index in 0 until connected.mediaItemCount && index != connected.currentMediaItemIndex) connected.removeMediaItem(index)
+    }
+
+    /** «Vaciar»: quita todo MENOS la pista que suena (como en el escritorio). */
+    fun clearQueue() {
+        val connected = controller ?: return
+        val current = connected.currentMediaItemIndex
+        if (current < connected.mediaItemCount - 1) connected.removeMediaItems(current + 1, connected.mediaItemCount)
+        if (current > 0) connected.removeMediaItems(0, current)
+    }
+
+    fun toggleShuffle() {
+        val connected = controller ?: return
+        val enabled = !connected.shuffleModeEnabled
+        connected.shuffleModeEnabled = enabled
+        prefs.edit().putBoolean(KEY_SHUFFLE, enabled).apply()
+    }
+
+    /** Sin repetir → todas → una → sin repetir. */
+    fun cycleRepeat() {
+        val connected = controller ?: return
+        val next = PlaybackModes.nextRepeat(connected.repeatMode)
+        connected.repeatMode = next
+        prefs.edit().putInt(KEY_REPEAT, next).apply()
     }
 
     fun togglePlay() {
@@ -138,25 +207,27 @@ class PlayerController(private val context: Context) {
     }
 
     private fun start(connected: MediaController, window: PlaybackQueue.Window) {
-        val items = window.tracks.map { track ->
-            val uri = Uri.parse(track.uri)
-            MediaItem.Builder()
-                .setMediaId(track.uuid)
-                .setUri(uri)
-                .setRequestMetadata(MediaItem.RequestMetadata.Builder().setMediaUri(uri).build())
-                .setMediaMetadata(
-                    MediaMetadata.Builder()
-                        .setTitle(track.title)
-                        .setArtist(track.artist.ifEmpty { track.albumArtist })
-                        .setAlbumTitle(track.album)
-                        .build(),
-                )
-                .build()
-        }
+        val items = window.tracks.map(::mediaItemOf)
         mutableState.update { it.copy(error = null) }
         connected.setMediaItems(items, window.startIndex, 0L)
         connected.prepare()
         connected.play()
+    }
+
+    private fun mediaItemOf(track: PlayableTrack): MediaItem {
+        val uri = Uri.parse(track.uri)
+        return MediaItem.Builder()
+            .setMediaId(track.uuid)
+            .setUri(uri)
+            .setRequestMetadata(MediaItem.RequestMetadata.Builder().setMediaUri(uri).build())
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle(track.title)
+                    .setArtist(track.artist.ifEmpty { track.albumArtist })
+                    .setAlbumTitle(track.album)
+                    .build(),
+            )
+            .build()
     }
 
     private fun refresh(player: Player) {
@@ -169,11 +240,20 @@ class PlayerController(private val context: Context) {
                 positionMs = player.currentPosition.coerceAtLeast(0),
                 durationMs = player.duration.coerceAtLeast(0),   // C.TIME_UNSET es negativo
                 hasNext = player.hasNextMediaItem(),
+                shuffle = player.shuffleModeEnabled,
+                repeatMode = player.repeatMode,
+                queue = (0 until player.mediaItemCount).map { index ->
+                    val item = player.getMediaItemAt(index)
+                    QueueItem(item.mediaId, item.mediaMetadata.title?.toString().orEmpty(), item.mediaMetadata.artist?.toString().orEmpty())
+                },
+                currentIndex = if (player.mediaItemCount > 0) player.currentMediaItemIndex else -1,
             )
         }
     }
 
     private companion object {
         const val POSITION_POLL_MS = 500L
+        const val KEY_SHUFFLE = "shuffle"
+        const val KEY_REPEAT = "repeat"
     }
 }
