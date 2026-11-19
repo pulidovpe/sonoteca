@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Compara los fallos de pytest con la lista de fallos conocidos (.github/known-failures.txt).
 
-Uso: check_baseline.py <salida_de_pytest.log> <pytest_exit_code> [known-failures.txt]
+Uso: check_baseline.py <salida_de_pytest.log> <pytest_exit_code> [known-failures.txt] [--informe]
 
 Requiere que pytest se haya ejecutado con ``-rfE`` (resumen corto de FAILED/ERROR).
 - Sale con 0 si no hay fallos, o si todos los fallos están en la lista.
@@ -32,6 +32,8 @@ def parse_baseline(text: str) -> set[str]:
 
 
 def main(argv: list[str]) -> int:
+    informe = "--informe" in argv          # solo informar: nunca falla (para sistemas sin lista propia)
+    argv = [a for a in argv if a != "--informe"]
     if len(argv) < 3:
         print(__doc__)
         return 2
@@ -42,6 +44,8 @@ def main(argv: list[str]) -> int:
     failed = parse_failures(log)
 
     out: list[str] = ["## Resultado de pytest frente a fallos conocidos", ""]
+    if informe:
+        out += ["_Modo informe: no falla. «Nuevos» = fallos que NO están en la lista de Linux (típicos de este sistema)._", ""]
     status = 0
 
     if rc not in (0, 1):
@@ -76,7 +80,7 @@ def main(argv: list[str]) -> int:
     if summary:
         with open(summary, "a", encoding="utf-8") as f:
             f.write(text + "\n")
-    return status
+    return 0 if informe else status
 
 
 if __name__ == "__main__":

@@ -33,7 +33,7 @@ gh run watch "$(gh run list --workflow ci.yml -L1 --json databaseId -q '.[0].dat
 1. ✅ `ci.yml` con fallos conocidos (26 heredados de v1.0.0).
 2. ✅ `build.yml` exige `ci.yml` antes de compilar un tag (solo al publicar).
 3. ✅ `android.yml`: pruebas JVM + APK debug con cambios en `android/**` (JDK 25; AGP descarga la plataforma del `compileSdk`). Verde en `feature/android` (run #2) y en `main` (run #3) el 2026-11-16.
-4. ⏳ Matriz macOS/Windows para los pendientes de Windows.
+4. 🟡 Matriz macOS/Windows de `pytest` (informativa, a demanda): `gh workflow run ci.yml --ref main -f cross=true`. **Sin ejecutar aún.**
 5. ⏳ Opcional: revisión con IA solo consultiva.
 
 ## Android CI (`android.yml`)
@@ -43,6 +43,15 @@ La rama debe contener `.github/workflows/android.yml` (un `push` usa el workflow
 El id real de la API 37 en sdkmanager es `platforms;android-37.0` (visto en el log del run #2); `platforms;android-37` no existe. No se instala a mano: la descarga AGP.
 El paso «Resumen de pruebas JVM» escribe en el resumen del job cuántas pruebas se ejecutaron (`.github/scripts/test_summary.py`); solo avisa, nunca rompe el job. Si el JDK, AGP o `compileSdk` cambian,
 hay que avisar al agente de CI: el workflow fija JDK 25 y la plataforma `android-37`.
+
+## Runners, versiones y matriz de sistemas
+- Linux fijado a `ubuntu-24.04` (en `ci.yml`, `android.yml` y `build.yml`). `ubuntu-latest` migra a 26.04 entre el 19-oct y el 19-nov-2026. La 26.04 se prueba a demanda:
+  `gh workflow run ci.yml --ref main -f runner=ubuntu-26.04` (verificado verde el 2026-11-17: lint, higiene y pytest). Revisar la fijación cuando GitHub anuncie la retirada de 24.04.
+- `ruff` fijado a la versión que usa la CI (0.17.5): subirla a propósito, no por sorpresa.
+- **Matriz macOS/Windows** (informativa): `gh workflow run ci.yml --ref main -f cross=true`. Corre `pytest` en `macos-latest` y `windows-latest` en paralelo a Linux, con `continue-on-error`
+  (nunca rompe el workflow) y sin lista propia de fallos conocidos: el resumen del job enseña los fallos «nuevos» frente a la lista de Linux, que son los propios de ese sistema.
+  `ffmpeg` se instala con `brew` / `choco` (sin verificar). Los logs quedan en los artefactos `pytest-log-macos` y `pytest-log-windows`.
+- `pytest` imprime las 15 pruebas más lentas (`--durations=15`) en el log y en el artefacto `pytest-log`.
 
 ## Datos de desarrollo ≠ datos reales
 Ejecutar una versión de desarrollo sobre tu biblioteca real **migra su base** (esquema v10 desde 1.0.1) y las apps antiguas dejan de abrirla («La base tiene versión 10, más nueva que esta app»). No hay vuelta atrás automática. Para desarrollar o probar binarios viejos: `SONOTECA_DATA_DIR=~/sonoteca-dev ./sonoteca gui`.
