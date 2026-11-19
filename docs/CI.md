@@ -50,7 +50,10 @@ hay que avisar al agente de CI: el workflow fija JDK 25 y la plataforma `android
 - `ruff` fijado a la versión que usa la CI (0.17.5): subirla a propósito, no por sorpresa.
 - **Matriz macOS/Windows** (informativa): `gh workflow run ci.yml --ref main -f cross=true`. Corre `pytest` en `macos-latest` y `windows-latest` en paralelo a Linux, con `continue-on-error`
   (nunca rompe el workflow) y sin lista propia de fallos conocidos: el resumen del job enseña los fallos «nuevos» frente a la lista de Linux, que son los propios de ese sistema.
-  `ffmpeg` se instala con `brew` / `choco` (sin verificar). Los logs quedan en los artefactos `pytest-log-macos` y `pytest-log-windows`.
+  `ffmpeg` se instala con `brew` / `choco` (verificado). Los logs quedan en los artefactos `pytest-log-macos` y `pytest-log-windows`.
+  Resultado (2026-11-18): **macOS = Linux** (26 conocidos, nada propio); **Windows = los 26 + 7 propios** (HOME frente a USERPROFILE, separadores de ruta, `WinError 123` en `duplicates_delete`, `find_adb` con rutas POSIX, una de `ui_edit`).
+  Listas por sistema: `.github/known-failures-macos.txt` y `.github/known-failures-windows.txt` (el job las usa para avisar de regresiones, sin fallar).
+  Al mirar `pytest.log` de Windows con shell, quitar los `\r` (`tr -d '\r'`): el log lleva saltos CRLF.
 - `pytest` imprime las 15 pruebas más lentas (`--durations=15`) en el log y en el artefacto `pytest-log`.
 
 ## Datos de desarrollo ≠ datos reales
