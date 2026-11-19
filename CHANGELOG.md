@@ -5,9 +5,18 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.18] - 2026-11-19
+**Android: aleatorio, repetir y cola de reproducción** (primera fase del rediseño; solo Kotlin + versión Python).
+- Mini reproductor: botones **Aleatorio** y **Repetir** (sin repetir → todas → una, el mismo ciclo del escritorio) y **Cola (N)**. Se usan `shuffleModeEnabled` y `repeatMode` de Media3 y se recuerdan entre sesiones (SharedPreferences `player`).
+- **Cola** en una hoja inferior: tocar una pista salta a ella, «Quitar» la saca (nunca la que suena), «Vaciar» deja solo la que suena. «Agregar al final de la cola» y «Reproducir a continuación» desde el menú ⋮ de cada pista
+  de «Descargado» y desde el resumen de un artista/álbum/lista. Con repetir una pista, cada vuelta cuenta otra reproducción (reinicia el contador de 5 s).
+- Diferencias con el escritorio, a propósito por ahora: lo ya reproducido no sale de la lista y no se reordena arrastrando.
+- Lógica pura nueva `PlaybackModes` (ciclo de repetir y etiquetas) con 4 pruebas JVM (`PlaybackModesTest`), que incluyen comprobar que sus constantes coinciden con las de Media3.
+- **SIN compilar ni probar** el Kotlin (lo hacen Android Studio y `android.yml`). Dudas mías: `ModalBottomSheet` con `@OptIn(ExperimentalMaterial3Api)` y los chips de Material 3 (BOM 2026.02.01).
+
 ## [1.0.17] - 2026-11-18
-**Android: una reproducción cuenta a los 5 s** (antes 3 s), por decisión de Pablo. Solo cambia `PlayCounter.COUNT_AFTER_MS` y sus pruebas JVM (umbral, pistas de menos de 5 s siguen contando enteras);
-el escritorio sigue en 3 s (`stats.COUNT_AFTER_MS`; pendiente de decidir si también se cambia). `docs/SYNC.md` ya no fija el umbral: lo decide cada app.
+**Una reproducción cuenta a los 5 s (antes 3 s), en el móvil y en el escritorio**, por decisión de Pablo. Móvil: `PlayCounter.COUNT_AFTER_MS` y sus pruebas JVM. Escritorio: `stats.COUNT_AFTER_MS` y `tests/test_stats_cleanup.py`
+(`test_ui_081` no cambia: usa pistas de ~1 s y el umbral es el menor entre el tiempo fijo y la duración). Las pistas de menos de 5 s siguen contando enteras. Las reproducciones ya contadas no se recalculan. `docs/SYNC.md` ya no fija el umbral: lo decide cada app.
 - Causa del cierre de la app tras 1.0.16, hallada en el `logcat -b crash` de Pablo: `AbstractMethodError ... LibraryDao.pendingPlayCount() ... LibraryDao_Impl`: el APK instalado mezclaba clases nuevas con un `LibraryDao_Impl`
   (código generado por Room) de una compilación anterior. No es un fallo del código (la CI compila desde cero): se arregla con «Clean Project» + «Rebuild» y ejecutar con **Run** (no «Apply Changes»).
 

@@ -90,6 +90,34 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Desde la pestaña «Descargado»: una pista a continuación de la que suena, o al final de la cola. */
+    fun queueTrack(index: Int, next: Boolean) {
+        val track = playable.value.getOrNull(index) ?: return
+        if (next) player.playNext(listOf(track)) else player.addToEnd(listOf(track))
+        message.value = if (next) "«${track.title}» sonará a continuación." else "«${track.title}» se agregó al final de la cola."
+    }
+
+    /** Lo ya descargado de la selección del diálogo, a continuación o al final de la cola. */
+    fun queueSelection(next: Boolean) {
+        val selection = planSelection ?: return
+        plan.value = null
+        viewModelScope.launch {
+            try {
+                val tracks = repository.playableOf(selection)
+                if (tracks.isEmpty()) {
+                    message.value = "No hay pistas descargadas de «${selection.label}»."
+                } else {
+                    if (next) player.playNext(tracks) else player.addToEnd(tracks)
+                    message.value = "${tracks.size} pistas de «${selection.label}» " + if (next) "sonarán a continuación." else "se agregaron al final de la cola."
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                message.value = friendly(e)
+            }
+        }
+    }
+
     override fun onCleared() {
         player.release()
     }

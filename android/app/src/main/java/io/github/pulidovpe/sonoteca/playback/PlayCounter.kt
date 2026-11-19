@@ -5,7 +5,7 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 /**
- * Decide cuándo una pista cuenta como «reproducida»: tras 5 s de AVANCE normal (en el escritorio son 3 s: `stats.COUNT_AFTER_MS`;
+ * Decide cuándo una pista cuenta como «reproducida»: tras 5 s de AVANCE normal (igual que el escritorio: `stats.COUNT_AFTER_MS`;
  * saltar con la barra no suma, retroceder tampoco; pausar no suma), o la duración entera si la pista dura menos de 5 s, y como mucho una
  * vez por reproducción. Al empezar otra pista —o la misma de nuevo— se reinicia. Lógica pura, sin Android: se prueba en la JVM.
  */

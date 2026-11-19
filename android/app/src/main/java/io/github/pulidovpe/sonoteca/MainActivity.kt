@@ -12,6 +12,7 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -22,12 +23,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -36,6 +44,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -45,6 +54,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import io.github.pulidovpe.sonoteca.db.AlbumRow
@@ -54,6 +64,7 @@ import io.github.pulidovpe.sonoteca.db.PlaylistRow
 import io.github.pulidovpe.sonoteca.download.DownloadPlan
 import io.github.pulidovpe.sonoteca.download.DownloadProgress
 import io.github.pulidovpe.sonoteca.download.formatBytes
+import io.github.pulidovpe.sonoteca.playback.PlaybackModes
 import io.github.pulidovpe.sonoteca.playback.PlaybackQueue
 import io.github.pulidovpe.sonoteca.playback.PlayerUi
 
@@ -99,6 +110,7 @@ fun SonotecaApp(viewModel: MainViewModel, onBeforePlay: () -> Unit) {
     val pendingPlays by viewModel.pendingPlays.collectAsState()
     val playerState by viewModel.playerState.collectAsState()
     var showPair by rememberSaveable { mutableStateOf(false) }
+    var showQueue by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
         bottomBar = {
@@ -109,6 +121,9 @@ fun SonotecaApp(viewModel: MainViewModel, onBeforePlay: () -> Unit) {
                     onPrevious = viewModel.player::previous,
                     onNext = viewModel.player::next,
                     onSeek = viewModel.player::seekTo,
+                    onShuffle = viewModel.player::toggleShuffle,
+                    onRepeat = viewModel.player::cycleRepeat,
+                    onQueue = { showQueue = true },
                 )
             }
         },
@@ -141,6 +156,10 @@ fun SonotecaApp(viewModel: MainViewModel, onBeforePlay: () -> Unit) {
                         onBeforePlay()
                         viewModel.playFromList(index)
                     },
+                    onQueueTrack = { index, next ->
+                        onBeforePlay()
+                        viewModel.queueTrack(index, next)
+                    },
                     onPairRequest = { showPair = true },
                     tracks = tracks,
                     playlists = playlists,
@@ -154,6 +173,15 @@ fun SonotecaApp(viewModel: MainViewModel, onBeforePlay: () -> Unit) {
                 )
             }
         }
+    }
+    if (showQueue && playerState.hasItem) {
+        QueueSheet(
+            state = playerState,
+            onDismiss = { showQueue = false },
+            onJump = viewModel.player::jumpTo,
+            onRemove = viewModel.player::removeAt,
+            onClear = viewModel.player::clearQueue,
+        )
     }
     plan?.let { chosen ->
         AlertDialog(
@@ -169,6 +197,18 @@ fun SonotecaApp(viewModel: MainViewModel, onBeforePlay: () -> Unit) {
                                 viewModel.playSelection()
                             },
                         ) { Text("Reproducir las ${chosen.onPhone} descargadas") }
+                        TextButton(
+                            onClick = {
+                                onBeforePlay()
+                                viewModel.queueSelection(next = true)
+                            },
+                        ) { Text("Reproducir a continuación") }
+                        TextButton(
+                            onClick = {
+                                onBeforePlay()
+                                viewModel.queueSelection(next = false)
+                            },
+                        ) { Text("Agregar al final de la cola") }
                         TextButton(onClick = viewModel::askDelete) { Text("Borrar ${chosen.onPhone} descargadas del teléfono") }
                     }
                 }
@@ -259,6 +299,7 @@ private fun LibraryScreen(
     playable: List<PlayableTrack>,
     pendingPlays: Int,
     onPlay: (Int) -> Unit,
+    onQueueTrack: (Int, Boolean) -> Unit,
     onPairRequest: () -> Unit,
     tracks: Int,
     playlists: Int,
@@ -335,12 +376,11 @@ private fun LibraryScreen(
                         item { Text("Aún no has descargado música. Elige un artista, álbum o lista y pulsa «Descargar».", modifier = Modifier.padding(vertical = 12.dp)) }
                     }
                     itemsIndexed(playable, key = { _, track -> track.uuid }) { index, track ->
-                        SelectableRow(
-                            title = track.title.ifEmpty { "(sin título)" },
-                            subtitle = (track.artist.ifEmpty { track.albumArtist }).ifEmpty { "(sin artista)" } + " · " + track.album.ifEmpty { "(sin álbum)" },
-                            right = PlaybackQueue.formatTime((track.duration * 1000).toLong()),
-                            enabled = true,
-                            onClick = { onPlay(index) },
+                        DownloadedRow(
+                            track = track,
+                            onPlay = { onPlay(index) },
+                            onQueueNext = { onQueueTrack(index, true) },
+                            onQueueEnd = { onQueueTrack(index, false) },
                         )
                     }
                 }
@@ -364,7 +404,16 @@ private fun SelectableRow(title: String, subtitle: String?, right: String, enabl
 }
 
 @Composable
-private fun MiniPlayer(state: PlayerUi, onToggle: () -> Unit, onPrevious: () -> Unit, onNext: () -> Unit, onSeek: (Long) -> Unit) {
+private fun MiniPlayer(
+    state: PlayerUi,
+    onToggle: () -> Unit,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    onSeek: (Long) -> Unit,
+    onShuffle: () -> Unit,
+    onRepeat: () -> Unit,
+    onQueue: () -> Unit,
+) {
     var dragging by remember { mutableStateOf<Float?>(null) }
     val duration = state.durationMs.coerceAtLeast(1L)
     Surface(tonalElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
@@ -381,15 +430,79 @@ private fun MiniPlayer(state: PlayerUi, onToggle: () -> Unit, onPrevious: () -> 
                 },
                 valueRange = 0f..duration.toFloat(),
             )
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    PlaybackQueue.formatTime((dragging ?: state.positionMs.toFloat()).toLong()) + " / " + PlaybackQueue.formatTime(state.durationMs),
-                    style = MaterialTheme.typography.bodySmall,
+            Text(
+                PlaybackQueue.formatTime((dragging ?: state.positionMs.toFloat()).toLong()) + " / " + PlaybackQueue.formatTime(state.durationMs),
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = onPrevious) { Text("⏮") }
+                TextButton(onClick = onToggle) { Text(if (state.isPlaying) "⏸" else "▶") }
+                TextButton(onClick = onNext, enabled = state.hasNext) { Text("⏭") }
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                FilterChip(selected = state.shuffle, onClick = onShuffle, label = { Text("Aleatorio", maxLines = 1) })
+                FilterChip(
+                    selected = state.repeatMode != PlaybackModes.REPEAT_OFF,
+                    onClick = onRepeat,
+                    label = { Text(PlaybackModes.repeatLabel(state.repeatMode), maxLines = 1) },
                 )
-                Row {
-                    TextButton(onClick = onPrevious) { Text("⏮") }
-                    TextButton(onClick = onToggle) { Text(if (state.isPlaying) "⏸" else "▶") }
-                    TextButton(onClick = onNext, enabled = state.hasNext) { Text("⏭") }
+                AssistChip(onClick = onQueue, label = { Text("Cola (${state.queue.size})", maxLines = 1) })
+            }
+        }
+    }
+}
+
+/** Una pista de la pestaña «Descargado»: tocar la reproduce; el menú ⋮ la pone a continuación o al final de la cola. */
+@Composable
+private fun DownloadedRow(track: PlayableTrack, onPlay: () -> Unit, onQueueNext: () -> Unit, onQueueEnd: () -> Unit) {
+    var menu by remember { mutableStateOf(false) }
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(modifier = Modifier.weight(1f).clickable { onPlay() }.padding(vertical = 8.dp)) {
+            Text(track.title.ifEmpty { "(sin título)" })
+            Text(
+                (track.artist.ifEmpty { track.albumArtist }).ifEmpty { "(sin artista)" } + " · " + track.album.ifEmpty { "(sin álbum)" },
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        Text(PlaybackQueue.formatTime((track.duration * 1000).toLong()))
+        Box {
+            TextButton(onClick = { menu = true }) { Text("⋮") }
+            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                DropdownMenuItem(text = { Text("Reproducir a continuación") }, onClick = { menu = false; onQueueNext() })
+                DropdownMenuItem(text = { Text("Agregar al final de la cola") }, onClick = { menu = false; onQueueEnd() })
+            }
+        }
+    }
+}
+
+/** La cola de reproducción («Reproduciendo»): tocar una pista salta a ella; «Quitar» la saca (no la que suena); «Vaciar» deja solo la que suena. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun QueueSheet(state: PlayerUi, onDismiss: () -> Unit, onJump: (Int) -> Unit, onRemove: (Int) -> Unit, onClear: () -> Unit) {
+    val listState = rememberLazyListState(initialFirstVisibleItemIndex = state.currentIndex.coerceAtLeast(0))
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Reproduciendo (${state.queue.size})", style = MaterialTheme.typography.titleMedium)
+            TextButton(onClick = onClear, enabled = state.queue.size > 1) { Text("Vaciar") }
+        }
+        LazyColumn(state = listState, modifier = Modifier.padding(horizontal = 16.dp)) {
+            itemsIndexed(state.queue, key = { index, item -> "$index-${item.uuid}" }) { index, item ->
+                val current = index == state.currentIndex
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f).clickable { onJump(index) }.padding(vertical = 8.dp)) {
+                        Text(
+                            item.title.ifEmpty { "(sin título)" },
+                            color = if (current) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                            fontWeight = if (current) FontWeight.Bold else FontWeight.Normal,
+                            maxLines = 1,
+                        )
+                        if (item.artist.isNotEmpty()) Text(item.artist, style = MaterialTheme.typography.bodySmall, maxLines = 1)
+                    }
+                    TextButton(onClick = { onRemove(index) }, enabled = !current) { Text("Quitar") }
                 }
             }
         }

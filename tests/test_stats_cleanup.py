@@ -1,4 +1,6 @@
 """0.8.1: contador de reproducciones y limpieza de álbumes/artistas vacíos (sin Qt)."""
+import sqlite3
+
 from sonoteca.core import library, stats
 from sonoteca.core.cleanup import purge_missing, prune_empty
 from sonoteca.core.db import SCHEMA_VERSION, connect
@@ -29,11 +31,12 @@ def test_play_counter_and_threshold():
     assert stats.play_counts(conn, [t]) == {t: 0}
     assert stats.record_play(conn, t) == 1 and stats.record_play(conn, t) == 2
     assert stats.play_counts(conn, [t, 999]) == {t: 2, 999: 0}
-    # cuenta a los 3 s de sonar (o la pista entera si dura menos), sin exigir oírla completa
-    assert stats.threshold_ms(200_000) == 3_000
-    assert stats.threshold_ms(600_000) == 3_000
-    assert stats.threshold_ms(0) == 3_000
+    # cuenta a los 5 s de sonar (o la pista entera si dura menos), sin exigir oírla completa
+    assert stats.threshold_ms(200_000) == 5_000
+    assert stats.threshold_ms(600_000) == 5_000
+    assert stats.threshold_ms(0) == 5_000
     assert stats.threshold_ms(1_000) == 1_000
+    assert stats.threshold_ms(4_000) == 4_000
     conn.execute("DELETE FROM tracks WHERE id=?", (t,))
     assert stats.play_counts(conn, [t]) == {t: 0}  # el contador sale con la pista (cascada)
 
@@ -81,9 +84,7 @@ def test_artist_top_tracks_two_per_album_sorted_by_plays():
     a1 = [add_track(conn, i, f"/a{i}.mp3", album="Uno") for i in range(1, 5)]
     b1 = [add_track(conn, i, f"/b{i}.mp3", album="Dos") for i in range(11, 14)]
     add_track(conn, 99, "/z.mp3", artist="Otro", album="Ajeno")
-    _plays(conn, a1[2], 5)
-    _plays(conn, a1[1], 2)
-    _plays(conn, a1[0], 1)
+    _plays(conn, a1[2], 5); _plays(conn, a1[1], 2); _plays(conn, a1[0], 1)
     _plays(conn, b1[1], 9)
     artist = conn.execute("SELECT id FROM artists WHERE name='X'").fetchone()[0]
     rows = stats.artist_top_tracks(conn, artist)
@@ -103,9 +104,7 @@ def test_home_rankings():
     t2 = add_track(conn, 2, "/2.mp3", artist="Dos", album="A2")
     t3 = add_track(conn, 3, "/3.mp3", artist="Dos", album="A2")
     assert stats.top_tracks(conn) == [] and stats.top_albums(conn) == [] and stats.top_artists(conn) == []
-    _plays(conn, t1, 1)
-    _plays(conn, t2, 2)
-    _plays(conn, t3, 2)
+    _plays(conn, t1, 1); _plays(conn, t2, 2); _plays(conn, t3, 2)
     assert [r["name"] for r in stats.top_artists(conn)] == ["Dos", "Uno"]
     assert stats.top_artists(conn)[0]["plays"] == 4
     assert [(r["title"], r["plays"]) for r in stats.top_albums(conn)] == [("A2", 4), ("A1", 1)]
