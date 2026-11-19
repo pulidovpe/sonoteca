@@ -38,6 +38,11 @@ on:
         options:
           - ubuntu-24.04
           - ubuntu-26.04
+      cross:
+        description: 'Ejecutar también pytest en macOS y Windows (informativo: no hace fallar el workflow)'
+        required: false
+        default: false
+        type: boolean
 
 # Sin secretos, solo lectura: es seguro con PRs de terceros (se usa pull_request, NO pull_request_target).
 permissions:
@@ -139,7 +144,7 @@ jobs:
         id: pytest
         run: |
           set +e
-          pytest -q -rfEs -p no:cacheprovider > pytest.log 2>&1
+          pytest -q -rfEs --durations=15 -p no:cacheprovider > pytest.log 2>&1
           RC=$?
           tail -n 80 pytest.log
           echo "rc=$RC" >> "$GITHUB_OUTPUT"
@@ -154,6 +159,83 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: pytest-log
+          path: pytest.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # INFORMATIVO: macOS y Windows no tienen lista propia de fallos conocidos (la de Linux no les sirve). Solo con
+  # `gh workflow run ci.yml --ref main -f cross=true`. continue-on-error: un rojo aquí no rompe nada; el resumen del job lista los
+  # fallos (formato de known-failures) para crear, si se quiere, una lista por sistema.
+  test-cross:
+    name: Pruebas (${{ matrix.label }}, informativo)
+    if: ${{ inputs.cross }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 40
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { key: macos, label: macOS, runner: macos-latest }
+          - { key: windows, label: Windows, runner: windows-latest }
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Checkout de las herramientas de CI
+        uses: actions/checkout@v6
+        with:
+          path: ci-tools
+          sparse-checkout: .github
+          sparse-checkout-cone-mode: true
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: pyproject.toml
+
+      # ffmpeg: los tests generan audio/video reales (sin él se OMITEN en silencio).
+      - name: ffmpeg (macOS)
+        if: matrix.key == 'macos'
+        run: brew install ffmpeg
+
+      - name: ffmpeg (Windows)
+        if: matrix.key == 'windows'
+        run: choco install ffmpeg --no-progress -y
+
+      - name: Instalar el proyecto
+        run: |
+          python -m pip install --upgrade pip
+          pip install -c packaging/build-constraints.txt -e ".[ui,dev]"
+
+      - name: Versiones
+        run: |
+          python --version
+          ffmpeg -version | head -1
+          pip list 2>/dev/null | grep -i -E "pyside6|shiboken|pytest|mutagen|cryptography|httpx" || true
+
+      - name: pytest
+        id: pytest
+        run: |
+          set +e
+          pytest -q -rfEs --durations=15 -p no:cacheprovider > pytest.log 2>&1
+          echo "rc=$?" >> "$GITHUB_OUTPUT"
+          tail -n 80 pytest.log
+          exit 0
+
+      - name: Informe de fallos (sin fallar)
+        run: python ci-tools/.github/scripts/check_baseline.py pytest.log "${{ steps.pytest.outputs.rc }}" ci-tools/.github/known-failures.txt --informe
+
+      - name: Subir log de pytest
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pytest-log-${{ matrix.key }}
           path: pytest.log
           if-no-files-found: ignore
           retention-days: 7
