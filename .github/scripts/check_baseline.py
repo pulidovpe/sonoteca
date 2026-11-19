@@ -45,7 +45,7 @@ def main(argv: list[str]) -> int:
 
     out: list[str] = ["## Resultado de pytest frente a fallos conocidos", ""]
     if informe:
-        out += ["_Modo informe: no falla. «Nuevos» = fallos que NO están en la lista de Linux (típicos de este sistema)._", ""]
+        out += ["_Modo informe: no falla. «Nuevos» = fallos que NO están en la lista de conocidos que se le pasó (regresiones en este sistema)._", ""]
     status = 0
 
     if rc not in (0, 1):

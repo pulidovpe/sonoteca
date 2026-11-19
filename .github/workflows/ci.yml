@@ -229,7 +229,7 @@ jobs:
           exit 0
 
       - name: Informe de fallos (sin fallar)
-        run: python ci-tools/.github/scripts/check_baseline.py pytest.log "${{ steps.pytest.outputs.rc }}" ci-tools/.github/known-failures.txt --informe
+        run: python ci-tools/.github/scripts/check_baseline.py pytest.log "${{ steps.pytest.outputs.rc }}" ci-tools/.github/known-failures-${{ matrix.key }}.txt --informe
 
       - name: Subir log de pytest
         if: always()
