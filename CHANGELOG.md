@@ -5,6 +5,12 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.17] - 2026-11-18
+**Android: una reproducción cuenta a los 5 s** (antes 3 s), por decisión de Pablo. Solo cambia `PlayCounter.COUNT_AFTER_MS` y sus pruebas JVM (umbral, pistas de menos de 5 s siguen contando enteras);
+el escritorio sigue en 3 s (`stats.COUNT_AFTER_MS`; pendiente de decidir si también se cambia). `docs/SYNC.md` ya no fija el umbral: lo decide cada app.
+- Causa del cierre de la app tras 1.0.16, hallada en el `logcat -b crash` de Pablo: `AbstractMethodError ... LibraryDao.pendingPlayCount() ... LibraryDao_Impl`: el APK instalado mezclaba clases nuevas con un `LibraryDao_Impl`
+  (código generado por Room) de una compilación anterior. No es un fallo del código (la CI compila desde cero): se arregla con «Clean Project» + «Rebuild» y ejecutar con **Run** (no «Apply Changes»).
+
 ## [1.0.16] - 2026-11-18
 **Android: el móvil anota las reproducciones y las sube al escritorio** (segunda mitad de «estadísticas»; el servidor llegó en 1.0.15). Solo Kotlin/Android + versión Python.
 - `PlayCounter` (lógica pura, 9 pruebas JVM nuevas en `PlayCounterTest`): misma regla que `stats.threshold_ms` del escritorio: 3 s de avance normal; saltar, retroceder y pausar no suman; una vez por reproducción.

@@ -51,7 +51,7 @@ KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más
   mostrará un error de reproducción; no hay aleatorio, repetir, ni cola editable todavía.
 
 ## Estadísticas de reproducción (fase 4c)
-- El servicio de reproducción cuenta una reproducción **a los 3 s de avance normal** (misma regla que el escritorio: saltar con la barra, retroceder o pausar no suma; una pista de menos de 3 s cuenta entera;
+- El servicio de reproducción cuenta una reproducción **a los 5 s de avance normal** (decisión de Pablo; el escritorio cuenta a los 3 s; saltar con la barra, retroceder o pausar no suma; una pista de menos de 5 s cuenta entera;
   como mucho una vez por reproducción; repetir la misma pista cuenta otra). Cuenta aunque la app esté cerrada. Cada una se guarda en Room (`play_events`: id único, pista, fecha UTC) sin necesidad de red.
 - Se suben al escritorio (`POST /v1/plays`, docs/SYNC.md) **al abrir la app** si el escritorio está al alcance (en silencio), al **sincronizar** (antes del catálogo) y al **emparejar**. Se borran del móvil solo al recibir el 200;
   si falla, quedan guardadas y se reintentan (el escritorio ignora las repetidas: no se cuenta doble). La pantalla principal muestra «N reproducciones por subir».

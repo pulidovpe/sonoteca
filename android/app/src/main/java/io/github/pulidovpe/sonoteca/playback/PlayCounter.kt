@@ -5,8 +5,8 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 /**
- * Decide cuándo una pista cuenta como «reproducida». Misma regla que el escritorio (`stats.threshold_ms`): tras 3 s de AVANCE normal
- * (saltar con la barra no suma, retroceder tampoco; pausar no suma), o la duración entera si la pista dura menos de 3 s, y como mucho una
+ * Decide cuándo una pista cuenta como «reproducida»: tras 5 s de AVANCE normal (en el escritorio son 3 s: `stats.COUNT_AFTER_MS`;
+ * saltar con la barra no suma, retroceder tampoco; pausar no suma), o la duración entera si la pista dura menos de 5 s, y como mucho una
  * vez por reproducción. Al empezar otra pista —o la misma de nuevo— se reinicia. Lógica pura, sin Android: se prueba en la JVM.
  */
 class PlayCounter(private val onCount: (trackUuid: String) -> Unit) {
@@ -36,7 +36,7 @@ class PlayCounter(private val onCount: (trackUuid: String) -> Unit) {
     }
 
     companion object {
-        const val COUNT_AFTER_MS = 3_000L
+        const val COUNT_AFTER_MS = 5_000L
         const val MAX_STEP_MS = 2_500L   // un avance mayor entre dos lecturas es un salto, no escucha
 
         fun threshold(durationMs: Long): Long = if (durationMs <= 0) COUNT_AFTER_MS else maxOf(1L, minOf(COUNT_AFTER_MS, durationMs))
