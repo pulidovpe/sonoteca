@@ -5,6 +5,15 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.19] - 2026-11-20
+**Android: tema «Neón» y navegación inferior** (segunda fase del rediseño; solo Kotlin/recursos + versión Python).
+- **Mismos colores e iconos que el escritorio**: `ui/NeonPalette.kt` y `ui/NeonIcons.kt` generados a partir de `Theme.qml` (25 colores, 12 iconos SVG) y `ui/NeonTheme.kt` con un esquema oscuro de Material 3 estable (acento cian,
+  violeta/magenta de la marca, `surfaceContainer*` de la barra lateral a las superficies elevadas, divisores sutiles). Siempre oscuro; la ventana arranca oscura (`themes.xml`, `colors.xml`).
+- **`NeonParityTest`** (3 pruebas JVM): compara colores e iconos con `src/sonoteca/ui/qml/Theme.qml` (se omite si el archivo no está a mano), para que la CI avise si el escritorio y el móvil se separan.
+- **Barra de navegación inferior** con tres destinos: Biblioteca (pestañas Artistas/Álbumes/Listas), Descargado y Escritorio (estado, emparejar/olvidar, sincronizar). La pantalla única anterior se divide en `LibraryTab`, `DownloadedTab` y `DesktopTab`.
+- **Mini reproductor** con los iconos del escritorio (anterior/play/pausa/siguiente, dibujados con los mismos trazos) y el botón de reproducir con degradado cian → magenta.
+- Verificado por Pablo en el POCO: 1.0.18 (aleatorio, repetir y cola) funciona. **1.0.19 SIN compilar ni probar**; dudas mías: `PathParser`/`scale` de Compose para los iconos y los parámetros de `darkColorScheme` (Material 3 1.4).
+
 ## [1.0.18] - 2026-11-19
 **Android: aleatorio, repetir y cola de reproducción** (primera fase del rediseño; solo Kotlin + versión Python).
 - Mini reproductor: botones **Aleatorio** y **Repetir** (sin repetir → todas → una, el mismo ciclo del escritorio) y **Cola (N)**. Se usan `shuffleModeEnabled` y `repeatMode` de Media3 y se recuerdan entre sesiones (SharedPreferences `player`).
