@@ -17,7 +17,8 @@ KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más
 | 3c | Descarga en segundo plano (WorkManager), limpiar descargas huérfanas, portadas y letras | pendiente |
 | 4a | **Reproductor local** (Media3 1.11.0): toca lo descargado en el teléfono, sin servidor ni cable; mini reproductor, notificación y segundo plano | 1.0.14: compila y reproduce en el POCO (pestaña Descargado, sin servidor, pantalla apagada y bloqueada); notificación, bloqueo, auriculares y llamadas ✅; **1.0.18** añade aleatorio, repetir y cola, sin verificar |
 | ~~4b~~ | ~~Crear/editar listas en el móvil~~ | aplazada por decisión de Pablo (2026-11-18) |
-| 4c | **Estadísticas**: el móvil anota las reproducciones sin conexión y las sube al escritorio al conectar | servidor 1.0.15 ✅ (CI verde); móvil 1.0.16, **sin verificar** |
+| 4c | **Estadísticas**: el móvil anota las reproducciones sin conexión y las sube al escritorio al conectar | servidor 1.0.15 ✅ (CI verde); móvil 1.0.16/1.0.17 compila y arranca, el conteo y la subida contra el escritorio real **sin verificar** |
+| 5a | **Rediseño «Neón»**: aleatorio/repetir/cola (1.0.18 ✅ en el POCO), tema y navegación inferior (1.0.19, **sin verificar**); luego portadas y reproductor completo, letras, Inicio |  |
 | 5 | Wi-Fi y USB pulidos (NSD, QR, permiso de red local) | pendiente |
 | 6 | Windows y Linux | pendiente |
 
@@ -40,7 +41,7 @@ KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más
 
 ## Reproductor (fase 4a)
 - Solo reproduce **lo descargado en el teléfono** (entradas de MediaStore que la app publicó) y **no necesita servidor, cable ni Wi-Fi**. Sin streaming.
-- Cuatro pestañas: Artistas, Álbumes, Listas y **Descargado** (todas las pistas bajadas, en orden de artista/álbum/pista; tocar una la reproduce y sigue con las siguientes).
+- **Navegación inferior (1.0.19)**: Biblioteca (pestañas Artistas / Álbumes / Listas), **Descargado** (todas las pistas bajadas, en orden de artista/álbum/pista; tocar una la reproduce y sigue con las siguientes) y Escritorio (estado, emparejar/olvidar, sincronizar).
   Desde el resumen de un artista/álbum/lista, **«Reproducir las N descargadas»** (las listas suenan en su orden).
 - Mini reproductor abajo: título, artista, barra de avance con salto, anterior/pausa/siguiente, y (1.0.18) **Aleatorio**, **Repetir** (sin repetir → todas → una, como en el escritorio) y **Cola (N)**.
   Aleatorio y repetir se recuerdan entre sesiones. El servicio (`PlaybackService`) sigue sonando con la pantalla apagada o la app en segundo plano,
@@ -53,6 +54,13 @@ KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más
 - El servicio solo abre URIs `content://media/…` (la sesión puede recibir peticiones de otras apps).
 - Salvedades (sin verificar): Xiaomi/HyperOS puede cerrar el servicio con la batería «optimizada» (ajusta la app a «Sin restricciones»); si borras del teléfono lo que está sonando, el reproductor
   mostrará un error de reproducción; no se reordena la cola arrastrando todavía.
+
+## Tema «Neón» y navegación (1.0.19)
+- Mismos colores que el escritorio: `ui/NeonPalette.kt` y `ui/NeonIcons.kt` se **generan a partir de `src/sonoteca/ui/qml/Theme.qml`** (fondo `#060e16`, acento cian, violeta y magenta de la marca, niveles de superficie, texto) y
+  `NeonParityTest` (JVM) los compara con ese archivo: si el escritorio cambia un color o un icono y el móvil no, la CI avisa. `ui/NeonTheme.kt` los pone en un esquema de Material 3 estable (siempre oscuro; no hay tema claro,
+  como en el escritorio) y la ventana arranca ya oscura (`themes.xml`/`colors.xml`), sin destello blanco.
+- Iconos del escritorio (anterior, play/pausa, siguiente, y los de la barra inferior) dibujados con los mismos trazos SVG (`PathIcon`); el botón de reproducir lleva el degradado cian → magenta.
+- Barra de navegación inferior con tres destinos (Biblioteca, Descargado, Escritorio) sobre el mini reproductor. «Inicio» («más escuchado») llegará cuando el móvil muestre las estadísticas.
 
 ## Estadísticas de reproducción (fase 4c)
 - El servicio de reproducción cuenta una reproducción **a los 5 s de avance normal** (decisión de Pablo, igual que el escritorio desde 1.0.17; saltar con la barra, retroceder o pausar no suma; una pista de menos de 5 s cuenta entera;
