@@ -12,7 +12,8 @@ datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_ver
 - **`NeonParityTest`** (3 pruebas JVM): compara colores e iconos con `src/sonoteca/ui/qml/Theme.qml` (se omite si el archivo no está a mano), para que la CI avise si el escritorio y el móvil se separan.
 - **Barra de navegación inferior** con tres destinos: Biblioteca (pestañas Artistas/Álbumes/Listas), Descargado y Escritorio (estado, emparejar/olvidar, sincronizar). La pantalla única anterior se divide en `LibraryTab`, `DownloadedTab` y `DesktopTab`.
 - **Mini reproductor** con los iconos del escritorio (anterior/play/pausa/siguiente, dibujados con los mismos trazos) y el botón de reproducir con degradado cian → magenta.
-- Verificado por Pablo en el POCO: 1.0.18 (aleatorio, repetir y cola) funciona. **1.0.19 SIN compilar ni probar**; dudas mías: `PathParser`/`scale` de Compose para los iconos y los parámetros de `darkColorScheme` (Material 3 1.4).
+- **Corrección tras el primer push (no compilaba)**: el script que generó `NeonIcons.kt` dejó un guion bajo inicial en las constantes (`_ALBUM`, `_PLAY`…) y `MainActivity` usa `NeonIcons.ALBUM`, `NeonIcons.PLAY`…: «Unresolved reference» en `compileDebugKotlin`. Ya sin el guion bajo; todas las referencias a `NeonPalette`, `NeonIcons` y `Neon` comprobadas con un script.
+- Verificado por Pablo en el POCO: 1.0.18 (aleatorio, repetir y cola) funciona. **1.0.19 aún SIN probar en el móvil**; dudas mías: `PathParser`/`scale` de Compose para los iconos y los parámetros de `darkColorScheme` (Material 3 1.4).
 
 ## [1.0.18] - 2026-11-19
 **Android: aleatorio, repetir y cola de reproducción** (primera fase del rediseño; solo Kotlin + versión Python).
