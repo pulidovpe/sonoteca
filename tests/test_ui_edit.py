@@ -231,7 +231,7 @@ def test_editor_shows_current_and_new_cover(qml_env, tmp_path):
     assert js("tagEditor.coverPath") == ""
     # al elegir una imagen aparece la miniatura nueva junto a la actual
     new = make_cover(tmp_path / "nueva.jpg", "0x33cc33")
-    act(f"tagEditor.coverPath = '{new}'", 400)
+    act(f"tagEditor.coverPath = '{new.as_posix()}'", 400)   # con «\» JS lo toma por escapes (\r, \t, \n) en Windows
     assert js("tagEditor.newThumbItem.source.toString()").endswith("nueva.jpg")
     assert js("tagEditor.currentThumbItem.visible") is True
     # modo artista: la imagen actual es la del artista

@@ -108,6 +108,7 @@ def test_no_cover_means_nothing_is_stored(tmp_path, datadir):
 def test_data_and_cache_never_default_inside_a_virtualenv(tmp_path, monkeypatch):
     venv = tmp_path / "repo" / ".venv"
     monkeypatch.setenv("HOME", str(tmp_path / "home"))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path / "home"))   # Windows: Path.home() usa USERPROFILE, no HOME
     monkeypatch.delenv("SONOTECA_DATA_DIR", raising=False)
     monkeypatch.delenv("SONOTECA_CACHE_DIR", raising=False)
     monkeypatch.setattr(sys, "prefix", str(venv))
