@@ -32,7 +32,7 @@ def test_cli_paths_warns_when_inside_venv(monkeypatch, tmp_path, capsys):
     assert main(["paths"]) == 0
     out = capsys.readouterr().out
     assert "AVISO" in out and "caché" in out and "SONOTECA_CACHE_DIR" in out
-    assert Path(tmp_path / "datos" / "library.db").as_posix() in out
+    assert str(Path(tmp_path / "datos" / "library.db")) in out   # sin as_posix(): en Windows la CLI imprime «\»
 
 
 def test_cli_version_shows_code_location(capsys):

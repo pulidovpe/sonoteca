@@ -33,7 +33,8 @@ def _fake_trash(tmp_path):
     moved = []
 
     def trash(path):
-        target = bin_dir / f"{len(moved)}-{path.split('/')[-1]}"
+        name = path.replace("\\", "/").split("/")[-1]            # también rutas de Windows (sin «C:» en el destino)
+        target = bin_dir / f"{len(moved)}-{name}"
         shutil.move(path, target)
         moved.append(path)
         return True

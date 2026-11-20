@@ -58,11 +58,13 @@ def test_reverse_without_adb_raises_a_clear_error(monkeypatch):
 
 def test_find_adb_prefers_path_then_sdk_locations():
     assert usb.find_adb({}, which=lambda name: "/usr/bin/adb") == "/usr/bin/adb"
+    exe = "adb.exe" if usb.sys.platform == "win32" else "adb"     # find_adb arma las rutas con Path y adb.exe en Windows
     env = {"HOME": "/Users/p"}
-    expected = "/Users/p/Library/Android/sdk/platform-tools/adb"
+    expected = str(usb.Path("/Users/p") / "Library" / "Android" / "sdk" / "platform-tools" / exe)
     assert usb.find_adb(env, which=lambda name: None, is_file=lambda p: p == expected) == expected
+    sdk_adb = str(usb.Path("/opt/sdk") / "platform-tools" / exe)
     assert usb.find_adb({"HOME": "/h", "ANDROID_HOME": "/opt/sdk"}, which=lambda name: None,
-                        is_file=lambda p: p == "/opt/sdk/platform-tools/adb") == "/opt/sdk/platform-tools/adb"
+                        is_file=lambda p: p == sdk_adb) == sdk_adb
     assert usb.find_adb(env, which=lambda name: None, is_file=lambda p: False) is None
 
 
