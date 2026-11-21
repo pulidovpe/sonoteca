@@ -77,6 +77,10 @@ import io.github.pulidovpe.sonoteca.ui.Neon
 import io.github.pulidovpe.sonoteca.ui.NeonIcons
 import io.github.pulidovpe.sonoteca.ui.PathIcon
 import io.github.pulidovpe.sonoteca.ui.SonotecaTheme
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.res.painterResource
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
@@ -104,6 +108,15 @@ class MainActivity : ComponentActivity() {
                 Surface(modifier = Modifier.fillMaxSize()) { SonotecaApp(viewModel, onBeforePlay = this::askNotificationPermission) }
             }
         }
+    }
+}
+
+/** Logo y nombre de la app, arriba de todas las pantallas. */
+@Composable
+private fun BrandHeader() {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Image(painter = painterResource(R.drawable.sonoteca_logo), contentDescription = "Logo de Sonoteca", modifier = Modifier.size(36.dp))
+        Text("Sonoteca", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -152,6 +165,7 @@ fun SonotecaApp(viewModel: MainViewModel, onBeforePlay: () -> Unit) {
                     )
                 }
                 if (hasCatalog) {
+                    HorizontalDivider()
                     NavigationBar {
                         Dest.entries.forEach { item ->
                             NavigationBarItem(
@@ -170,6 +184,7 @@ fun SonotecaApp(viewModel: MainViewModel, onBeforePlay: () -> Unit) {
             modifier = Modifier.padding(padding).padding(start = 16.dp, end = 16.dp, top = 16.dp).fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            BrandHeader()
             message?.let { text ->
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(12.dp)) {
@@ -182,7 +197,6 @@ fun SonotecaApp(viewModel: MainViewModel, onBeforePlay: () -> Unit) {
             val current = pairing
             if (!hasCatalog) {
                 // instalación nueva: aún no hay catálogo, solo se puede emparejar
-                Text("Sonoteca", style = MaterialTheme.typography.headlineMedium)
                 PairScreen(busy = busy, onPair = viewModel::pair)
             } else {
                 // con catálogo se usa la biblioteca aunque no haya emparejamiento: lo descargado se reproduce sin servidor
@@ -490,7 +504,12 @@ private fun MiniPlayer(
 ) {
     var dragging by remember { mutableStateOf<Float?>(null) }
     val duration = state.durationMs.coerceAtLeast(1L)
-    Surface(color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
             Text(state.title.ifEmpty { "(sin título)" }, style = MaterialTheme.typography.titleMedium, maxLines = 1)
             if (state.artist.isNotEmpty()) Text(state.artist, style = MaterialTheme.typography.bodySmall, maxLines = 1)

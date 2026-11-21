@@ -5,6 +5,15 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.20] - 2026-11-20
+**Android: el mini reproductor se distingue de la lista, y se ven el logo y el nombre de Sonoteca.** Solo recursos y `MainActivity` + versión Python.
+- **Mini reproductor**: antes usaba casi el mismo azul oscuro que la lista (`#0a141d` frente a `#060e16`). Ahora `surfaceContainerHighest`, esquinas superiores redondeadas, borde de 1 dp y una línea divisoria sobre la barra de navegación.
+- **Icono de lanzador**: era el de la plantilla de Android; ahora es el logo de Sonoteca (icono adaptable con el logo en la zona segura sobre el fondo `neon_bg`, e iconos heredados). Generado desde `assets/icons/sonoteca-1024.png`; revisado con máscara circular y con cuadrada redondeada.
+- **Cabecera** con el logo (`drawable-nodpi/sonoteca_logo.png`) y el nombre en todas las pantallas.
+- Hay 2 archivos huérfanos de la plantilla que conviene borrar con `git rm` (`drawable/ic_launcher_background.xml` y `drawable/ic_launcher_foreground.xml`); ya no se referencian.
+- Verificado por Pablo: 1.0.19 (tema y navegación) en verde en CI y sin romper nada en el POCO. **1.0.20 SIN compilar ni probar**.
+- **Peticiones de Pablo para después** (en este orden): firma de la APK de release (pedido de ci, 1.0.21), miniaturas de portadas de álbumes y artistas en lista y en cuadrícula, y letras de las canciones descargadas.
+
 ## [1.0.19] - 2026-11-20
 **Android: tema «Neón» y navegación inferior** (segunda fase del rediseño; solo Kotlin/recursos + versión Python).
 - **Mismos colores e iconos que el escritorio**: `ui/NeonPalette.kt` y `ui/NeonIcons.kt` generados a partir de `Theme.qml` (25 colores, 12 iconos SVG) y `ui/NeonTheme.kt` con un esquema oscuro de Material 3 estable (acento cian,
