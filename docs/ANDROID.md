@@ -60,7 +60,11 @@ KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más
   `NeonParityTest` (JVM) los compara con ese archivo: si el escritorio cambia un color o un icono y el móvil no, la CI avisa. `ui/NeonTheme.kt` los pone en un esquema de Material 3 estable (siempre oscuro; no hay tema claro,
   como en el escritorio) y la ventana arranca ya oscura (`themes.xml`/`colors.xml`), sin destello blanco.
 - Iconos del escritorio (anterior, play/pausa, siguiente, y los de la barra inferior) dibujados con los mismos trazos SVG (`PathIcon`); el botón de reproducir lleva el degradado cian → magenta.
-- Barra de navegación inferior con tres destinos (Biblioteca, Descargado, Escritorio) sobre el mini reproductor. «Inicio» («más escuchado») llegará cuando el móvil muestre las estadísticas.
+- Barra de navegación inferior con tres destinos (Biblioteca, Descargado, Escritorio) bajo el mini reproductor.
+- **Mini reproductor (1.0.20)**: tono más claro que la lista (`surfaceContainerHighest`), esquinas superiores redondeadas y borde fino, y una línea sobre la barra de navegación; antes se confundía con el fondo.
+- **Marca (1.0.20)**: cabecera con el logo y el nombre «Sonoteca» arriba de todas las pantallas, y **icono de lanzador = el logo de Sonoteca** (adaptable: logo dentro de la zona segura sobre el fondo de la marca; antes era el de la plantilla de Android).
+  Los recursos se generan a partir de `assets/icons/sonoteca-1024.png` (`mipmap-*/ic_launcher_logo.png`, `ic_launcher*.webp`, `drawable-nodpi/sonoteca_logo.png`); no hay capa monocroma (el logo es a color).
+  Se evaluó el recorte con máscara circular y cuadrada redondeada: no se corta nada. «Inicio» («más escuchado») llegará cuando el móvil muestre las estadísticas.
 
 ## Estadísticas de reproducción (fase 4c)
 - El servicio de reproducción cuenta una reproducción **a los 5 s de avance normal** (decisión de Pablo, igual que el escritorio desde 1.0.17; saltar con la barra, retroceder o pausar no suma; una pista de menos de 5 s cuenta entera;
