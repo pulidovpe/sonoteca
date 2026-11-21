@@ -6,7 +6,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Property, QObject, QTimer, Signal, Slot
 
-from sonoteca.core import library, paths, pending_tags, session, stats
+from sonoteca.core import library, paths, pending_tags, play_source, session, stats
 from sonoteca.core.db import connect
 from sonoteca.core.models import UNKNOWN_ALBUM, UNKNOWN_ARTIST
 from sonoteca.player.backend import PlayerBackend
@@ -244,6 +244,12 @@ class PlayerController(QObject):
     @Property(str, notify=sourceChanged)
     def sourceKey(self) -> str:
         return self._source
+
+    @Slot(result="QVariantMap")
+    def sourceInfo(self) -> dict:
+        """Tipo («album» / «playlist») y nombre de lo que suena; vacíos si son canciones sin lista o el origen ya no existe."""
+        kind, name = play_source.describe(self._conn, self._source)
+        return {"kind": kind, "title": album_display(name) if kind == "album" else name}
 
     @Slot("QVariantList", int)
     def playTrackIds(self, ids: list, index: int) -> None:

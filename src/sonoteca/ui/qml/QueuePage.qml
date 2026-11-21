@@ -12,12 +12,14 @@ Item {
     signal menuRequested(var ids)
     signal saveRequested()
 
-    function refresh() { items = player.queueItems() }
+    property var origin: ({"kind": "", "title": ""})   // álbum o lista de donde sale lo que suena (vacío: canciones sin lista)
+    function refresh() { items = player.queueItems(); origin = player.sourceInfo() }
     function removeAt(i) { player.removeFromQueue(i) }
     Component.onCompleted: refresh()
     Connections {
         target: player
         function onQueueChanged() { page.refresh() }
+        function onSourceChanged() { page.refresh() }
     }
     Connections {
         target: Theme
@@ -26,17 +28,19 @@ Item {
 
     Text {
         id: title
-        text: page.panel ? "Reproduciendo" : "Lista de reproducci\u00f3n"
+        text: page.panel ? (page.origin.title !== "" ? page.origin.title : "Reproduciendo") : "Lista de reproducci\u00f3n"
         color: Theme.text
         font.pixelSize: page.panel ? 22 : 30
         font.weight: Font.Bold
+        width: parent.width - 2 * page.pad
+        elide: Text.ElideRight
         anchors { left: parent.left; top: parent.top; leftMargin: page.pad; topMargin: page.panel ? 16 : 8 }
     }
     Text {
         id: sub
         color: Theme.textDim
         font.pixelSize: 13
-        text: page.items.length === 0 ? "Vac\u00eda" : Theme.plural(page.items.length, "canci\u00f3n", "canciones") + (page.panel ? "" : " \u00b7 temporal: se pierde al cerrar la aplicaci\u00f3n")
+        text: page.items.length === 0 ? "Vac\u00eda" : (page.panel && page.origin.kind !== "" ? (page.origin.kind === "album" ? "\u00c1lbum" : "Lista") + " \u00b7 " : "") + Theme.plural(page.items.length, "canci\u00f3n", "canciones") + (page.panel ? "" : " \u00b7 temporal: se pierde al cerrar la aplicaci\u00f3n")
         anchors { left: parent.left; top: title.bottom; leftMargin: page.pad; topMargin: 2 }
     }
     Flow {
