@@ -13,6 +13,7 @@ datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_ver
   `cover/CoverKeys` (lógica pura: claves SHA-1, tamaño de muestreo; 5 pruebas JVM `CoverKeysTest`) y `ui/CoverThumb`. En Biblioteca ▸ Artistas/Álbumes, selector **Lista / Cuadrícula** (3 columnas, miniatura cuadrada con el nombre debajo, a petición de Pablo).
   Sin imagen: la «cajita» de color plano `placeholder` del escritorio (nuevo token en `NeonPalette`, comprobado por `NeonParityTest`).
 - Verificado por Pablo: 1.0.19 y 1.0.20 en CI; el mini reproductor y el logo, por probar. **1.0.21 SIN compilar ni probar el Kotlin**; dudas mías: `LazyVerticalGrid` con `items` renombrado (`gridItems`) y `produceState` con dos claves.
+- **Corrección tras el primer push (no compilaba)**: `ui/CoverThumb.kt` usaba `6.dp` sin importar `androidx.compose.ui.unit.dp` («Unresolved reference 'dp'», línea 29 en el log de CI). Ya importado. Lo encontró el log de Pablo; una comprobación estática ampliada (extensiones de Compose sin import: `dp`, `size`, `padding`, `clip`, delegados de estado…) no halla ningún otro caso en el resto del código.
 - **Nota para ci**: el punto (A) del trabajo de escritorio que Pablo te pidió (5 s de escucha) **ya está hecho en 1.0.17** (`core/stats.py`, `tests/test_stats_cleanup.py`): no lo repitas.
 
 ## [1.0.20] - 2026-11-20
