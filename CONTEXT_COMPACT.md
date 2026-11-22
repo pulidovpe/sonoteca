@@ -16,6 +16,8 @@
   `pytest.log`, carpetas `tmp*`/`hsperfdata_*` ni `build/`.
 - **Orden de aplicación de un zip (decírselo siempre)**: commit de lo pendiente → `git fetch origin && git merge origin/main` → `unzip -o` → `git status` y `git diff --stat` (revisar que no cambie
   nada de `.github`/`docs/CI.md`; si cambia, `git checkout origin/main -- .github docs/CI.md`) → commit. Nunca copiar carpetas con Finder (reemplaza y borra: ya pasó).
+- **Cada comando `git` que dé a Pablo debe decir en qué carpeta se ejecuta**: el repo está en `/Users/pulidovpe/workspace/mis-proyectos/sonoteca` (poner `cd` explícito delante; `unzip -o` también se ejecuta ahí). Orden de Pablo, 2026-11-22.
+- **Antes de entregar Kotlin nuevo** (no puedo compilar Android): (1) compilar y ejecutar la lógica pura con el compilador real (`kotlinc` 2.2.10 de la release de GitHub `JetBrains/kotlin`, descargable aquí), (2) comprobar imports de extensiones de Compose (`dp`, `size`, `padding`, `clip`, `getValue`…) en TODOS los `.kt` con un script, (3) nombres sin definir/argumentos con nombre. Los errores de CI llegan sin las líneas `e: file://`: pedírselas a Pablo con `gh run view … --log-failed | grep "e: file"`.
 - **NUNCA enviar en un zip un archivo de `tests/` o `src/` que yo no haya creado desde cero**: mi copia está vieja y ya pisó dos veces las correcciones de lint de `main` (2026-11-17, 9 archivos; 2026-11-19, `tests/test_stats_cleanup.py`). Para cambiarlos, dar un comando/script que edite el archivo real tras `git checkout origin/main -- <ruta>` y pedir `git diff origin/main -- <ruta>` para verificar.
 - **Zips = SOLO los archivos que cambian en esa entrega** (más CHANGELOG, `__init__.py` y este contexto), no el árbol entero: mi copia de `tests/` y `src/` puede estar vieja y un `unzip -o` pisó
   las correcciones de lint de `main` (2026-11-17, 9 archivos; arreglado con `git checkout origin/main -- tests src/sonoteca/player/qt_backend.py`). Si `git diff --stat` muestra archivos que la entrega no menciona, restaurarlos desde `origin/main`.
@@ -60,7 +62,7 @@
 
 ## Peticiones de Pablo (2026-11-20, por hacer en este orden)
 1. **Firma de la APK de release + versionName/versionCode desde `src/sonoteca/__init__.py`** (ahora 1.0.22: Pablo adelantó las portadas; lo espera el agente 2; ver su archivo).
-2. ✅(sin verificar, 1.0.21) **Miniaturas de portadas de álbumes y artistas** en lista y en cuadrícula (cuadrícula de 3 columnas con el nombre DEBAJO, decidido por Pablo; ruta nueva `/v1/tracks/{uuid}/artist`; placeholder = color plano de las cajitas del escritorio). El primer push de 1.0.21 NO compiló (`compileDebugKotlin`; causa por conocer: falta el log con las líneas `e: file://`).
+2. ✅(sin verificar, 1.0.21) **Miniaturas de portadas de álbumes y artistas** en lista y en cuadrícula (cuadrícula de 3 columnas con el nombre DEBAJO, decidido por Pablo; ruta nueva `/v1/tracks/{uuid}/artist`; placeholder = color plano de las cajitas del escritorio). El primer push de 1.0.21 NO compiló: `CoverThumb.kt` usaba `.dp` sin importar `androidx.compose.ui.unit.dp` (corregido).
 3. **Letras** de las canciones descargadas (existen en el servidor: `/lyrics`; LRC sincronizado en el escritorio).
 4. Después: reproductor a pantalla completa y «Inicio» con lo más escuchado.
 
