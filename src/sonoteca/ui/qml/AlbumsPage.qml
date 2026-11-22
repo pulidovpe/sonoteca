@@ -144,6 +144,7 @@ Item {
             title: modelData.displayTitle
             subtitle: modelData.artist + (modelData.year > 0 ? " · " + modelData.year : "")
             onClicked: page.albumClicked(modelData.id)
+            menuEnabled: true
             onMenuRequested: page.menuRequested(library.albumTrackIds(modelData.id))
         }
         populate: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 280 } }

@@ -20,7 +20,13 @@ AppMenu {
     // «Reproducir ahora»: conserva la lista y pone estas canciones de primeras (también con Aleatorio)
     function playNow() { player.playFirst(ids) }
     // «Vaciar y reproducir»: la lista queda solo con estas canciones
-    function replaceAndPlay() { player.playTrackIds(ids, 0) }
+    function replaceAndPlay() {
+        // Si son TODAS las pistas de un álbum, el panel «Reproduciendo» lleva su nombre (como al pulsar «Reproducir» en el álbum)
+        var album = library.wholeAlbumOf(ids)
+        if (album > 0 && player.shuffle) player.playShuffled("album:" + album, ids)
+        else if (album > 0) player.playFrom("album:" + album, ids, 0)
+        else player.playTrackIds(ids, 0)
+    }
     function playLater() { player.playNext(ids) }
     function addToList() { player.addToQueue(ids) }
     function edit() { editRequested(ids) }

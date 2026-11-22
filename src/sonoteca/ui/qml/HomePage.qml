@@ -109,6 +109,7 @@ Item {
                     title: modelData.displayTitle
                     subtitle: modelData.artist + " \u00b7 \u25b6 " + modelData.plays
                     onClicked: page.albumClicked(modelData.id)
+                    menuEnabled: true
                     onMenuRequested: page.menuRequested(library.albumTrackIds(modelData.id))
                 }
             }
@@ -132,6 +133,8 @@ Item {
                     title: modelData.name
                     subtitle: "\u25b6 " + modelData.plays + " \u00b7 " + Theme.plural(modelData.tracks, "pista", "pistas")
                     onClicked: page.artistClicked(modelData.id, modelData.name)
+                    menuEnabled: true
+                    onMenuRequested: page.menuRequested(library.artistTrackIds(modelData.id))
                 }
             }
 

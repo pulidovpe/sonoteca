@@ -7,8 +7,9 @@ Item {
     property string coverSource: "image://cover/" + albumId + "?v=" + Theme.dataRevision
     property string title
     property string subtitle
-    // Solo los álbumes (albumId > 0) llevan menú ⋮ y clic derecho; las cajas de artistas no
-    readonly property bool hasMenu: albumId > 0
+    // Menú ⋮ y clic derecho: lo activa cada página en las cajas que lo llevan (álbumes y artistas)
+    property bool menuEnabled: false
+    readonly property bool hasMenu: menuEnabled
     signal clicked()
     signal menuRequested()
 

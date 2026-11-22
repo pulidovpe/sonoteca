@@ -514,7 +514,7 @@ ApplicationWindow {
     Component { id: homeComp; HomePage { onPlayOneRequested: (id) => win.playOne(id); onAlbumClicked: (id) => win.openAlbum(id); onArtistClicked: (id, name) => win.openArtist(id, name); onPlaylistClicked: (id) => win.openPlaylist(id); onMenuRequested: (ids) => win.showTrackMenu(ids) } }
     Component { id: albumsComp; AlbumsPage { onPlayOneRequested: (id) => win.playOne(id); onMenuRequested: (ids) => win.showTrackMenu(ids); onAlbumClicked: (id) => win.openAlbum(id); onNeedInternet: win.openInternetSettings(); onEditArtistRequested: (id, name) => win.editArtistTags(id, name) } }
     Component { id: albumComp; AlbumDetail { onEditRequested: (ids) => win.editTags(ids); onMenuRequested: (ids) => win.showTrackMenu(ids); onListRequested: (ids) => win.showPlaylistPicker(ids); onNewListRequested: (ids) => win.pickerNewList(ids); onRemoveRequested: (ids, label, whole) => win.confirmRemoveFromLibrary(ids, label, whole); onLookupRequested: (id, ids, unknown) => win.lookupAlbum(id, ids, unknown); onPlayOneRequested: (id) => win.playOne(id); onArtistRequested: (id, name) => win.openArtist(id, name) } }
-    Component { id: artistsComp; ArtistsPage { onArtistClicked: (id, name) => win.openArtist(id, name) } }
+    Component { id: artistsComp; ArtistsPage { onArtistClicked: (id, name) => win.openArtist(id, name); onMenuRequested: (ids) => win.showTrackMenu(ids) } }
     Component {
         id: reviewComp
         TrackListPage {

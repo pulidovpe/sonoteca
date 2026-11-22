@@ -113,6 +113,8 @@ Item {
                     title: modelData.name
                     subtitle: modelData.subtitle
                     onClicked: page.artistClicked(modelData.id, modelData.name)
+                    menuEnabled: true
+                    onMenuRequested: page.menuRequested(library.artistTrackIds(modelData.id))
                 }
             }
 
@@ -132,6 +134,7 @@ Item {
                     title: modelData.title
                     subtitle: modelData.subtitle
                     onClicked: page.albumClicked(modelData.id)
+                    menuEnabled: true
                     onMenuRequested: page.menuRequested(library.albumTrackIds(modelData.id))
                 }
             }

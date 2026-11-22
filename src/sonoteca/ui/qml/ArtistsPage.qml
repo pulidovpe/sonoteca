@@ -14,6 +14,7 @@ Item {
         onTriggered: grid.contentY = page.restore.y || 0
     }
     signal artistClicked(int artistId, string name)
+    signal menuRequested(var ids)
 
     Text {
         id: title
@@ -45,6 +46,8 @@ Item {
             title: modelData.name
             subtitle: Theme.plural(modelData.albums, "álbum", "álbumes") + " · " + Theme.plural(modelData.tracks, "pista", "pistas")
             onClicked: page.artistClicked(modelData.id, modelData.name)
+            menuEnabled: true
+            onMenuRequested: page.menuRequested(library.artistTrackIds(modelData.id))
         }
         populate: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 280 } }
         ScrollBar.vertical: ScrollBar { }

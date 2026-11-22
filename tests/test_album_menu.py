@@ -12,7 +12,7 @@ def _read(name):
 def test_album_card_has_the_menu_button_and_right_click_only_for_albums():
     card = _read("AlbumCard.qml")
     assert "signal menuRequested()" in card and "Theme.iconMore" in card
-    assert "Qt.RightButton" in card and "hasMenu: albumId > 0" in card        # las cajas de artistas (sin albumId) no
+    assert "Qt.RightButton" in card and "hasMenu: menuEnabled" in card        # lo activa cada página
     assert "root.hasMenu" in card[card.index("Qt.RightButton"):][:200]
 
 

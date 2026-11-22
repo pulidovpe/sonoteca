@@ -136,6 +136,12 @@ class LibraryController(QObject):
         """Ids de todas las pistas del álbum, en orden de disco y pista (menú ⋮ de las cajas de álbum)."""
         return [r["id"] for r in library.list_tracks(self._conn, album_id=album_id)]
 
+    @Slot("QVariantList", result=int)
+    def wholeAlbumOf(self, ids: list) -> int:
+        """Id del álbum si `ids` son TODAS las pistas de un único álbum (2 o más); 0 en cualquier otro caso."""
+        from sonoteca.core import play_source
+        return play_source.whole_album(self._conn, [int(i) for i in ids])
+
     @Slot(int, result="QVariantList")
     def artistTopTracks(self, artist_id: int) -> list[dict]:
         """Hasta 2 canciones por álbum del artista, ordenadas por reproducciones."""

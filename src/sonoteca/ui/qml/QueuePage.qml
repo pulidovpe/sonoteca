@@ -33,6 +33,8 @@ Item {
         font.pixelSize: page.panel ? 22 : 30
         font.weight: Font.Bold
         width: parent.width - 2 * page.pad
+        wrapMode: Text.Wrap
+        maximumLineCount: 2
         elide: Text.ElideRight
         anchors { left: parent.left; top: parent.top; leftMargin: page.pad; topMargin: page.panel ? 16 : 8 }
     }
