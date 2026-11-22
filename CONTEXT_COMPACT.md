@@ -60,7 +60,7 @@
 
 ## Peticiones de Pablo (2026-11-20, por hacer en este orden)
 1. **Firma de la APK de release + versionName/versionCode desde `src/sonoteca/__init__.py`** (ahora 1.0.22: Pablo adelantó las portadas; lo espera el agente 2; ver su archivo).
-2. ✅(sin verificar, 1.0.21) **Miniaturas de portadas de álbumes y artistas** en lista y en cuadrícula (nombre al lado; ruta nueva `/v1/tracks/{uuid}/artist`; placeholder = color plano de las cajitas del escritorio). Pendiente de confirmar con Pablo si la cuadrícula debe llevar el nombre al lado o debajo.
+2. ✅(sin verificar, 1.0.21) **Miniaturas de portadas de álbumes y artistas** en lista y en cuadrícula (cuadrícula de 3 columnas con el nombre DEBAJO, decidido por Pablo; ruta nueva `/v1/tracks/{uuid}/artist`; placeholder = color plano de las cajitas del escritorio). El primer push de 1.0.21 NO compiló (`compileDebugKotlin`; causa por conocer: falta el log con las líneas `e: file://`).
 3. **Letras** de las canciones descargadas (existen en el servidor: `/lyrics`; LRC sincronizado en el escritorio).
 4. Después: reproductor a pantalla completa y «Inicio» con lo más escuchado.
 

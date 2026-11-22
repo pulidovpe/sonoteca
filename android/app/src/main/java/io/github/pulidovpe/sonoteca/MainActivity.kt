@@ -88,6 +88,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import io.github.pulidovpe.sonoteca.cover.CoverKeys
 import io.github.pulidovpe.sonoteca.cover.CoverLoader
 import io.github.pulidovpe.sonoteca.ui.CoverThumb
+import androidx.compose.foundation.layout.aspectRatio
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
@@ -399,7 +400,7 @@ private fun LibraryTab(
         HorizontalDivider()
         if (tab < 2 && grid) {
             LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
+                columns = GridCells.Fixed(3),
                 modifier = Modifier.weight(1f),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -476,7 +477,7 @@ private fun LibraryTab(
     }
 }
 
-/** Celda de la cuadrícula: la miniatura con el nombre al lado (y, abajo, cuántas pistas están en el teléfono). */
+/** Celda de la cuadrícula (3 columnas): la miniatura cuadrada, el nombre debajo y cuántas pistas están en el teléfono. */
 @Composable
 private fun GridCell(
     covers: CoverLoader,
@@ -489,22 +490,14 @@ private fun GridCell(
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-            .clickable(enabled = enabled) { onClick() }
-            .padding(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    Column(
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable(enabled = enabled) { onClick() },
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        CoverThumb(covers, coverKey, sampleUuid, artist, modifier = Modifier.size(56.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(right, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+        CoverThumb(covers, coverKey, sampleUuid, artist, modifier = Modifier.fillMaxWidth().aspectRatio(1f))
+        Text(title, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(right, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
