@@ -4,7 +4,7 @@ from test_player_controller import env  # noqa: F401  (fixture)
 from sonoteca.core import playlists
 
 
-def test_source_info_names_the_album_or_playlist_and_forgets_it(env):
+def test_source_info_names_the_album_or_playlist_and_forgets_it(env):  # noqa: F811
     ctrl, _be, album, *_ = env
     ctrl.playAlbum(album, 0)
     ids = ctrl.queueTrackIds()
