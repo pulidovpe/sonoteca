@@ -132,6 +132,11 @@ class LibraryController(QObject):
         return out
 
     @Slot(int, result="QVariantList")
+    def albumTrackIds(self, album_id: int) -> list[int]:
+        """Ids de todas las pistas del álbum, en orden de disco y pista (menú ⋮ de las cajas de álbum)."""
+        return [r["id"] for r in library.list_tracks(self._conn, album_id=album_id)]
+
+    @Slot(int, result="QVariantList")
     def artistTopTracks(self, artist_id: int) -> list[dict]:
         """Hasta 2 canciones por álbum del artista, ordenadas por reproducciones."""
         return [{"id": r["id"], "title": r["title"], "duration": r["duration"],

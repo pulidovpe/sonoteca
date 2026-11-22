@@ -109,6 +109,7 @@ Item {
                     title: modelData.displayTitle
                     subtitle: modelData.artist + " \u00b7 \u25b6 " + modelData.plays
                     onClicked: page.albumClicked(modelData.id)
+                    onMenuRequested: page.menuRequested(library.albumTrackIds(modelData.id))
                 }
             }
 

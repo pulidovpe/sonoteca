@@ -132,6 +132,7 @@ Item {
                     title: modelData.title
                     subtitle: modelData.subtitle
                     onClicked: page.albumClicked(modelData.id)
+                    onMenuRequested: page.menuRequested(library.albumTrackIds(modelData.id))
                 }
             }
 
