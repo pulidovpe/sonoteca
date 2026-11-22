@@ -7,6 +7,7 @@ import io.github.pulidovpe.sonoteca.db.AppDatabase
 import io.github.pulidovpe.sonoteca.download.DownloadPlan
 import io.github.pulidovpe.sonoteca.download.DownloadProgress
 import io.github.pulidovpe.sonoteca.net.SyncHttpException
+import io.github.pulidovpe.sonoteca.cover.CoverLoader
 import io.github.pulidovpe.sonoteca.playback.PlayerController
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -23,6 +24,9 @@ import javax.net.ssl.SSLException
 class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val store = PairingStore(app)
     private val repository = SyncRepository(app, AppDatabase.get(app), store)
+
+    /** Miniaturas de portadas de álbumes y artistas (se piden al escritorio al verse y se guardan en el teléfono). */
+    val covers = CoverLoader(app, store)
 
     val pairing = MutableStateFlow(store.load())
     val busy = MutableStateFlow(false)

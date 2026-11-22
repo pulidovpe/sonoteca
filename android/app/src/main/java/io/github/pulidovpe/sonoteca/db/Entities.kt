@@ -72,8 +72,10 @@ data class PlayableTrack(
     val uri: String,
 )
 
-data class ArtistRow(val name: String, val tracks: Int, val downloaded: Int)
+/** `sampleUuid`: UUID de una pista del artista (el escritorio resuelve su imagen a partir de ella). */
+data class ArtistRow(val name: String, val tracks: Int, val downloaded: Int, val sampleUuid: String)
 
-data class AlbumRow(val artist: String, val album: String, val tracks: Int, val downloaded: Int)
+/** `sampleUuid`: UUID de una pista del álbum (el escritorio resuelve su portada a partir de ella). */
+data class AlbumRow(val artist: String, val album: String, val tracks: Int, val downloaded: Int, val sampleUuid: String)
 
 data class PlaylistRow(val uuid: String, val name: String, val tracks: Int, val downloaded: Int)

@@ -42,6 +42,7 @@ el certificado vive en `<datos>/sync/server-cert.pem`.
 | `GET /v1/manifest` | sí | pistas de audio con huella vigente, listas, listas borradas, `pending_hash` |
 | `GET /v1/tracks/{uuid}/file` | sí | audio; admite `Range` (206/416); cabeceras `ETag` y `X-Sonoteca-Hash` |
 | `GET /v1/tracks/{uuid}/cover` | sí | JPEG/PNG (404 si no hay) |
+| `GET /v1/tracks/{uuid}/artist` | sí | JPEG/PNG: imagen del artista de ÁLBUM de la pista, con la regla del escritorio (su foto descargada o, si no, la portada de un álbum suyo; 404 si no hay) |
 | `GET /v1/tracks/{uuid}/lyrics` | sí | `{synced_lrc, original_text, language}` (404 si no hay) |
 | `POST /v1/plays` | sí | `{events:[{id, track_uuid, played_at}]}` → `{accepted, duplicates, unknown:[id…], invalid:[id…]}` (ver «Estadísticas») |
 | `PUT /v1/playlists/{uuid}` | sí | `{name, updated_at, tracks:[uuid…]}` → `{applied, name, updated_at, missing:[uuid…]}` |

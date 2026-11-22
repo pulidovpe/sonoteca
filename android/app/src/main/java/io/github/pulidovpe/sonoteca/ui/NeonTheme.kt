@@ -14,6 +14,9 @@ object Neon {
     val magenta = Color(NeonPalette.MAGENTA)
     val textOnAccent = Color(NeonPalette.TEXT_ON_ACCENT)
 
+    /** La «cajita» sin portada (el escritorio muestra este color plano mientras no hay imagen). */
+    val placeholder = Color(NeonPalette.PLACEHOLDER)
+
     /** Degradado cian → magenta del botón de reproducir (como en el escritorio). */
     val playGradient: Brush = Brush.linearGradient(listOf(cyan, magenta))
 }

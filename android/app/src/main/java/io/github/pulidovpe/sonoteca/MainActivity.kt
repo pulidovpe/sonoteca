@@ -81,6 +81,13 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items as gridItems
+import androidx.compose.ui.text.style.TextOverflow
+import io.github.pulidovpe.sonoteca.cover.CoverKeys
+import io.github.pulidovpe.sonoteca.cover.CoverLoader
+import io.github.pulidovpe.sonoteca.ui.CoverThumb
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
@@ -202,6 +209,7 @@ fun SonotecaApp(viewModel: MainViewModel, onBeforePlay: () -> Unit) {
                 // con catálogo se usa la biblioteca aunque no haya emparejamiento: lo descargado se reproduce sin servidor
                 when (dest) {
                     Dest.Library -> LibraryTab(
+                        covers = viewModel.covers,
                         artists = artists,
                         albums = albums,
                         playlistRows = playlistRows,
@@ -356,6 +364,7 @@ private fun PairScreen(busy: Boolean, onPair: (String, String) -> Unit) {
 
 @Composable
 private fun LibraryTab(
+    covers: CoverLoader,
     artists: List<ArtistRow>,
     albums: List<AlbumRow>,
     playlistRows: List<PlaylistRow>,
@@ -363,6 +372,7 @@ private fun LibraryTab(
     onSelect: (Selection) -> Unit,
 ) {
     var tab by rememberSaveable { mutableStateOf(0) }
+    var grid by rememberSaveable { mutableStateOf(false) }   // lista (como antes) o cuadrícula, para Artistas y Álbumes
     Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Biblioteca", style = MaterialTheme.typography.headlineSmall)
         // tres pestañas de igual ancho y con poco relleno
@@ -380,37 +390,120 @@ private fun LibraryTab(
                 }
             }
         }
+        if (tab < 2) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(selected = !grid, onClick = { grid = false }, label = { Text("Lista", maxLines = 1) })
+                FilterChip(selected = grid, onClick = { grid = true }, label = { Text("Cuadrícula", maxLines = 1) })
+            }
+        }
         HorizontalDivider()
-        LazyColumn(modifier = Modifier.weight(1f)) {
-            when (tab) {
-                0 -> items(artists, key = { it.name }) { artist ->
-                    SelectableRow(
-                        title = artist.name.ifEmpty { "(sin artista)" },
-                        subtitle = null,
-                        right = "${artist.downloaded}/${artist.tracks}",
-                        enabled = !busy,
-                        onClick = { onSelect(Selection.Artist(artist.name)) },
-                    )
-                }
-                1 -> items(albums, key = { it.artist + "||" + it.album }) { album ->
-                    SelectableRow(
-                        title = album.album.ifEmpty { "(sin álbum)" },
-                        subtitle = album.artist.ifEmpty { "(sin artista)" },
-                        right = "${album.downloaded}/${album.tracks}",
-                        enabled = !busy,
-                        onClick = { onSelect(Selection.Album(album.artist, album.album)) },
-                    )
-                }
-                else -> items(playlistRows, key = { it.uuid }) { list ->
-                    SelectableRow(
-                        title = list.name,
-                        subtitle = null,
-                        right = "${list.downloaded}/${list.tracks}",
-                        enabled = !busy,
-                        onClick = { onSelect(Selection.Playlist(list.uuid, list.name)) },
-                    )
+        if (tab < 2 && grid) {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (tab == 0) {
+                    gridItems(artists, key = { it.name }) { artist ->
+                        GridCell(
+                            covers = covers,
+                            coverKey = CoverKeys.artist(artist.name),
+                            sampleUuid = artist.sampleUuid,
+                            artist = true,
+                            title = artist.name.ifEmpty { "(sin artista)" },
+                            subtitle = null,
+                            right = "${artist.downloaded}/${artist.tracks}",
+                            enabled = !busy,
+                            onClick = { onSelect(Selection.Artist(artist.name)) },
+                        )
+                    }
+                } else {
+                    gridItems(albums, key = { it.artist + "||" + it.album }) { album ->
+                        GridCell(
+                            covers = covers,
+                            coverKey = CoverKeys.album(album.artist, album.album),
+                            sampleUuid = album.sampleUuid,
+                            artist = false,
+                            title = album.album.ifEmpty { "(sin álbum)" },
+                            subtitle = album.artist.ifEmpty { "(sin artista)" },
+                            right = "${album.downloaded}/${album.tracks}",
+                            enabled = !busy,
+                            onClick = { onSelect(Selection.Album(album.artist, album.album)) },
+                        )
+                    }
                 }
             }
+        } else {
+            LazyColumn(modifier = Modifier.weight(1f)) {
+                when (tab) {
+                    0 -> items(artists, key = { it.name }) { artist ->
+                        SelectableRow(
+                            title = artist.name.ifEmpty { "(sin artista)" },
+                            subtitle = null,
+                            right = "${artist.downloaded}/${artist.tracks}",
+                            enabled = !busy,
+                            onClick = { onSelect(Selection.Artist(artist.name)) },
+                            leading = {
+                                CoverThumb(covers, CoverKeys.artist(artist.name), artist.sampleUuid, artist = true, modifier = Modifier.size(48.dp))
+                            },
+                        )
+                    }
+                    1 -> items(albums, key = { it.artist + "||" + it.album }) { album ->
+                        SelectableRow(
+                            title = album.album.ifEmpty { "(sin álbum)" },
+                            subtitle = album.artist.ifEmpty { "(sin artista)" },
+                            right = "${album.downloaded}/${album.tracks}",
+                            enabled = !busy,
+                            onClick = { onSelect(Selection.Album(album.artist, album.album)) },
+                            leading = {
+                                CoverThumb(covers, CoverKeys.album(album.artist, album.album), album.sampleUuid, artist = false, modifier = Modifier.size(48.dp))
+                            },
+                        )
+                    }
+                    else -> items(playlistRows, key = { it.uuid }) { list ->
+                        SelectableRow(
+                            title = list.name,
+                            subtitle = null,
+                            right = "${list.downloaded}/${list.tracks}",
+                            enabled = !busy,
+                            onClick = { onSelect(Selection.Playlist(list.uuid, list.name)) },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Celda de la cuadrícula: la miniatura con el nombre al lado (y, abajo, cuántas pistas están en el teléfono). */
+@Composable
+private fun GridCell(
+    covers: CoverLoader,
+    coverKey: String,
+    sampleUuid: String,
+    artist: Boolean,
+    title: String,
+    subtitle: String?,
+    right: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .clickable(enabled = enabled) { onClick() }
+            .padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        CoverThumb(covers, coverKey, sampleUuid, artist, modifier = Modifier.size(56.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(right, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -478,11 +571,20 @@ private fun DesktopTab(
 }
 
 @Composable
-private fun SelectableRow(title: String, subtitle: String?, right: String, enabled: Boolean, onClick: () -> Unit) {
+private fun SelectableRow(
+    title: String,
+    subtitle: String?,
+    right: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    leading: (@Composable () -> Unit)? = null,
+) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable(enabled = enabled) { onClick() }.padding(vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier.fillMaxWidth().clickable(enabled = enabled) { onClick() }.padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        leading?.invoke()
         Column(modifier = Modifier.weight(1f)) {
             Text(title)
             if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall)

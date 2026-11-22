@@ -8,6 +8,8 @@ import java.net.URI
 import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.HttpsURLConnection
 
+private const val MAX_IMAGE_BYTES = 12L * 1024 * 1024   // una portada más grande que esto no se descarga
+
 /** Error devuelto por el servidor (código HTTP + mensaje del escritorio). */
 class SyncHttpException(val status: Int, message: String) : IOException(message)
 
@@ -47,6 +49,27 @@ class SyncApi(
             unknown = response.optJSONArray("unknown")?.length() ?: 0,
             invalid = response.optJSONArray("invalid")?.length() ?: 0,
         )
+    }
+
+    /**
+     * Imagen para miniaturas: la portada del álbum de la pista o, con `artist = true`, la imagen del artista de álbum
+     * (su foto o la portada de uno de sus álbumes, como en el escritorio). `null` si el escritorio no tiene ninguna.
+     */
+    fun image(trackUuid: String, artist: Boolean): ByteArray? {
+        val connection = open("GET", "/v1/tracks/$trackUuid/" + if (artist) "artist" else "cover")
+        connection.setRequestProperty("Accept-Encoding", "identity")
+        try {
+            val status = connection.responseCode
+            if (status == 404) return null
+            if (status !in 200..299) {
+                val text = connection.errorStream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+                throw SyncHttpException(status, errorMessage(text, status))
+            }
+            if (connection.contentLengthLong > MAX_IMAGE_BYTES) return null
+            return connection.inputStream.use { it.readBytes() }
+        } finally {
+            connection.disconnect()
+        }
     }
 
     fun manifest(): Manifest = parseManifest(request("GET", "/v1/manifest", null))

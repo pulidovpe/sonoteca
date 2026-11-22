@@ -37,7 +37,7 @@ abstract class LibraryDao {
     abstract suspend fun insertPlaylistLinks(links: List<PlaylistTrackEntity>)
 
     @Query(
-        "SELECT t.albumArtist AS name, COUNT(*) AS tracks, COUNT(d.trackUuid) AS downloaded FROM tracks t " +
+        "SELECT t.albumArtist AS name, COUNT(*) AS tracks, COUNT(d.trackUuid) AS downloaded, MIN(t.uuid) AS sampleUuid FROM tracks t " +
             "LEFT JOIN downloads d ON d.trackUuid = t.uuid AND d.hash = t.hash " +
             "GROUP BY t.albumArtist ORDER BY t.albumArtist COLLATE NOCASE",
     )
@@ -50,7 +50,7 @@ abstract class LibraryDao {
     abstract suspend fun tracksOfArtist(artist: String): List<TrackEntity>
 
     @Query(
-        "SELECT t.albumArtist AS artist, t.album AS album, COUNT(*) AS tracks, COUNT(d.trackUuid) AS downloaded FROM tracks t " +
+        "SELECT t.albumArtist AS artist, t.album AS album, COUNT(*) AS tracks, COUNT(d.trackUuid) AS downloaded, MIN(t.uuid) AS sampleUuid FROM tracks t " +
             "LEFT JOIN downloads d ON d.trackUuid = t.uuid AND d.hash = t.hash " +
             "GROUP BY t.albumArtist, t.album ORDER BY t.album COLLATE NOCASE, t.albumArtist COLLATE NOCASE",
     )
