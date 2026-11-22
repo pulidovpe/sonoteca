@@ -30,6 +30,7 @@ object NeonPalette {
     const val WARN = 0xFFF5C26BL
     const val DANGER = 0xFFFF6B81L
     const val SCRIM = 0xB0020A12L
+    const val PLACEHOLDER = 0xFF101D29L
 
     /** Nombre en `Theme.qml` → color ARGB. */
     val tokens: Map<String, Long> = mapOf(
@@ -58,5 +59,6 @@ object NeonPalette {
         "warn" to WARN,
         "danger" to DANGER,
         "scrim" to SCRIM,
+        "placeholder" to PLACEHOLDER,
     )
 }

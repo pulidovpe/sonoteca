@@ -18,7 +18,7 @@ KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más
 | 4a | **Reproductor local** (Media3 1.11.0): toca lo descargado en el teléfono, sin servidor ni cable; mini reproductor, notificación y segundo plano | 1.0.14: compila y reproduce en el POCO (pestaña Descargado, sin servidor, pantalla apagada y bloqueada); notificación, bloqueo, auriculares y llamadas ✅; **1.0.18** añade aleatorio, repetir y cola, sin verificar |
 | ~~4b~~ | ~~Crear/editar listas en el móvil~~ | aplazada por decisión de Pablo (2026-11-18) |
 | 4c | **Estadísticas**: el móvil anota las reproducciones sin conexión y las sube al escritorio al conectar | servidor 1.0.15 ✅ (CI verde); móvil 1.0.16/1.0.17 compila y arranca, el conteo y la subida contra el escritorio real **sin verificar** |
-| 5a | **Rediseño «Neón»**: aleatorio/repetir/cola (1.0.18 ✅ en el POCO), tema y navegación inferior (1.0.19, **sin verificar**); luego portadas y reproductor completo, letras, Inicio |  |
+| 5a | **Rediseño «Neón»**: aleatorio/repetir/cola (1.0.18 ✅ en el POCO), tema y navegación inferior (1.0.19 ✅), logo e icono (1.0.20), miniaturas de portadas en lista y cuadrícula (1.0.21, **sin verificar**); luego letras, reproductor completo, Inicio |  |
 | 5 | Wi-Fi y USB pulidos (NSD, QR, permiso de red local) | pendiente |
 | 6 | Windows y Linux | pendiente |
 
@@ -65,6 +65,15 @@ KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más
 - **Marca (1.0.20)**: cabecera con el logo y el nombre «Sonoteca» arriba de todas las pantallas, y **icono de lanzador = el logo de Sonoteca** (adaptable: logo dentro de la zona segura sobre el fondo de la marca; antes era el de la plantilla de Android).
   Los recursos se generan a partir de `assets/icons/sonoteca-1024.png` (`mipmap-*/ic_launcher_logo.png`, `ic_launcher*.webp`, `drawable-nodpi/sonoteca_logo.png`); no hay capa monocroma (el logo es a color).
   Se evaluó el recorte con máscara circular y cuadrada redondeada: no se corta nada. «Inicio» («más escuchado») llegará cuando el móvil muestre las estadísticas.
+
+## Portadas (1.0.21)
+- **Miniaturas de portadas de álbumes y de imágenes de artistas** en Biblioteca ▸ Artistas y Álbumes, en **lista** (como antes, con la miniatura a la izquierda) y en **cuadrícula** de 2 columnas con el nombre al lado de la miniatura
+  (selector «Lista / Cuadrícula»; no se recuerda al cerrar la app). Las listas de reproducción siguen sin miniatura.
+- Se piden **solo cuando se ven** (no se descarga la biblioteca entera): `GET /v1/tracks/{uuid}/cover` (álbum) y `GET /v1/tracks/{uuid}/artist` (artista, ver docs/SYNC.md) con el UUID de una pista de muestra (`MIN(uuid)` en la consulta de Room).
+  El escritorio ya sabe qué imagen toca (artista: su foto descargada y, si no, la portada de un álbum suyo — la misma regla que usa su interfaz).
+- `CoverLoader` las reduce a 320 px (recorte cuadrado), las guarda como JPEG en `files/covers` y las sirve desde memoria (24 MB) o disco: después se ven **sin conexión**. 4 descargas a la vez. Una portada que el escritorio no tiene se recuerda 24 h (`.none`).
+- **Sin imagen**: se ve la «cajita» de color plano `Neon.placeholder` (`#101d29`, el `placeholder` de `Theme.qml`), como en las cajas de álbum del escritorio. Sin emparejamiento solo se muestra lo ya guardado.
+- Aún sin portadas: Descargado, mini reproductor, cola y listas de reproducción (en el escritorio las listas llevan un collage de portadas).
 
 ## Estadísticas de reproducción (fase 4c)
 - El servicio de reproducción cuenta una reproducción **a los 5 s de avance normal** (decisión de Pablo, igual que el escritorio desde 1.0.17; saltar con la barra, retroceder o pausar no suma; una pista de menos de 5 s cuenta entera;

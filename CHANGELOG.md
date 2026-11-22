@@ -5,6 +5,16 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.21] - 2026-11-21
+**Miniaturas de portadas de álbumes y artistas en la app Android** (lista y cuadrícula), por petición de Pablo. Escritorio/servidor: solo una ruta nueva; el resto es Android.
+- **Servidor** (`sync/server.py`): nueva ruta `GET /v1/tracks/{uuid}/artist` con `default_artist_image_provider`: la imagen del artista de ÁLBUM de la pista con la regla del escritorio (`covers.artist_photo` y, si no hay, la portada de `covers.artist_cover_album`);
+  404 si no hay. 8 pruebas nuevas en `tests/test_sync_covers.py` (carpeta, foto preferida, PNG, sin imagen, foto ilegible, ruta con token y 404, `cover` sigue igual). Corridas aquí con corredor propio y `mutagen` simulado; pytest real y ruff los ejecuta la CI.
+- **Móvil**: `ArtistRow`/`AlbumRow` traen `sampleUuid` (`MIN(uuid)`; el esquema de Room no cambia), `SyncApi.image`, `cover/CoverLoader` (miniaturas de 320 px en `files/covers`, memoria 24 MB, 4 descargas a la vez, «no hay» recordado 24 h),
+  `cover/CoverKeys` (lógica pura: claves SHA-1, tamaño de muestreo; 5 pruebas JVM `CoverKeysTest`) y `ui/CoverThumb`. En Biblioteca ▸ Artistas/Álbumes, selector **Lista / Cuadrícula** (2 columnas, miniatura con el nombre al lado).
+  Sin imagen: la «cajita» de color plano `placeholder` del escritorio (nuevo token en `NeonPalette`, comprobado por `NeonParityTest`).
+- Verificado por Pablo: 1.0.19 y 1.0.20 en CI; el mini reproductor y el logo, por probar. **1.0.21 SIN compilar ni probar el Kotlin**; dudas mías: `LazyVerticalGrid` con `items` renombrado (`gridItems`) y `produceState` con dos claves.
+- **Nota para ci**: el punto (A) del trabajo de escritorio que Pablo te pidió (5 s de escucha) **ya está hecho en 1.0.17** (`core/stats.py`, `tests/test_stats_cleanup.py`): no lo repitas.
+
 ## [1.0.20] - 2026-11-20
 **Android: el mini reproductor se distingue de la lista, y se ven el logo y el nombre de Sonoteca.** Solo recursos y `MainActivity` + versión Python.
 - **Mini reproductor**: antes usaba casi el mismo azul oscuro que la lista (`#0a141d` frente a `#060e16`). Ahora `surfaceContainerHighest`, esquinas superiores redondeadas, borde de 1 dp y una línea divisoria sobre la barra de navegación.
