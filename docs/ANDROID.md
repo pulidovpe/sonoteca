@@ -67,7 +67,7 @@ KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más
   Se evaluó el recorte con máscara circular y cuadrada redondeada: no se corta nada. «Inicio» («más escuchado») llegará cuando el móvil muestre las estadísticas.
 
 ## Portadas (1.0.21)
-- **Miniaturas de portadas de álbumes y de imágenes de artistas** en Biblioteca ▸ Artistas y Álbumes, en **lista** (como antes, con la miniatura a la izquierda) y en **cuadrícula** de 2 columnas con el nombre al lado de la miniatura
+- **Miniaturas de portadas de álbumes y de imágenes de artistas** en Biblioteca ▸ Artistas y Álbumes, en **lista** (como antes, con la miniatura a la izquierda) y en **cuadrícula** de 3 columnas con el nombre debajo de la miniatura (como las cajas de álbum del escritorio)
   (selector «Lista / Cuadrícula»; no se recuerda al cerrar la app). Las listas de reproducción siguen sin miniatura.
 - Se piden **solo cuando se ven** (no se descarga la biblioteca entera): `GET /v1/tracks/{uuid}/cover` (álbum) y `GET /v1/tracks/{uuid}/artist` (artista, ver docs/SYNC.md) con el UUID de una pista de muestra (`MIN(uuid)` en la consulta de Room).
   El escritorio ya sabe qué imagen toca (artista: su foto descargada y, si no, la portada de un álbum suyo — la misma regla que usa su interfaz).
