@@ -28,7 +28,7 @@ Item {
 
     Text {
         id: title
-        text: page.panel ? (page.origin.title !== "" ? page.origin.title : "Reproduciendo") : "Lista de reproducci\u00f3n"
+        text: page.panel ? (page.origin.title !== "" ? page.origin.title : (player.currentTrack.title ? "Reproduciendo " + player.currentTrack.title : "Reproduciendo")) : "Lista de reproducci\u00f3n"
         color: Theme.text
         font.pixelSize: page.panel ? 22 : 30
         font.weight: Font.Bold

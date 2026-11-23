@@ -268,6 +268,7 @@ class PlayerController(QObject):
             return
         at = max(self._queue.position, -1) + 1
         self._queue.insert_next(valid)
+        self._set_source("")                 # lista mezclada: ya no es solo ese álbum o esa lista
         self._queue.jump_to(at)
         self._error_streak = 0
         self._play_current()
@@ -362,6 +363,8 @@ class PlayerController(QObject):
             return
         was_empty = len(self._queue) == 0
         self._queue.append(valid)
+        if not was_empty:
+            self._set_source("")             # lista mezclada: ya no es solo ese álbum o esa lista
         self.queueChanged.emit()
         if was_empty:
             self.queueMessage.emit(f"Lista temporal creada con {self._songs(len(valid))}. "
@@ -377,6 +380,7 @@ class PlayerController(QObject):
         if not valid:
             return
         self._queue.insert_next(valid)
+        self._set_source("")                 # lista mezclada: ya no es solo ese álbum o esa lista
         self.queueChanged.emit()
         self.queueMessage.emit(f"{self._songs(len(valid)).capitalize()} sonar"
                                f"{'á' if len(valid) == 1 else 'án'} a continuación")

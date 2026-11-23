@@ -16,6 +16,8 @@ AppMenu {
     property bool allowDelete: false
     // Datos de la canción (solo con una seleccionada) para los enlaces al artista y al álbum
     readonly property var info: ids.length === 1 ? library.trackInfo(ids[0]) : ({})
+    // Si son TODAS las pistas de un álbum (caja de álbum): «Reproducir ahora» vacía la lista y el panel lleva el nombre del álbum
+    readonly property int wholeAlbum: ids.length > 1 ? library.wholeAlbumOf(ids) : 0
 
     // «Reproducir ahora»: conserva la lista y pone estas canciones de primeras (también con Aleatorio)
     function playNow() { player.playFirst(ids) }
@@ -35,12 +37,12 @@ AppMenu {
     property alias removeItem: removeItem
 
     AppMenuItem {
-        text: root.ids.length > 1 ? "Reproducir ahora (" + root.ids.length + " pistas \u00b7 conserva la lista)" : "Reproducir ahora (conserva la lista)"
-        onTriggered: root.playNow()
+        text: root.wholeAlbum > 0 ? "Reproducir ahora (" + root.ids.length + " pistas)" : (root.ids.length > 1 ? "Reproducir ahora (" + root.ids.length + " pistas \u00b7 conserva la lista)" : "Reproducir ahora (conserva la lista)")
+        onTriggered: { if (root.wholeAlbum > 0) root.replaceAndPlay(); else root.playNow() }
     }
     AppMenuItem {
-        text: root.ids.length > 1 ? "Vaciar y reproducir (" + root.ids.length + " pistas)" : "Vaciar y reproducir"
-        onTriggered: root.replaceAndPlay()
+        text: root.wholeAlbum > 0 ? "Reproducir ahora (" + root.ids.length + " pistas \u00b7 conserva la lista)" : (root.ids.length > 1 ? "Vaciar y reproducir (" + root.ids.length + " pistas)" : "Vaciar y reproducir")
+        onTriggered: { if (root.wholeAlbum > 0) root.playNow(); else root.replaceAndPlay() }
     }
     AppMenuItem {
         text: "Reproducir a continuaci\u00f3n"

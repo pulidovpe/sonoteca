@@ -18,3 +18,14 @@ def test_source_info_names_the_album_or_playlist_and_forgets_it(env):  # noqa: F
     assert ctrl.sourceInfo()["title"] == "Otro nombre"
     ctrl.playTrackIds(ids, 0)                                            # otra forma de empezar: olvida el origen
     assert ctrl.sourceInfo() == {"kind": "", "title": ""}
+
+
+def test_inserting_or_adding_songs_to_a_list_in_progress_leaves_it_without_origin(env):  # noqa: F811
+    ctrl, _be, album, *_ = env
+    ctrl.playAlbum(album, 0)
+    ids = ctrl.queueTrackIds()
+    for name in ("playFirst", "playNext", "addToQueue"):
+        ctrl.playFrom(f"album:{album}", ids, 0)
+        assert ctrl.sourceInfo()["kind"] == "album", name
+        getattr(ctrl, name)(ids[:1])
+        assert ctrl.sourceInfo() == {"kind": "", "title": ""}, name        # lista mezclada: el panel dirá «Reproduciendo <canción>»
