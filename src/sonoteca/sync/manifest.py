@@ -7,8 +7,12 @@ from datetime import datetime, timezone
 from . import API_VERSION
 from ..core.db import SCHEMA_VERSION
 
-_TRACKS = """
-    SELECT t.uuid, f.content_hash AS hash, f.hash_size AS size, f.format, t.title,
+# Huella vigente: la calculada con el tamaño y la fecha ACTUALES del archivo (si no, el contenido pudo cambiar y no se anuncia).
+_HASH_CURRENT = "(f.content_hash IS NOT NULL AND f.hash_size IS f.size AND f.hash_mtime_ns IS f.mtime_ns)"
+
+_TRACKS = f"""
+    SELECT t.uuid, CASE WHEN {_HASH_CURRENT} THEN f.content_hash END AS hash,
+           CASE WHEN {_HASH_CURRENT} THEN f.hash_size END AS size, f.format, t.title,
            ar.name AS artist, aa.name AS album_artist, al.title AS album,
            t.track_no, t.disc_no, COALESCE(t.year, al.year) AS year, t.duration, t.genre, t.has_cover,
            COALESCE((SELECT ps.plays FROM play_stats ps WHERE ps.track_id = t.id), 0) AS plays,
@@ -29,13 +33,14 @@ def now_iso() -> str:
 
 
 def build_manifest(conn: sqlite3.Connection) -> dict:
-    """Pistas de audio con huella vigente, listas (con el orden de sus pistas por uuid) y listas borradas.
+    """TODAS las pistas de audio, listas (con el orden de sus pistas por uuid) y listas borradas.
 
-    Las pistas sin huella vigente no se anuncian todavía: se cuentan en `pending_hash` y el móvil vuelve a pedir el
-    manifiesto más tarde (la huella se calcula en segundo plano)."""
+    Una pista sin huella vigente se anuncia igual, con `hash` y `size` en null (se cuenta en `pending_hash` y la huella se
+    calcula en segundo plano): así el móvil ve el catálogo completo y puede borrar con seguridad lo que ya no existe
+    (`complete: true`). Antes solo se anunciaban las pistas con huella, y mientras hubiera pendientes el móvil no borraba
+    nada: no aparecían las novedades y seguían viéndose artistas y nombres viejos."""
     tracks, pending = [], 0
-    for row in conn.execute(_TRACKS + " AND f.hash_size IS f.size AND f.hash_mtime_ns IS f.mtime_ns"
-                                      " AND f.content_hash IS NOT NULL ORDER BY al.id, t.disc_no, t.track_no, t.id"):
+    for row in conn.execute(_TRACKS + " ORDER BY al.id, t.disc_no, t.track_no, t.id"):
         item = dict(row)
         item["has_cover"] = bool(item["has_cover"])
         item["has_lyrics"] = bool(item["has_lyrics"])
@@ -52,5 +57,5 @@ def build_manifest(conn: sqlite3.Connection) -> dict:
             (pl["id"],))]
         playlists.append({"uuid": pl["uuid"], "name": pl["name"], "updated_at": pl["updated_at"], "tracks": uuids})
     deleted = [dict(r) for r in conn.execute("SELECT uuid, deleted_at FROM deleted_playlists ORDER BY deleted_at")]
-    return {"api": API_VERSION, "schema": SCHEMA_VERSION, "generated_at": now_iso(), "pending_hash": pending,
+    return {"api": API_VERSION, "schema": SCHEMA_VERSION, "generated_at": now_iso(), "pending_hash": pending, "complete": True,
             "tracks": tracks, "playlists": playlists, "deleted_playlists": deleted}

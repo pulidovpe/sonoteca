@@ -33,6 +33,8 @@ data class Manifest(
     val tracks: List<ManifestTrack>,
     val playlists: List<ManifestPlaylist>,
     val deletedPlaylists: List<DeletedPlaylist>,
+    /** El manifiesto trae TODAS las pistas (aunque sin huella): se puede borrar con seguridad lo que no aparece. Servidores antiguos: false. */
+    val complete: Boolean = false,
 )
 
 // `isNull` es true si la clave falta o vale null; con org.json, optString sobre un null devolvería el texto "null".
@@ -46,7 +48,7 @@ fun parseManifest(json: String): Manifest {
             val t = array.getJSONObject(i)
             ManifestTrack(
                 uuid = t.getString("uuid"),
-                hash = t.getString("hash"),
+                hash = t.text("hash"),   // null mientras el escritorio aún calcula la huella
                 size = if (t.isNull("size")) 0L else t.getLong("size"),
                 format = t.text("format"),
                 title = t.text("title"),
@@ -86,6 +88,7 @@ fun parseManifest(json: String): Manifest {
         schema = root.int("schema"),
         generatedAt = root.text("generated_at"),
         pendingHash = root.int("pending_hash"),
+        complete = !root.isNull("complete") && root.getBoolean("complete"),
         tracks = tracks,
         playlists = playlists,
         deletedPlaylists = deleted,

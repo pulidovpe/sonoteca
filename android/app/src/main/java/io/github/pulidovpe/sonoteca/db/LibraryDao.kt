@@ -21,6 +21,9 @@ abstract class LibraryDao {
     @Query("SELECT uuid FROM tracks")
     abstract suspend fun trackUuids(): List<String>
 
+    @Query("SELECT uuid, hash, size FROM tracks")
+    abstract suspend fun trackHashes(): List<TrackHashRow>
+
     @Query("DELETE FROM tracks WHERE uuid IN (:uuids)")
     abstract suspend fun deleteTracks(uuids: List<String>)
 

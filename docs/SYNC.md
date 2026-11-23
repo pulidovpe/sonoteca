@@ -39,7 +39,7 @@ el certificado vive en `<datos>/sync/server-cert.pem`.
 |---|---|---|
 | `GET /v1/ping` | no | `{app, api, name}` |
 | `POST /v1/pair` | código | ver arriba |
-| `GET /v1/manifest` | sí | pistas de audio con huella vigente, listas, listas borradas, `pending_hash` |
+| `GET /v1/manifest` | sí | TODAS las pistas de audio (con `hash`/`size` en null si su huella aún no está calculada), listas, listas borradas, `pending_hash`, `complete` |
 | `GET /v1/tracks/{uuid}/file` | sí | audio; admite `Range` (206/416); cabeceras `ETag` y `X-Sonoteca-Hash` |
 | `GET /v1/tracks/{uuid}/cover` | sí | JPEG/PNG (404 si no hay) |
 | `GET /v1/tracks/{uuid}/artist` | sí | JPEG/PNG: imagen del artista de ÁLBUM de la pista, con la regla del escritorio (su foto descargada o, si no, la portada de un álbum suyo; 404 si no hay) |
@@ -52,8 +52,11 @@ Errores: JSON `{"error": "..."}` con 400 (petición inválida), 401 (token), 403
 (archivo ausente), 416.
 
 ### Manifiesto
-`pending_hash` > 0 significa que el escritorio aún calcula huellas (se hace en segundo plano la primera vez, puede tardar
-minutos con miles de archivos): esas pistas todavía no aparecen. El móvil vuelve a pedir el manifiesto más tarde.
+**Catálogo completo (desde 1.0.22)**: el manifiesto trae TODAS las pistas de audio, `complete: true`. `pending_hash` > 0 significa que el escritorio aún calcula huellas
+(en segundo plano; puede tardar minutos con miles de archivos): esas pistas vienen con `hash` y `size` en `null` y **se ven pero aún no se pueden descargar**; el móvil vuelve a sincronizar más tarde.
+Con `complete: true` el móvil **borra de su catálogo las pistas que ya no están** aunque haya pendientes (antes solo anunciaba las pistas con huella y, mientras hubiera pendientes, no borraba nada:
+no aparecían las novedades y seguían viéndose artistas y nombres viejos). Un servidor antiguo no manda `complete`: el móvil sigue borrando solo si `pending_hash` es 0.
+Si el móvil ya conoce una pista y el manifiesto no trae su huella (el archivo cambió), **conserva la huella anterior** hasta recibir la nueva.
 Cada pista: `uuid, hash, size, format, title, artist, album_artist, album, track_no, disc_no, year, duration, genre,
 has_cover, has_lyrics, plays`. `plays` = reproducciones totales de la pista en el escritorio (0 si ninguna; incluye las que ya subió el móvil). Cada lista: `uuid, name, updated_at, tracks` (uuid de pista, en orden).
 

@@ -59,6 +59,9 @@ data class DownloadEntity(
 
 data class DownloadedHash(val trackUuid: String, val hash: String)
 
+/** Huella y tamaño que el catálogo ya conoce de una pista (se conservan si el escritorio aún no tiene la nueva). */
+data class TrackHashRow(val uuid: String, val hash: String, val size: Long)
+
 /** Una pista descargada y lista para reproducir (resultado de consultas; no es una tabla). `uri` es la entrada de MediaStore. */
 data class PlayableTrack(
     val uuid: String,

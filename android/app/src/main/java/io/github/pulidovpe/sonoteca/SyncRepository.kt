@@ -10,6 +10,7 @@ import io.github.pulidovpe.sonoteca.db.PlayableTrack
 import io.github.pulidovpe.sonoteca.db.PlaylistEntity
 import io.github.pulidovpe.sonoteca.db.PlaylistTrackEntity
 import io.github.pulidovpe.sonoteca.db.TrackEntity
+import io.github.pulidovpe.sonoteca.db.TrackHashRow
 import io.github.pulidovpe.sonoteca.download.DownloadPlan
 import io.github.pulidovpe.sonoteca.download.DownloadProgress
 import io.github.pulidovpe.sonoteca.download.DownloadSummary
@@ -52,13 +53,17 @@ class SyncRepository(private val context: Context, private val db: AppDatabase, 
             null
         }
         val manifest = SyncApi(pairing.host, pairing.port, pairing.fingerprint, pairing.token).manifest()
+        // si el escritorio aún no tiene la huella de una pista que ya conocemos (la reescribió), se conserva la anterior:
+        // así lo descargado sigue contando como descargado hasta que llegue la nueva
+        val known = db.library().trackHashes().associateBy { it.uuid }
         db.library().applyManifest(
-            tracks = manifest.tracks.map { it.toEntity() },
+            tracks = manifest.tracks.map { track -> track.toEntity().let { keepKnownHash(it, known[it.uuid]) } },
             playlists = manifest.playlists.map { PlaylistEntity(it.uuid, it.name, it.updatedAt) },
             links = manifest.playlists.flatMap { playlist ->
                 playlist.tracks.mapIndexed { index, trackUuid -> PlaylistTrackEntity(playlist.uuid, index, trackUuid) }
             },
-            allowDeletes = manifest.pendingHash == 0,
+            // con `complete` el manifiesto trae todas las pistas, así que lo que falta ya no existe; un servidor antiguo solo es fiable sin pendientes
+            allowDeletes = manifest.complete || manifest.pendingHash == 0,
         )
         summary(manifest) + when {
             uploaded == null -> " No se pudieron subir las reproducciones: se reintentará."
@@ -138,7 +143,7 @@ class SyncRepository(private val context: Context, private val db: AppDatabase, 
     private fun summary(m: Manifest): String {
         val base = "${m.tracks.size} pistas y ${m.playlists.size} listas sincronizadas."
         return if (m.pendingHash > 0) {
-            "$base El escritorio aún calcula huellas de ${m.pendingHash} archivos: vuelve a sincronizar en unos minutos."
+            "$base El escritorio aún calcula la huella de ${m.pendingHash} archivos: esas pistas ya se ven, pero no se pueden descargar todavía; sincroniza otra vez en unos minutos."
         } else {
             base
         }
@@ -152,3 +157,10 @@ class SyncRepository(private val context: Context, private val db: AppDatabase, 
 }
 
 private const val PLAY_BATCH = 500   // reproducciones por petición (y por consulta de borrado)
+
+/**
+ * Si el escritorio aún no tiene la huella de una pista (la reescribió y la recalcula), se conservan la huella y el tamaño que el catálogo
+ * ya conocía: así lo descargado sigue contando como descargado hasta que llegue la nueva. Una pista nueva sin huella queda con `hash` vacío.
+ */
+internal fun keepKnownHash(entity: TrackEntity, before: TrackHashRow?): TrackEntity =
+    if (entity.hash.isEmpty() && before != null) entity.copy(hash = before.hash, size = before.size) else entity

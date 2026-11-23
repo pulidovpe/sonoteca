@@ -116,4 +116,22 @@ class ManifestParserTest {
         assertEquals(listOf("5e5fb46e-23f0-49e9-8ad3-95c4c6a6b2e5", "61993f2e-6ba5-48ee-be6d-f1033091439d"), playlist.tracks)
         assertTrue(manifest.deletedPlaylists.isEmpty())
     }
+
+    @Test
+    fun aTrackWithoutAHashYetHasAnEmptyHashAndTheManifestIsComplete() {
+        val pending = json
+            .replace("\"pending_hash\": 0,", "\"pending_hash\": 1,\n \"complete\": true,")
+            .replaceFirst("\"hash\": \"2816597888e4a0d3a36b82b83316ab32680eb8f00f8cd3b904d681246d285a0e\",", "\"hash\": null,")
+            .replaceFirst("\"size\": 100,", "\"size\": null,")
+        val manifest = parseManifest(pending)
+        assertTrue(manifest.complete)
+        assertEquals("", manifest.tracks[0].hash)
+        assertEquals(0L, manifest.tracks[0].size)
+        assertEquals(1, manifest.tracks.count { it.hash.isEmpty() })   // las demás siguen con su huella
+    }
+
+    @Test
+    fun anOldServerManifestIsNotCompleteByDefault() {
+        assertFalse(parseManifest(json).complete)
+    }
 }

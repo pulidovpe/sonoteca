@@ -66,6 +66,11 @@ KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más
   Los recursos se generan a partir de `assets/icons/sonoteca-1024.png` (`mipmap-*/ic_launcher_logo.png`, `ic_launcher*.webp`, `drawable-nodpi/sonoteca_logo.png`); no hay capa monocroma (el logo es a color).
   Se evaluó el recorte con máscara circular y cuadrada redondeada: no se corta nada. «Inicio» («más escuchado») llegará cuando el móvil muestre las estadísticas.
 
+## Sincronizar el catálogo (1.0.22)
+- El manifiesto trae **todas** las pistas del escritorio (las que aún no tienen huella con `hash: null`); la app **borra de su catálogo lo que ya no aparece** y actualiza por UUID los nombres cambiados. Así desaparecen artistas viejos y aparecen los álbumes nuevos aunque el escritorio siga calculando huellas.
+- Las pistas sin huella se ven pero **no se descargan todavía** (el diálogo y el mensaje lo dicen); basta sincronizar otra vez en unos minutos. Si el escritorio reescribe una pista que ya se conocía, el móvil conserva su huella anterior hasta recibir la nueva.
+- Lo descargado de pistas que desaparecen del escritorio queda en `Música/Sonoteca` (ya no aparece en «Descargado»); limpiar esos archivos huérfanos sigue pendiente.
+
 ## Portadas (1.0.21)
 - **Miniaturas de portadas de álbumes y de imágenes de artistas** en Biblioteca ▸ Artistas y Álbumes, en **lista** (como antes, con la miniatura a la izquierda) y en **cuadrícula** de 3 columnas con el nombre debajo de la miniatura (como las cajas de álbum del escritorio)
   (selector «Lista / Cuadrícula»; no se recuerda al cerrar la app). Las listas de reproducción siguen sin miniatura.

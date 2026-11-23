@@ -5,6 +5,19 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.22] - 2026-11-22
+**Corrección: el móvil veía artistas que ya no existen o con nombre viejo, y le faltaban álbumes añadidos** (bug que reportó Pablo al probar 1.0.21).
+- **Causa (mía, de diseño)**: el manifiesto solo anunciaba las pistas con huella ya calculada, y el móvil **solo borraba** pistas del catálogo si no quedaban huellas pendientes. Mientras el escritorio calculaba huellas
+  (o si alguna no se podía calcular nunca) no aparecían las pistas nuevas o reescritas y no se borraba nada: quedaban pistas, artistas y nombres viejos. Se arrastraba desde que el móvil sincronizaba con otra base (1609 → 1618 pistas).
+- **Servidor** (`sync/manifest.py`): el manifiesto trae **TODAS** las pistas de audio; las que aún no tienen huella vigente vienen con `hash` y `size` en `null` (se cuentan en `pending_hash`) y se añade `complete: true`.
+  5 pruebas nuevas en `tests/test_sync_manifest.py` (todas listadas sin huella, aparecen al calcularse, archivo reescrito sigue listado sin huella, pista borrada desaparece, artista renombrado conserva el uuid con el nombre nuevo).
+  `docs/SYNC.md` actualizado. API sigue en v1 (campo nuevo opcional).
+- **Móvil**: lee `hash: null` y `complete`; con `complete` **borra del catálogo lo que ya no aparece** aunque haya pendientes (con un servidor antiguo, como antes: solo sin pendientes). Si el manifiesto no trae la huella de una pista que ya conoce,
+  **conserva la anterior** (`keepKnownHash`) para que lo descargado siga en «Descargado» mientras el escritorio recalcula. Lo que aún no tiene huella se ve pero no se descarga todavía: el diálogo de descarga y el mensaje de sincronizar lo explican.
+  Pruebas JVM nuevas: `KeepKnownHashTest` (3), 2 en `ManifestParserTest` y 1 en `PlanTest`.
+- Verificado por Pablo: 1.0.21 en el POCO (miniaturas en artistas y álbumes, cuadrícula, sin conexión, mini reproductor y logo); **1.0.22 SIN compilar ni probar el Kotlin**: el plan y `keepKnownHash` sí se compilaron y ejecutaron con el compilador real de Kotlin (con una copia de `TrackEntity` sin Room).
+- **Pedido de Pablo, en este orden, ANTES de la firma de la APK**: (1.0.23) miniaturas también en «Descargado» (con cuadrícula) y en las listas de reproducción; (1.0.24) reproductor ampliado con espacio para portada y letras (cuando existan) y mini reproductor minimizable; después las letras y, por último, la firma.
+
 ## [1.0.21] - 2026-11-21
 **Miniaturas de portadas de álbumes y artistas en la app Android** (lista y cuadrícula), por petición de Pablo. Escritorio/servidor: solo una ruta nueva; el resto es Android.
 - **Servidor** (`sync/server.py`): nueva ruta `GET /v1/tracks/{uuid}/artist` con `default_artist_image_provider`: la imagen del artista de ÁLBUM de la pista con la regla del escritorio (`covers.artist_photo` y, si no hay, la portada de `covers.artist_cover_album`);

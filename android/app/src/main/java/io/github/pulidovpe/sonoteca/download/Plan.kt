@@ -18,9 +18,11 @@ data class DownloadPlan(
     val freeBytes: Long,
     /** Pistas de la selección que tienen alguna descarga en el teléfono (aunque esté desactualizada): lo que se puede borrar. */
     val onPhone: Int = 0,
+    /** Pistas de la selección que el escritorio aún no puede entregar (sin huella): no se descargan todavía. */
+    val notReady: Int = 0,
 ) {
     val pendingBytes: Long = pending.sumOf { it.size }
-    val alreadyDone: Int = totalTracks - pending.size
+    val alreadyDone: Int = totalTracks - pending.size - notReady
     val fits: Boolean = pendingBytes + FREE_SPACE_MARGIN_BYTES <= freeBytes
 }
 
@@ -30,10 +32,11 @@ fun buildPlan(
     downloadedHashes: Map<String, String>,
     freeBytes: Long,
 ): DownloadPlan {
-    val pending = tracks.filter { downloadedHashes[it.uuid] != it.hash }
+    val pending = tracks.filter { it.hash.isNotEmpty() && downloadedHashes[it.uuid] != it.hash }
+    val notReady = tracks.count { it.hash.isEmpty() }
     val replacing = pending.count { downloadedHashes.containsKey(it.uuid) }
     val onPhone = tracks.count { downloadedHashes.containsKey(it.uuid) }
-    return DownloadPlan(label, tracks.size, pending, replacing, freeBytes, onPhone)
+    return DownloadPlan(label, tracks.size, pending, replacing, freeBytes, onPhone, notReady)
 }
 
 fun formatBytes(bytes: Long): String {

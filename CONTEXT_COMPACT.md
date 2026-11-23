@@ -1,4 +1,4 @@
-# Sonoteca — CONTEXTO COMPACTO (v1.0.21)
+# Sonoteca — CONTEXTO COMPACTO (v1.0.22)
 
 > Pégalo al inicio de un chat nuevo del **agente principal** (app, sincronización, Android). Va **junto con el árbol del repo**: lo más seguro es
 > `git archive --format=zip -o ~/Desktop/sonoteca-arbol.zip HEAD` desde la rama de trabajo, ya fusionada con `origin/main` (el zip de mis entregas
@@ -29,7 +29,7 @@
   (`java Archivo.java`) contra el servidor Python. Usa rutas absolutas y `bash -c` (el shell por defecto es `sh`: sin `<( )`).
 
 ## Estado (2026-11-17)
-- **App de escritorio** (Python 3.12 + PySide6/QML, SQLite **esquema v10**): ver «Qué es / Mapa / UI / Trampas» abajo. Versión actual **1.0.21**. `feature/android` ya se fusionó en `main` (PR #5).
+- **App de escritorio** (Python 3.12 + PySide6/QML, SQLite **esquema v10**): ver «Qué es / Mapa / UI / Trampas» abajo. Versión actual **1.0.22**. `feature/android` ya se fusionó en `main` (PR #5).
 - **Sincronización con Android** (HECHA y verificada por USB con tu biblioteca): servidor HTTPS en `src/sonoteca/sync/` (`manifest, merge, pairing, tls, server, usb`), comandos `sonoteca sync-serve [--solo-usb]
   [--sin-adb]` y `sync-devices`. Protocolo en `docs/SYNC.md`. Decisiones: identidad estable `tracks.uuid` + `files.content_hash` (SHA-256 con caché); **HTTPS autofirmado con la huella fijada** al
   emparejar (código de 6 dígitos de un solo uso → token); listas con `uuid`/`updated_at` y «última modificación gana» + `deleted_playlists`; manifiesto con `pending_hash` (si > 0, **no se borra nada local**);
@@ -60,8 +60,10 @@
 - Biblioteca: ~9 GB de música (1609 pistas, 11 listas); el POCO tiene 256 GB y ~90 GB libres.
 - Pablo no responde siempre a todas las preguntas de un mensaje: confirmar lo crítico una a una. Pega marcadores como `<TU_BASE_V10>` literalmente si no se le avisa: dar comandos sin marcadores.
 
-## Peticiones de Pablo (2026-11-20, por hacer en este orden)
-1. **Firma de la APK de release + versionName/versionCode desde `src/sonoteca/__init__.py`** (ahora 1.0.22: Pablo adelantó las portadas; lo espera el agente 2; ver su archivo).
+## Peticiones de Pablo (actualizado 2026-11-22; por hacer en este orden)
+0. ✅(sin verificar, 1.0.22) **Bug del catálogo del móvil**: artistas que ya no existían/nombre viejo y álbumes añadidos que faltaban; causa: el manifiesto solo traía pistas con huella y el móvil no borraba con pendientes → ahora el manifiesto es completo (`complete: true`, `hash: null`) y el móvil borra y conserva huellas conocidas.
+0b. **Antes de la firma** (Pablo, 2026-11-22): (a) miniaturas de portadas también en **Descargado** (con **cuadrícula**) y en las **listas de reproducción** (el escritorio las muestra como collage); (b) **reproductor ampliado** con un espacio arriba para la portada y para las letras (cuando existan) y **mini reproductor minimizable** (más delgado, en pausa o al ver letras/detalles); (c) letras de las canciones descargadas. Luego la firma.
+1. **Firma de la APK de release + versionName/versionCode desde `src/sonoteca/__init__.py`** (DESPUÉS de 0b: Pablo adelantó las portadas; lo espera el agente 2; ver su archivo).
 2. ✅(sin verificar, 1.0.21) **Miniaturas de portadas de álbumes y artistas** en lista y en cuadrícula (cuadrícula de 3 columnas con el nombre DEBAJO, decidido por Pablo; ruta nueva `/v1/tracks/{uuid}/artist`; placeholder = color plano de las cajitas del escritorio). El primer push de 1.0.21 NO compiló: `CoverThumb.kt` usaba `.dp` sin importar `androidx.compose.ui.unit.dp` (corregido).
 3. **Letras** de las canciones descargadas (existen en el servidor: `/lyrics`; LRC sincronizado en el escritorio).
 4. Después: reproductor a pantalla completa y «Inicio» con lo más escuchado.

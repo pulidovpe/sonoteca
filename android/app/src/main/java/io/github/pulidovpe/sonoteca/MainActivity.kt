@@ -314,13 +314,15 @@ fun SonotecaApp(viewModel: MainViewModel, onBeforePlay: () -> Unit) {
 }
 
 private fun planText(plan: DownloadPlan): String = when {
-    plan.pending.isEmpty() -> "Las ${plan.totalTracks} pistas ya están descargadas."
+    plan.pending.isEmpty() && plan.notReady == 0 -> "Las ${plan.totalTracks} pistas ya están descargadas."
+    plan.pending.isEmpty() -> "No hay nada que descargar ahora: ${plan.notReady} pistas aún no están listas en el escritorio (calcula su huella); sincroniza otra vez en unos minutos."
     else -> buildString {
         append("Faltan ${plan.pending.size} de ${plan.totalTracks} pistas (${formatBytes(plan.pendingBytes)}).")
         if (plan.replacing > 0) append(" ${plan.replacing} cambiaron en el escritorio y se bajarán de nuevo.")
         append("\nEspacio libre en el teléfono: ${formatBytes(plan.freeBytes)}.")
         if (!plan.fits) append("\nNo hay espacio suficiente (se deja un margen de 200 MB).")
         append("\nSe guardarán en Música/Sonoteca.")
+        if (plan.notReady > 0) append("\n${plan.notReady} pistas más aún no están listas en el escritorio: sincroniza otra vez en unos minutos.")
     }
 }
 

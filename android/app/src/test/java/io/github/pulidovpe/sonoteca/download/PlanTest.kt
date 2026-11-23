@@ -56,4 +56,14 @@ class PlanTest {
         assertEquals("1.5 GB", formatBytes((1.5 * 1024 * 1024 * 1024).toLong()))
         assertEquals("90.5 GB", formatBytes((90.46 * 1024 * 1024 * 1024).toLong()))
     }
+
+    @Test
+    fun tracksWithoutAHashYetAreNotDownloadedButAreCounted() {
+        val list = listOf(track("u1", "h1", 100), track("u2", "", 0), track("u3", "h3", 300))
+        val plan = buildPlan("A", list, mapOf("u1" to "h1"), freeBytes = 10_000_000_000L)
+        assertEquals(listOf("u3"), plan.pending.map { it.uuid })
+        assertEquals(1, plan.notReady)
+        assertEquals(1, plan.alreadyDone)          // u1; u2 aún no está lista y u3 falta
+        assertEquals(300L, plan.pendingBytes)
+    }
 }
