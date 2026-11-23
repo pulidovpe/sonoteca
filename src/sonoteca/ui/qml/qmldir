@@ -27,6 +27,7 @@ OnlineSettings 1.0 OnlineSettings.qml
 ArtistHeader 1.0 ArtistHeader.qml
 AlbumLookup 1.0 AlbumLookup.qml
 TrackMenu 1.0 TrackMenu.qml
+PlaylistMenu 1.0 PlaylistMenu.qml
 QueuePage 1.0 QueuePage.qml
 ListTrackRow 1.0 ListTrackRow.qml
 NamePrompt 1.0 NamePrompt.qml

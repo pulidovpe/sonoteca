@@ -416,6 +416,7 @@ ApplicationWindow {
         trackMenu.allowDelete = !!allowDelete        // «Eliminar archivo» solo en Por revisar
         trackMenu.popup()
     }
+    function showPlaylistMenu(id, name) { playlistMenu.openFor(id, name) }
     function editTags(ids) {
         if (ids.length > 0) tagEditor.openFor(ids, 0, "")
     }
@@ -574,7 +575,7 @@ ApplicationWindow {
         }
     }
     Component { id: lyricsComp; LyricsPage { onSettingsRequested: lyricsSettings.openDialog(); onNeedInternet: win.openInternetSettings() } }
-    Component { id: playlistsComp; PlaylistsPage { onOpenPlaylist: (id) => win.openPlaylist(id); onNewRequested: win.newPlaylist(); onFoldersRequested: folderListsDialog.openDialog() } }
+    Component { id: playlistsComp; PlaylistsPage { onOpenPlaylist: (id) => win.openPlaylist(id); onNewRequested: win.newPlaylist(); onFoldersRequested: folderListsDialog.openDialog(); onMenuRequested: (id, name) => win.showPlaylistMenu(id, name) } }
     Component {
         id: playlistComp
         PlaylistDetail {
@@ -1040,6 +1041,7 @@ ApplicationWindow {
     TagEditor { id: tagEditor }
     Binding { target: DragState; property: "inputBlocked"; value: tagEditor.visible || tagEditor.opened || albumLookup.visible || albumLookup.opened }   // también aquí, por si el aviso del propio editor no llega
     TrackMenu { id: trackMenu; onRemoveRequested: (ids) => win.confirmRemoveFromLibrary(ids); onDeleteRequested: (id) => win.confirmDeleteFile(id); onArtistRequested: (id, name) => win.openArtist(id, name); onAlbumRequested: (id) => win.openAlbum(id); onLyricsRequested: (id) => win.showLyrics(id); onEditRequested: (ids) => win.editTags(ids); onListPickerRequested: (ids) => win.showPlaylistPicker(ids) }
+    PlaylistMenu { id: playlistMenu; onRenameRequested: (id, name) => win.renamePlaylist(id, name); onDeleteRequested: (id, name) => win.deletePlaylist(id, name) }
     NamePrompt { id: namePrompt }
     ConfirmDialog { id: confirmDialog }
     PlaylistPicker { id: playlistPicker; onNewRequested: (ids) => win.pickerNewList(ids); onDuplicatesFound: (listId, ids, count) => duplicateDialog.openFor(listId, ids, count) }

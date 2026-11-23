@@ -8,6 +8,7 @@ Item {
     property bool gridMode: prefs.boolValue("playlists.grid", false)      // se guarda entre sesiones
     function setGrid(on) { gridMode = on; prefs.setBool("playlists.grid", on) }
     signal openPlaylist(int playlistId)
+    signal menuRequested(int playlistId, string name)
     signal newRequested()
     signal foldersRequested()    // crear listas a partir de carpetas de la biblioteca
 
@@ -69,10 +70,11 @@ Item {
             delegate: Item {
                 width: list.width
                 height: 64
+                HoverHandler { id: rowHover }        // independiente de los MouseArea de encima (el botón ⋮ no apaga el resaltado)
                 Rectangle {
                     anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
                     radius: 8
-                    color: mouse.containsMouse ? Theme.surfaceHover : "transparent"
+                    color: rowHover.hovered ? Theme.surfaceHover : "transparent"
                     Behavior on color { ColorAnimation { duration: Theme.fast } }
                 }
                 PlaylistCover {
@@ -84,7 +86,7 @@ Item {
                     albumIds: (playlists.revision, Theme.dataRevision, playlists.coverAlbums(modelData.id))
                 }
                 Column {
-                    anchors { left: icon.right; leftMargin: 16; right: parent.right; rightMargin: 24; verticalCenter: parent.verticalCenter }
+                    anchors { left: icon.right; leftMargin: 16; right: parent.right; rightMargin: 64; verticalCenter: parent.verticalCenter }
                     spacing: 2
                     Text { width: parent.width; text: modelData.name; color: Theme.text; font.pixelSize: 15; elide: Text.ElideRight }
                     Text {
@@ -99,8 +101,22 @@ Item {
                     id: mouse
                     anchors.fill: parent
                     hoverEnabled: true
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: page.openPlaylist(modelData.id)
+                    onClicked: (m) => {
+                        if (m.button === Qt.RightButton) page.menuRequested(modelData.id, modelData.name)
+                        else page.openPlaylist(modelData.id)
+                    }
+                }
+                IconButton {
+                    width: 30; height: 30; iconSize: 16
+                    svg: Theme.iconMore
+                    toolTip: "M\u00e1s opciones"
+                    enabled: rowHover.hovered
+                    opacity: rowHover.hovered ? 1 : 0
+                    Behavior on opacity { NumberAnimation { duration: Theme.fast } }
+                    anchors { right: parent.right; rightMargin: 24; verticalCenter: parent.verticalCenter }
+                    onClicked: page.menuRequested(modelData.id, modelData.name)
                 }
             }
             ScrollBar.vertical: ScrollBar { }
@@ -120,10 +136,11 @@ Item {
                 Rectangle {
                     anchors { fill: parent; margins: 8 }
                     radius: Theme.radius
-                    color: cardMouse.containsMouse ? Theme.surfaceHover : Theme.surface
-                    scale: cardMouse.containsMouse ? 1.03 : 1.0
+                    color: cardHover.hovered ? Theme.surfaceHover : Theme.surface
+                    scale: cardHover.hovered ? 1.03 : 1.0
                     Behavior on color { ColorAnimation { duration: Theme.fast } }
                     Behavior on scale { NumberAnimation { duration: Theme.fast; easing.type: Easing.OutCubic } }
+                    HoverHandler { id: cardHover }        // el botón ⋮ de encima no debe apagar el resaltado
                     Column {
                         anchors { fill: parent; margins: 12 }
                         spacing: 10
@@ -146,8 +163,29 @@ Item {
                         id: cardMouse
                         anchors.fill: parent
                         hoverEnabled: true
+                        acceptedButtons: Qt.LeftButton | Qt.RightButton
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: page.openPlaylist(modelData.id)
+                        onClicked: (m) => {
+                            if (m.button === Qt.RightButton) page.menuRequested(modelData.id, modelData.name)
+                            else page.openPlaylist(modelData.id)
+                        }
+                    }
+                    Rectangle {
+                        width: 30; height: 30; radius: 15
+                        color: Theme.surface
+                        opacity: cardHover.hovered ? 0.9 : 0
+                        Behavior on opacity { NumberAnimation { duration: Theme.fast } }
+                        anchors { top: parent.top; right: parent.right; topMargin: 16; rightMargin: 16 }
+                    }
+                    IconButton {
+                        width: 30; height: 30; iconSize: 16
+                        svg: Theme.iconMore
+                        toolTip: "M\u00e1s opciones"
+                        enabled: cardHover.hovered
+                        opacity: cardHover.hovered ? 1 : 0
+                        Behavior on opacity { NumberAnimation { duration: Theme.fast } }
+                        anchors { top: parent.top; right: parent.right; topMargin: 16; rightMargin: 16 }
+                        onClicked: page.menuRequested(modelData.id, modelData.name)
                     }
                 }
             }
