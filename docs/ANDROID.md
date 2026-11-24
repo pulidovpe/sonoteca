@@ -41,7 +41,7 @@ KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más
 
 ## Reproductor (fase 4a)
 - Solo reproduce **lo descargado en el teléfono** (entradas de MediaStore que la app publicó) y **no necesita servidor, cable ni Wi-Fi**. Sin streaming.
-- **Navegación inferior (1.0.19)**: Biblioteca (pestañas Artistas / Álbumes / Listas), **Descargado** (todas las pistas bajadas, en orden de artista/álbum/pista; tocar una la reproduce y sigue con las siguientes) y Escritorio (estado, emparejar/olvidar, sincronizar).
+- **Navegación inferior (1.0.19)**: Biblioteca (pestañas Artistas / Álbumes / Listas), **Descargado** (1.0.24: sub-pestañas **Pistas, Artistas, Álbumes y Listas**, solo con lo que ya tiene alguna pista en el teléfono; «Pistas» = todas las bajadas, en orden de artista/álbum/pista, y tocar una la reproduce y sigue con las siguientes; tocar un artista, álbum o lista abre el mismo resumen que en Biblioteca) y Escritorio (estado, emparejar/olvidar, sincronizar).
   Desde el resumen de un artista/álbum/lista, **«Reproducir las N descargadas»** (las listas suenan en su orden).
 - Mini reproductor abajo: título, artista, barra de avance con salto, anterior/pausa/siguiente, y (1.0.18) **Aleatorio**, **Repetir** (sin repetir → todas → una, como en el escritorio) y **Cola (N)**.
   Aleatorio y repetir se recuerdan entre sesiones. El servicio (`PlaybackService`) sigue sonando con la pantalla apagada o la app en segundo plano,

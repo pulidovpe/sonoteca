@@ -1,4 +1,4 @@
-__version__ = "1.0.23"
+__version__ = "1.0.24"
 
 # Datos que muestra «Acerca de» (una sola fuente; pyproject.toml y el README los repiten por convención de los índices)
 LICENSE_NAME = "MIT"

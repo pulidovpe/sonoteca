@@ -5,6 +5,14 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.24] - 2026-11-24
+**Android: lo descargado se organiza por Pistas, Artistas, Álbumes y Listas** (petición de Pablo antes del reproductor ampliado). Solo Kotlin + versión Python.
+- **Descargado** tiene ahora sub-pestañas **Pistas / Artistas / Álbumes / Listas**. Artistas, Álbumes y Listas muestran **solo lo que ya tiene alguna pista descargada**, con portadas (y el collage de las listas), en lista o cuadrícula (la elección se recuerda),
+  y con la misma regla de color: completo en color, a medias o faltante en gris, con su «3/12». Tocar uno abre el mismo resumen que en Biblioteca (reproducir las descargadas, a continuación / al final de la cola, descargar lo que falta, borrar).
+- Refactor: Biblioteca y Descargado comparten las filas (`libraryEntries`) y la vista (`LibraryEntries`, `SubTabs`, `ViewModeChips`); la regla «completo → color / alguna → aparece en Descargado» vive en `download/DownloadState` (pura, 2 pruebas JVM `DownloadStateTest`).
+- **SIN compilar ni probar el Kotlin**: `DownloadState` se compiló y ejecutó con el compilador real de Kotlin; el resto, comprobado con los scripts de imports, nombres y mezcla lista/cuadrícula, y sin errores de sintaxis. Este cambio SUSTITUYE el `MainActivity.kt` de 1.0.23 (incluye todo lo de 1.0.23).
+- Git de Pablo: su rama local tenía el historial reescrito sobre el `main` actual (mismos commits, otros hashes); se resuelve con `git cherry` + `git push --force-with-lease origin feature/android`, y luego PR a `main` con «Create a merge commit».
+
 ## [1.0.23] - 2026-11-23
 **Android: portadas también en Descargado y en las listas, lista o cuadrícula recordada, y color/gris según lo descargado** (petición de Pablo tras probar 1.0.21). Solo Kotlin + versión Python.
 - **Cuadrícula o lista se recuerda** entre sesiones (`SharedPreferences` «ui»), y vale para Biblioteca (Artistas, Álbumes y **Listas**) y para Descargado.

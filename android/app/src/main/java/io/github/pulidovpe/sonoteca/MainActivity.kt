@@ -92,6 +92,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import io.github.pulidovpe.sonoteca.db.CoverSample
 import io.github.pulidovpe.sonoteca.ui.PlaylistCollage
 import androidx.compose.foundation.lazy.grid.itemsIndexed as gridItemsIndexed
+import io.github.pulidovpe.sonoteca.download.DownloadState
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
@@ -226,8 +227,14 @@ fun SonotecaApp(viewModel: MainViewModel, onBeforePlay: () -> Unit) {
                     )
                     Dest.Downloaded -> DownloadedTab(
                         covers = viewModel.covers,
+                        loadSamples = viewModel::playlistCovers,
                         grid = gridView,
                         onGrid = viewModel::setGridView,
+                        artists = artists,
+                        albums = albums,
+                        playlistRows = playlistRows,
+                        busy = busy,
+                        onSelect = viewModel::choose,
                         playable = playable,
                         onPlay = { index ->
                             onBeforePlay()
@@ -394,6 +401,113 @@ private fun ViewModeChips(grid: Boolean, onGrid: (Boolean) -> Unit) {
     }
 }
 
+/** Pestañas de igual ancho y con poco relleno (la seleccionada, rellena). */
+@Composable
+private fun SubTabs(titles: List<String>, selected: Int, onSelect: (Int) -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        val tabPadding = PaddingValues(horizontal = 4.dp)
+        titles.forEachIndexed { index, title ->
+            if (selected == index) {
+                Button(onClick = { onSelect(index) }, modifier = Modifier.weight(1f), contentPadding = tabPadding) {
+                    Text(title, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                }
+            } else {
+                TextButton(onClick = { onSelect(index) }, modifier = Modifier.weight(1f), contentPadding = tabPadding) {
+                    Text(title, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Las filas de Artistas (kind 0), Álbumes (1) o Listas (2). Con `onlyDownloaded`, solo las que ya tienen alguna pista en el teléfono.
+ * En color lo que está completo; en gris lo que aún falta por descargar (también si está a medias).
+ */
+private fun libraryEntries(
+    kind: Int,
+    onlyDownloaded: Boolean,
+    artists: List<ArtistRow>,
+    albums: List<AlbumRow>,
+    playlistRows: List<PlaylistRow>,
+    covers: CoverLoader,
+    loadSamples: suspend (String) -> List<CoverSample>,
+    onSelect: (Selection) -> Unit,
+): List<LibraryItem> = when (kind) {
+    0 -> artists.filter { !onlyDownloaded || DownloadState.hasAny(it.downloaded) }.map { artist ->
+        LibraryItem(
+            key = artist.name,
+            title = artist.name.ifEmpty { "(sin artista)" },
+            subtitle = null,
+            right = "${artist.downloaded}/${artist.tracks}",
+            onClick = { onSelect(Selection.Artist(artist.name)) },
+            cover = { modifier ->
+                CoverThumb(
+                    covers, CoverKeys.artist(artist.name), artist.sampleUuid, artist = true, modifier = modifier,
+                    colored = DownloadState.isComplete(artist.tracks, artist.downloaded),
+                )
+            },
+        )
+    }
+    1 -> albums.filter { !onlyDownloaded || DownloadState.hasAny(it.downloaded) }.map { album ->
+        LibraryItem(
+            key = album.artist + "||" + album.album,
+            title = album.album.ifEmpty { "(sin álbum)" },
+            subtitle = album.artist.ifEmpty { "(sin artista)" },
+            right = "${album.downloaded}/${album.tracks}",
+            onClick = { onSelect(Selection.Album(album.artist, album.album)) },
+            cover = { modifier ->
+                CoverThumb(
+                    covers, CoverKeys.album(album.artist, album.album), album.sampleUuid, artist = false, modifier = modifier,
+                    colored = DownloadState.isComplete(album.tracks, album.downloaded),
+                )
+            },
+        )
+    }
+    else -> playlistRows.filter { !onlyDownloaded || DownloadState.hasAny(it.downloaded) }.map { list ->
+        LibraryItem(
+            key = list.uuid,
+            title = list.name,
+            subtitle = null,
+            right = "${list.downloaded}/${list.tracks}",
+            onClick = { onSelect(Selection.Playlist(list.uuid, list.name)) },
+            cover = { modifier ->
+                PlaylistCollage(covers, list.uuid, loadSamples, modifier = modifier, colored = DownloadState.isComplete(list.tracks, list.downloaded))
+            },
+        )
+    }
+}
+
+/** Esas filas en lista o en cuadrícula de 3 columnas; si no hay ninguna, un mensaje. */
+@Composable
+private fun LibraryEntries(entries: List<LibraryItem>, grid: Boolean, busy: Boolean, emptyText: String, modifier: Modifier = Modifier) {
+    if (entries.isEmpty()) {
+        Text(emptyText, modifier = modifier.padding(vertical = 12.dp))
+    } else if (grid) {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            modifier = modifier,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            gridItems(entries, key = { it.key }) { entry -> GridCell(entry, enabled = !busy) }
+        }
+    } else {
+        LazyColumn(modifier = modifier) {
+            items(entries, key = { it.key }) { entry ->
+                SelectableRow(
+                    title = entry.title,
+                    subtitle = entry.subtitle,
+                    right = entry.right,
+                    enabled = !busy,
+                    onClick = entry.onClick,
+                    leading = { entry.cover(Modifier.size(48.dp)) },
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun LibraryTab(
     covers: CoverLoader,
@@ -407,95 +521,15 @@ private fun LibraryTab(
     onSelect: (Selection) -> Unit,
 ) {
     var tab by rememberSaveable { mutableStateOf(0) }
-    // en color lo que está completo en el teléfono; en gris lo que aún falta por descargar (también si está a medias)
     val entries = remember(tab, artists, albums, playlistRows) {
-        when (tab) {
-            0 -> artists.map { artist ->
-                LibraryItem(
-                    key = artist.name,
-                    title = artist.name.ifEmpty { "(sin artista)" },
-                    subtitle = null,
-                    right = "${artist.downloaded}/${artist.tracks}",
-                    onClick = { onSelect(Selection.Artist(artist.name)) },
-                    cover = { modifier ->
-                        CoverThumb(
-                            covers, CoverKeys.artist(artist.name), artist.sampleUuid, artist = true, modifier = modifier,
-                            colored = artist.tracks > 0 && artist.downloaded >= artist.tracks,
-                        )
-                    },
-                )
-            }
-            1 -> albums.map { album ->
-                LibraryItem(
-                    key = album.artist + "||" + album.album,
-                    title = album.album.ifEmpty { "(sin álbum)" },
-                    subtitle = album.artist.ifEmpty { "(sin artista)" },
-                    right = "${album.downloaded}/${album.tracks}",
-                    onClick = { onSelect(Selection.Album(album.artist, album.album)) },
-                    cover = { modifier ->
-                        CoverThumb(
-                            covers, CoverKeys.album(album.artist, album.album), album.sampleUuid, artist = false, modifier = modifier,
-                            colored = album.tracks > 0 && album.downloaded >= album.tracks,
-                        )
-                    },
-                )
-            }
-            else -> playlistRows.map { list ->
-                LibraryItem(
-                    key = list.uuid,
-                    title = list.name,
-                    subtitle = null,
-                    right = "${list.downloaded}/${list.tracks}",
-                    onClick = { onSelect(Selection.Playlist(list.uuid, list.name)) },
-                    cover = { modifier ->
-                        PlaylistCollage(covers, list.uuid, loadSamples, modifier = modifier, colored = list.tracks > 0 && list.downloaded >= list.tracks)
-                    },
-                )
-            }
-        }
+        libraryEntries(tab, false, artists, albums, playlistRows, covers, loadSamples, onSelect)
     }
     Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Biblioteca", style = MaterialTheme.typography.headlineSmall)
-        // tres pestañas de igual ancho y con poco relleno
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            val tabPadding = PaddingValues(horizontal = 4.dp)
-            listOf("Artistas", "Álbumes", "Listas").forEachIndexed { index, title ->
-                if (tab == index) {
-                    Button(onClick = { tab = index }, modifier = Modifier.weight(1f), contentPadding = tabPadding) {
-                        Text(title, style = MaterialTheme.typography.labelMedium, maxLines = 1)
-                    }
-                } else {
-                    TextButton(onClick = { tab = index }, modifier = Modifier.weight(1f), contentPadding = tabPadding) {
-                        Text(title, style = MaterialTheme.typography.labelMedium, maxLines = 1)
-                    }
-                }
-            }
-        }
+        SubTabs(listOf("Artistas", "Álbumes", "Listas"), tab) { tab = it }
         ViewModeChips(grid = grid, onGrid = onGrid)
         HorizontalDivider()
-        if (grid) {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
-                modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                gridItems(entries, key = { it.key }) { entry -> GridCell(entry, enabled = !busy) }
-            }
-        } else {
-            LazyColumn(modifier = Modifier.weight(1f)) {
-                items(entries, key = { it.key }) { entry ->
-                    SelectableRow(
-                        title = entry.title,
-                        subtitle = entry.subtitle,
-                        right = entry.right,
-                        enabled = !busy,
-                        onClick = entry.onClick,
-                        leading = { entry.cover(Modifier.size(48.dp)) },
-                    )
-                }
-            }
-        }
+        LibraryEntries(entries, grid, busy, emptyText = "La biblioteca está vacía: sincroniza con el escritorio.", modifier = Modifier.weight(1f))
     }
 }
 
@@ -513,21 +547,51 @@ private fun GridCell(entry: LibraryItem, enabled: Boolean) {
     }
 }
 
+/**
+ * Lo descargado en el teléfono, por Pistas, Artistas, Álbumes o Listas (solo lo que ya tiene alguna pista descargada). Tocar un artista,
+ * álbum o lista abre el mismo resumen que en Biblioteca (reproducir, cola, descargar lo que falta, borrar).
+ */
 @Composable
 private fun DownloadedTab(
     covers: CoverLoader,
+    loadSamples: suspend (String) -> List<CoverSample>,
     grid: Boolean,
     onGrid: (Boolean) -> Unit,
+    artists: List<ArtistRow>,
+    albums: List<AlbumRow>,
+    playlistRows: List<PlaylistRow>,
+    busy: Boolean,
+    onSelect: (Selection) -> Unit,
     playable: List<PlayableTrack>,
     onPlay: (Int) -> Unit,
     onQueueTrack: (Int, Boolean) -> Unit,
 ) {
+    var tab by rememberSaveable { mutableStateOf(0) }   // 0 = pistas, 1 = artistas, 2 = álbumes, 3 = listas
+    val entries = remember(tab, artists, albums, playlistRows) {
+        if (tab == 0) emptyList<LibraryItem>() else libraryEntries(tab - 1, true, artists, albums, playlistRows, covers, loadSamples, onSelect)
+    }
     Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Descargado", style = MaterialTheme.typography.headlineSmall)
-        Text("${playable.size} pistas en el teléfono", style = MaterialTheme.typography.bodySmall)
+        Text(
+            when (tab) {
+                0 -> "${playable.size} pistas en el teléfono"
+                1 -> "${entries.size} artistas con música en el teléfono"
+                2 -> "${entries.size} álbumes con música en el teléfono"
+                else -> "${entries.size} listas con música en el teléfono"
+            },
+            style = MaterialTheme.typography.bodySmall,
+        )
+        SubTabs(listOf("Pistas", "Artistas", "Álbumes", "Listas"), tab) { tab = it }
         ViewModeChips(grid = grid, onGrid = onGrid)
         HorizontalDivider()
-        if (playable.isEmpty()) {
+        if (tab != 0) {
+            val none = when (tab) {
+                1 -> "Aún no hay artistas con música descargada."
+                2 -> "Aún no hay álbumes con música descargada."
+                else -> "Aún no hay listas con música descargada."
+            }
+            LibraryEntries(entries, grid, busy, emptyText = none, modifier = Modifier.weight(1f))
+        } else if (playable.isEmpty()) {
             Text(
                 "Aún no has descargado música. En Biblioteca elige un artista, álbum o lista y pulsa «Descargar».",
                 modifier = Modifier.padding(vertical = 12.dp),
