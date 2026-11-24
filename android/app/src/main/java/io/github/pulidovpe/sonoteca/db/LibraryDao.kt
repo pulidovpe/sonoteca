@@ -68,6 +68,14 @@ abstract class LibraryDao {
     )
     abstract fun playlistRows(): Flow<List<PlaylistRow>>
 
+    /** Hasta 4 álbumes de la lista, en el orden en que aparecen (para el collage de su portada, como en el escritorio). */
+    @Query(
+        "SELECT t.albumArtist AS artist, t.album AS album, MIN(t.uuid) AS sampleUuid FROM playlist_tracks pt " +
+            "JOIN tracks t ON t.uuid = pt.trackUuid WHERE pt.playlistUuid = :uuid " +
+            "GROUP BY t.albumArtist, t.album ORDER BY MIN(pt.position) LIMIT 4",
+    )
+    abstract suspend fun playlistCoverSamples(uuid: String): List<CoverSample>
+
     @Query(
         "SELECT * FROM tracks WHERE albumArtist = :artist AND album = :album " +
             "ORDER BY discNo, trackNo, title COLLATE NOCASE",

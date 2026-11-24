@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.Environment
 import android.os.StatFs
 import io.github.pulidovpe.sonoteca.db.AppDatabase
+import io.github.pulidovpe.sonoteca.db.CoverSample
 import io.github.pulidovpe.sonoteca.db.PlayableTrack
 import io.github.pulidovpe.sonoteca.db.PlaylistEntity
 import io.github.pulidovpe.sonoteca.db.PlaylistTrackEntity
@@ -94,6 +95,8 @@ class SyncRepository(private val context: Context, private val db: AppDatabase, 
         is Selection.Album -> db.library().tracksOfAlbum(selection.artist, selection.album)
         is Selection.Playlist -> db.library().tracksOfPlaylist(selection.uuid)
     }
+
+    suspend fun playlistCoverSamples(uuid: String): List<CoverSample> = db.library().playlistCoverSamples(uuid)
 
     /** Las pistas YA descargadas de una selección, listas para reproducir (en orden de álbum; las listas, en su orden). */
     suspend fun playableOf(selection: Selection): List<PlayableTrack> = withContext(Dispatchers.IO) {

@@ -5,6 +5,18 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.23] - 2026-11-23
+**Android: portadas también en Descargado y en las listas, lista o cuadrícula recordada, y color/gris según lo descargado** (petición de Pablo tras probar 1.0.21). Solo Kotlin + versión Python.
+- **Cuadrícula o lista se recuerda** entre sesiones (`SharedPreferences` «ui»), y vale para Biblioteca (Artistas, Álbumes y **Listas**) y para Descargado.
+- **Listas de reproducción con portada**: collage de hasta 4 álbumes (consulta Room `playlistCoverSamples`, `PlaylistCollage`); el reparto (1 completa, 2 mitades, 3 = mitad + dos cuartos, 4 = 2×2) es el de `PlaylistCover.qml`
+  (`CollageLayout`, 3 pruebas JVM `CollageLayoutTest`, una de ellas compara con el QML del escritorio).
+- **Descargado con portadas**: cada pista muestra la portada de su álbum, en lista y en cuadrícula (3 columnas; menú ⋮ en cada celda).
+- **En color lo completo, en gris lo que falta**: artista, álbum o lista con todas sus pistas descargadas → color; si falta alguna (también a medias, 3/12) → escala de grises (decisión de Pablo). Aplica a miniaturas, collages, lista y cuadrícula.
+- Refactor: las tres pestañas de Biblioteca comparten `LibraryItem` y la misma lista/cuadrícula; `TrackMenu` compartido.
+- **SIN compilar ni probar el Kotlin**: el reparto del collage se compiló y ejecutó con el compilador real contra `PlaylistCover.qml`; dudas mías: `BoxWithConstraints` con `offset`/`size` en dp, y `ColorFilter.colorMatrix`.
+- Corregido antes de entregar: en la cuadrícula de Descargado se usaba `itemsIndexed` de lista (no existe para cuadrículas); ahora `gridItemsIndexed`.
+- Pendiente: el `git push` de 1.0.22 fue rechazado a Pablo (non-fast-forward); hay que traer lo que tiene GitHub antes de subir.
+
 ## [1.0.22] - 2026-11-22
 **Corrección: el móvil veía artistas que ya no existen o con nombre viejo, y le faltaban álbumes añadidos** (bug que reportó Pablo al probar 1.0.21).
 - **Causa (mía, de diseño)**: el manifiesto solo anunciaba las pistas con huella ya calculada, y el móvil **solo borraba** pistas del catálogo si no quedaban huellas pendientes. Mientras el escritorio calculaba huellas

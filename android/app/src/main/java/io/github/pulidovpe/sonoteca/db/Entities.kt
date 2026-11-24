@@ -81,4 +81,7 @@ data class ArtistRow(val name: String, val tracks: Int, val downloaded: Int, val
 /** `sampleUuid`: UUID de una pista del álbum (el escritorio resuelve su portada a partir de ella). */
 data class AlbumRow(val artist: String, val album: String, val tracks: Int, val downloaded: Int, val sampleUuid: String)
 
+/** Un álbum de una lista (para su collage de portadas): `sampleUuid` es una pista de ese álbum. */
+data class CoverSample(val artist: String, val album: String, val sampleUuid: String)
+
 data class PlaylistRow(val uuid: String, val name: String, val tracks: Int, val downloaded: Int)

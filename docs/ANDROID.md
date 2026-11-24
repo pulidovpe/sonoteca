@@ -73,12 +73,15 @@ KSP 2.3.10, Room 2.8.5 (`androidx.room`; Room 3 `androidx.room3` queda para más
 
 ## Portadas (1.0.21)
 - **Miniaturas de portadas de álbumes y de imágenes de artistas** en Biblioteca ▸ Artistas y Álbumes, en **lista** (como antes, con la miniatura a la izquierda) y en **cuadrícula** de 3 columnas con el nombre debajo de la miniatura (como las cajas de álbum del escritorio)
-  (selector «Lista / Cuadrícula»; no se recuerda al cerrar la app). Las listas de reproducción siguen sin miniatura.
+  (selector «Lista / Cuadrícula», **que se recuerda entre sesiones**).
+- **1.0.23**: también **Listas** (collage de hasta 4 portadas de sus álbumes, repartido como en el escritorio: 1 = completa, 2 = mitades, 3 = una mitad y dos cuartos, 4 = 2×2; `CollageLayout` + `CollageLayoutTest`, que lo compara con `PlaylistCover.qml`)
+  y **Descargado** (la portada del álbum de cada pista), todos con lista y cuadrícula.
+- **Color y gris (1.0.23)**: lo que está **completo** en el teléfono (artista, álbum o lista con todas sus pistas descargadas) se ve **en color**; lo que aún falta por descargar, **en escala de grises**, también si está a medias (3/12). Vale en lista y en cuadrícula.
 - Se piden **solo cuando se ven** (no se descarga la biblioteca entera): `GET /v1/tracks/{uuid}/cover` (álbum) y `GET /v1/tracks/{uuid}/artist` (artista, ver docs/SYNC.md) con el UUID de una pista de muestra (`MIN(uuid)` en la consulta de Room).
   El escritorio ya sabe qué imagen toca (artista: su foto descargada y, si no, la portada de un álbum suyo — la misma regla que usa su interfaz).
 - `CoverLoader` las reduce a 320 px (recorte cuadrado), las guarda como JPEG en `files/covers` y las sirve desde memoria (24 MB) o disco: después se ven **sin conexión**. 4 descargas a la vez. Una portada que el escritorio no tiene se recuerda 24 h (`.none`).
 - **Sin imagen**: se ve la «cajita» de color plano `Neon.placeholder` (`#101d29`, el `placeholder` de `Theme.qml`), como en las cajas de álbum del escritorio. Sin emparejamiento solo se muestra lo ya guardado.
-- Aún sin portadas: Descargado, mini reproductor, cola y listas de reproducción (en el escritorio las listas llevan un collage de portadas).
+- Aún sin portadas: mini reproductor y cola (irán con el reproductor ampliado).
 
 ## Estadísticas de reproducción (fase 4c)
 - El servicio de reproducción cuenta una reproducción **a los 5 s de avance normal** (decisión de Pablo, igual que el escritorio desde 1.0.17; saltar con la barra, retroceder o pausar no suma; una pista de menos de 5 s cuenta entera;

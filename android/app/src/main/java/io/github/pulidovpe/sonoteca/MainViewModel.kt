@@ -1,6 +1,7 @@
 package io.github.pulidovpe.sonoteca
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.pulidovpe.sonoteca.db.AppDatabase
@@ -8,6 +9,7 @@ import io.github.pulidovpe.sonoteca.download.DownloadPlan
 import io.github.pulidovpe.sonoteca.download.DownloadProgress
 import io.github.pulidovpe.sonoteca.net.SyncHttpException
 import io.github.pulidovpe.sonoteca.cover.CoverLoader
+import io.github.pulidovpe.sonoteca.db.CoverSample
 import io.github.pulidovpe.sonoteca.playback.PlayerController
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -27,6 +29,19 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Miniaturas de portadas de álbumes y artistas (se piden al escritorio al verse y se guardan en el teléfono). */
     val covers = CoverLoader(app, store)
+
+    private val uiPrefs = app.getSharedPreferences("ui", Context.MODE_PRIVATE)
+
+    /** Lista (false) o cuadrícula (true) en Biblioteca y Descargado; se recuerda entre sesiones. */
+    val gridView = MutableStateFlow(uiPrefs.getBoolean(KEY_GRID, false))
+
+    fun setGridView(on: Boolean) {
+        gridView.value = on
+        uiPrefs.edit().putBoolean(KEY_GRID, on).apply()
+    }
+
+    /** Álbumes de una lista para su collage de portadas. */
+    suspend fun playlistCovers(uuid: String): List<CoverSample> = repository.playlistCoverSamples(uuid)
 
     val pairing = MutableStateFlow(store.load())
     val busy = MutableStateFlow(false)
@@ -265,3 +280,5 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         else -> "Error inesperado: ${e.javaClass.simpleName}: ${e.message}"
     }
 }
+
+private const val KEY_GRID = "grid"
