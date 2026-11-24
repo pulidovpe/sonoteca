@@ -55,5 +55,13 @@ hay que avisar al agente de CI: el workflow fija JDK 25 y la plataforma `android
   Al mirar `pytest.log` de Windows con shell, quitar los `\r` (`tr -d '\r'`): el log lleva saltos CRLF.
 - `pytest` imprime las 15 pruebas más lentas (`--durations=15`) en el log y en el artefacto `pytest-log`.
 
+## Actualización de la base de datos (job `upgrade`)
+Protege a quien tiene una versión antigua (hoy **v1.0.0**, esquema 9) y descarga una nueva. En cada ejecución de CI: (1) se crea una biblioteca de ejemplo con el
+**código antiguo** (checkout del tag en `old/`); (2) se migra con el **código actual** y se comprueba la versión del esquema, la copia de seguridad previa
+(`library.db.v<N>.bak`), el número de filas de cada tabla, los valores concretos (títulos, orden de las listas, reproducciones, letras), `integrity_check`,
+`foreign_key_check`, uuid únicos y que abrir otra vez no cambie nada; (3) se comprueba que la app **antigua se niega** a abrir la base ya migrada.
+El script es `.github/scripts/upgrade_check.py` (pasos `create`, `verify`, `refuse`). Para añadir otra versión de partida, añade su tag a `matrix.tag` del job.
+Limitación: los datos de ejemplo se insertan por SQL; no pasan por el escáner ni por ficheros de audio reales.
+
 ## Datos de desarrollo ≠ datos reales
 Ejecutar una versión de desarrollo sobre tu biblioteca real **migra su base** (esquema v10 desde 1.0.1) y las apps antiguas dejan de abrirla («La base tiene versión 10, más nueva que esta app»). No hay vuelta atrás automática. Para desarrollar o probar binarios viejos: `SONOTECA_DATA_DIR=~/sonoteca-dev ./sonoteca gui`.
