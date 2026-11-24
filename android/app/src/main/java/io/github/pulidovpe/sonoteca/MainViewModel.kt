@@ -7,6 +7,8 @@ import io.github.pulidovpe.sonoteca.db.AppDatabase
 import io.github.pulidovpe.sonoteca.download.DownloadPlan
 import io.github.pulidovpe.sonoteca.download.DownloadProgress
 import io.github.pulidovpe.sonoteca.net.SyncHttpException
+import io.github.pulidovpe.sonoteca.cover.CoverLoader
+import io.github.pulidovpe.sonoteca.playback.PlayerController
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +24,9 @@ import javax.net.ssl.SSLException
 class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val store = PairingStore(app)
     private val repository = SyncRepository(app, AppDatabase.get(app), store)
+
+    /** Miniaturas de portadas de álbumes y artistas (se piden al escritorio al verse y se guardan en el teléfono). */
+    val covers = CoverLoader(app, store)
 
     val pairing = MutableStateFlow(store.load())
     val busy = MutableStateFlow(false)
@@ -39,6 +44,87 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val playlistCount = repository.playlistCount.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
     val albums = repository.albums.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     val playlistRows = repository.playlistRows.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Reproductor local (fase 4a): toca lo descargado en el teléfono, sin servidor ni cable. */
+    val player = PlayerController(app)
+    val playerState = player.state
+    val playable = repository.playable.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Reproducciones anotadas en el teléfono que aún no se han subido al escritorio. */
+    val pendingPlays = repository.pendingPlays.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
+    init {
+        player.connect()
+        uploadPlaysQuietly()
+    }
+
+    /** Al abrir la app, si el escritorio está al alcance, sube las reproducciones pendientes sin molestar; si no, se reintenta luego. */
+    private fun uploadPlaysQuietly() {
+        val current = pairing.value ?: return
+        viewModelScope.launch {
+            try {
+                repository.uploadPlays(current)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // sin escritorio al alcance (sin cable ni Wi-Fi): es lo normal; las reproducciones siguen guardadas
+            }
+        }
+    }
+
+    /** Toca la lista «Descargado» entera empezando por la pista `index`. */
+    fun playFromList(index: Int) {
+        val list = playable.value
+        if (index in list.indices) player.play(list, index)
+    }
+
+    /** Toca lo ya descargado de la selección del diálogo (artista, álbum o lista). */
+    fun playSelection() {
+        val selection = planSelection ?: return
+        plan.value = null
+        viewModelScope.launch {
+            try {
+                val tracks = repository.playableOf(selection)
+                if (tracks.isEmpty()) message.value = "No hay pistas descargadas de «${selection.label}»." else player.play(tracks, 0)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                message.value = friendly(e)
+            }
+        }
+    }
+
+    /** Desde la pestaña «Descargado»: una pista a continuación de la que suena, o al final de la cola. */
+    fun queueTrack(index: Int, next: Boolean) {
+        val track = playable.value.getOrNull(index) ?: return
+        if (next) player.playNext(listOf(track)) else player.addToEnd(listOf(track))
+        message.value = if (next) "«${track.title}» sonará a continuación." else "«${track.title}» se agregó al final de la cola."
+    }
+
+    /** Lo ya descargado de la selección del diálogo, a continuación o al final de la cola. */
+    fun queueSelection(next: Boolean) {
+        val selection = planSelection ?: return
+        plan.value = null
+        viewModelScope.launch {
+            try {
+                val tracks = repository.playableOf(selection)
+                if (tracks.isEmpty()) {
+                    message.value = "No hay pistas descargadas de «${selection.label}»."
+                } else {
+                    if (next) player.playNext(tracks) else player.addToEnd(tracks)
+                    message.value = "${tracks.size} pistas de «${selection.label}» " + if (next) "sonarán a continuación." else "se agregaron al final de la cola."
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                message.value = friendly(e)
+            }
+        }
+    }
+
+    override fun onCleared() {
+        player.release()
+    }
 
     fun pair(url: String, deviceName: String) = launchBusy {
         val paired = repository.pair(url, deviceName)

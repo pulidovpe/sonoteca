@@ -29,10 +29,10 @@ def test_play_counter_and_threshold():
     assert stats.play_counts(conn, [t]) == {t: 0}
     assert stats.record_play(conn, t) == 1 and stats.record_play(conn, t) == 2
     assert stats.play_counts(conn, [t, 999]) == {t: 2, 999: 0}
-    # cuenta a los 3 s de sonar (o la pista entera si dura menos), sin exigir oírla completa
-    assert stats.threshold_ms(200_000) == 3_000
-    assert stats.threshold_ms(600_000) == 3_000
-    assert stats.threshold_ms(0) == 3_000
+    # cuenta a los 5 s de sonar (o la pista entera si dura menos), sin exigir oírla completa
+    assert stats.threshold_ms(200_000) == 5_000
+    assert stats.threshold_ms(600_000) == 5_000
+    assert stats.threshold_ms(0) == 5_000
     assert stats.threshold_ms(1_000) == 1_000
     conn.execute("DELETE FROM tracks WHERE id=?", (t,))
     assert stats.play_counts(conn, [t]) == {t: 0}  # el contador sale con la pista (cascada)

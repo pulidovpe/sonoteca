@@ -5,8 +5,9 @@ import sqlite3
 from datetime import datetime
 
 # Una reproducción cuenta apenas la pista suena unos segundos, sin importar cómo se inició
-# (artista, álbum, lista, automático) ni si se oye completa. Los 3 s evitan contar un salto accidental.
-COUNT_AFTER_MS = 3_000
+# (artista, álbum, lista, automático) ni si se oye completa. Los 5 s evitan contar un salto accidental
+# (eran 3 s hasta 1.0.16; el móvil usa el mismo valor: `PlayCounter.COUNT_AFTER_MS`).
+COUNT_AFTER_MS = 5_000
 
 
 def threshold_ms(duration_ms: int) -> int:

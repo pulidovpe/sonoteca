@@ -42,7 +42,9 @@ el certificado vive en `<datos>/sync/server-cert.pem`.
 | `GET /v1/manifest` | sí | pistas de audio con huella vigente, listas, listas borradas, `pending_hash` |
 | `GET /v1/tracks/{uuid}/file` | sí | audio; admite `Range` (206/416); cabeceras `ETag` y `X-Sonoteca-Hash` |
 | `GET /v1/tracks/{uuid}/cover` | sí | JPEG/PNG (404 si no hay) |
+| `GET /v1/tracks/{uuid}/artist` | sí | JPEG/PNG: imagen del artista de ÁLBUM de la pista, con la regla del escritorio (su foto descargada o, si no, la portada de un álbum suyo; 404 si no hay) |
 | `GET /v1/tracks/{uuid}/lyrics` | sí | `{synced_lrc, original_text, language}` (404 si no hay) |
+| `POST /v1/plays` | sí | `{events:[{id, track_uuid, played_at}]}` → `{accepted, duplicates, unknown:[id…], invalid:[id…]}` (ver «Estadísticas») |
 | `PUT /v1/playlists/{uuid}` | sí | `{name, updated_at, tracks:[uuid…]}` → `{applied, name, updated_at, missing:[uuid…]}` |
 | `DELETE /v1/playlists/{uuid}` | sí | `{deleted_at}` → `{deleted, already_gone}` |
 
@@ -53,12 +55,21 @@ Errores: JSON `{"error": "..."}` con 400 (petición inválida), 401 (token), 403
 `pending_hash` > 0 significa que el escritorio aún calcula huellas (se hace en segundo plano la primera vez, puede tardar
 minutos con miles de archivos): esas pistas todavía no aparecen. El móvil vuelve a pedir el manifiesto más tarde.
 Cada pista: `uuid, hash, size, format, title, artist, album_artist, album, track_no, disc_no, year, duration, genre,
-has_cover, has_lyrics`. Cada lista: `uuid, name, updated_at, tracks` (uuid de pista, en orden).
+has_cover, has_lyrics, plays`. `plays` = reproducciones totales de la pista en el escritorio (0 si ninguna; incluye las que ya subió el móvil). Cada lista: `uuid, name, updated_at, tracks` (uuid de pista, en orden).
 
 ### Descarga
 El móvil guarda en un archivo temporal, calcula el SHA-256 y lo compara con `hash` del manifiesto **y** con
 `X-Sonoteca-Hash`. Si no coincide con el manifiesto (el archivo cambió en el escritorio), descarta y vuelve a pedir el
 manifiesto. Las descargas se reanudan con `Range`.
+
+### Estadísticas de reproducción (móvil → escritorio)
+El móvil anota cada reproducción SIN conexión como un **evento** `{id, track_uuid, played_at}` (`id`: 8–64 caracteres, único por evento; `played_at`: UTC ISO 8601 con
+milisegundos) y los sube con `POST /v1/plays` la próxima vez que se conecta (máx. 5000 por petición; el cuerpo, 2 MB). Cuándo cuenta una reproducción lo decide cada app (hoy: 5 s de escucha en el escritorio y en el móvil; eran 3 s en el escritorio hasta 1.0.16); el protocolo solo transporta las ya contadas.
+- **Idempotente**: el escritorio guarda cada `id` en `sync_play_events`; si el móvil reenvía un lote (se cortó antes de recibir la respuesta) los repetidos salen en `duplicates` y no suman.
+- Cada evento nuevo suma 1 a `play_stats.plays` (el contador que ya usa la app de escritorio) y adelanta `last_played` si es más reciente (hora local, como el escritorio).
+  Una fecha más de 1 día en el futuro se recorta a «ahora».
+- `unknown` = eventos de pistas que ya no existen en el escritorio; `invalid` = eventos mal formados. **El móvil descarta todo el lote al recibir 200**: reenviarlos no los arreglaría.
+- Un cuerpo sin `events` o con más de 5000 → 400; sin token válido → 401.
 
 ### Listas: última modificación gana
 `updated_at` es UTC ISO 8601 con milisegundos (`2026-11-12T10:00:00.000Z`). Se aplica la versión con la marca más reciente;

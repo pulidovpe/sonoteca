@@ -1,65 +1,142 @@
 package io.github.pulidovpe.sonoteca
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import io.github.pulidovpe.sonoteca.db.AlbumRow
 import io.github.pulidovpe.sonoteca.db.ArtistRow
+import io.github.pulidovpe.sonoteca.db.PlayableTrack
 import io.github.pulidovpe.sonoteca.db.PlaylistRow
 import io.github.pulidovpe.sonoteca.download.DownloadPlan
 import io.github.pulidovpe.sonoteca.download.DownloadProgress
 import io.github.pulidovpe.sonoteca.download.formatBytes
+import io.github.pulidovpe.sonoteca.playback.PlaybackModes
+import io.github.pulidovpe.sonoteca.playback.PlaybackQueue
+import io.github.pulidovpe.sonoteca.playback.PlayerUi
+import androidx.activity.SystemBarStyle
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import io.github.pulidovpe.sonoteca.ui.Neon
+import io.github.pulidovpe.sonoteca.ui.NeonIcons
+import io.github.pulidovpe.sonoteca.ui.PathIcon
+import io.github.pulidovpe.sonoteca.ui.SonotecaTheme
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items as gridItems
+import androidx.compose.ui.text.style.TextOverflow
+import io.github.pulidovpe.sonoteca.cover.CoverKeys
+import io.github.pulidovpe.sonoteca.cover.CoverLoader
+import io.github.pulidovpe.sonoteca.ui.CoverThumb
+import androidx.compose.foundation.layout.aspectRatio
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
 
+    // Android 13+: sin este permiso la reproducción funciona, pero no se ve la notificación con los controles.
+    private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
+    private fun askNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= 33 &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // tema «Neón» siempre oscuro: barras del sistema transparentes con iconos claros
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
+        )
         setContent {
-            MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()) {
-                Surface(modifier = Modifier.fillMaxSize()) { SonotecaApp(viewModel) }
+            SonotecaTheme {
+                Surface(modifier = Modifier.fillMaxSize()) { SonotecaApp(viewModel, onBeforePlay = this::askNotificationPermission) }
             }
         }
     }
 }
 
+/** Logo y nombre de la app, arriba de todas las pantallas. */
 @Composable
-fun SonotecaApp(viewModel: MainViewModel) {
+private fun BrandHeader() {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Image(painter = painterResource(R.drawable.sonoteca_logo), contentDescription = "Logo de Sonoteca", modifier = Modifier.size(36.dp))
+        Text("Sonoteca", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+    }
+}
+
+/** Destinos de la barra de navegación inferior (iconos del escritorio). */
+private enum class Dest(val label: String, val icon: String) {
+    Library("Biblioteca", NeonIcons.ALBUM),
+    Downloaded("Descargado", NeonIcons.HEADPHONES),
+    Desktop("Escritorio", NeonIcons.DISPLAY),
+}
+
+@Composable
+fun SonotecaApp(viewModel: MainViewModel, onBeforePlay: () -> Unit) {
     val pairing by viewModel.pairing.collectAsState()
     val busy by viewModel.busy.collectAsState()
     val message by viewModel.message.collectAsState()
@@ -71,13 +148,51 @@ fun SonotecaApp(viewModel: MainViewModel) {
     val deleteAsk by viewModel.deleteAsk.collectAsState()
     val plan by viewModel.plan.collectAsState()
     val progress by viewModel.progress.collectAsState()
+    val playable by viewModel.playable.collectAsState()
+    val pendingPlays by viewModel.pendingPlays.collectAsState()
+    val playerState by viewModel.playerState.collectAsState()
+    var showPair by rememberSaveable { mutableStateOf(false) }
+    var showQueue by rememberSaveable { mutableStateOf(false) }
 
-    Scaffold { padding ->
+    val hasCatalog = pairing != null || tracks > 0
+    var dest by rememberSaveable { mutableStateOf(Dest.Library) }
+
+    Scaffold(
+        bottomBar = {
+            Column {
+                if (playerState.hasItem) {
+                    MiniPlayer(
+                        state = playerState,
+                        onToggle = viewModel.player::togglePlay,
+                        onPrevious = viewModel.player::previous,
+                        onNext = viewModel.player::next,
+                        onSeek = viewModel.player::seekTo,
+                        onShuffle = viewModel.player::toggleShuffle,
+                        onRepeat = viewModel.player::cycleRepeat,
+                        onQueue = { showQueue = true },
+                    )
+                }
+                if (hasCatalog) {
+                    HorizontalDivider()
+                    NavigationBar {
+                        Dest.entries.forEach { item ->
+                            NavigationBarItem(
+                                selected = dest == item,
+                                onClick = { dest = item },
+                                icon = { PathIcon(item.icon) },
+                                label = { Text(item.label) },
+                            )
+                        }
+                    }
+                }
+            }
+        },
+    ) { padding ->
         Column(
-            modifier = Modifier.padding(padding).padding(16.dp).fillMaxSize(),
+            modifier = Modifier.padding(padding).padding(start = 16.dp, end = 16.dp, top = 16.dp).fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text("Sonoteca", style = MaterialTheme.typography.headlineMedium)
+            BrandHeader()
             message?.let { text ->
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(12.dp)) {
@@ -88,23 +203,55 @@ fun SonotecaApp(viewModel: MainViewModel) {
             }
             progress?.let { DownloadCard(it, onCancel = viewModel::cancelDownload) }
             val current = pairing
-            if (current == null) {
+            if (!hasCatalog) {
+                // instalación nueva: aún no hay catálogo, solo se puede emparejar
                 PairScreen(busy = busy, onPair = viewModel::pair)
             } else {
-                LibraryScreen(
-                    server = "${current.host}:${current.port}",
-                    tracks = tracks,
-                    playlists = playlists,
-                    artists = artists,
-                    albums = albums,
-                    playlistRows = playlistRows,
-                    busy = busy,
-                    onSync = viewModel::sync,
-                    onUnpair = viewModel::unpair,
-                    onSelect = viewModel::choose,
-                )
+                // con catálogo se usa la biblioteca aunque no haya emparejamiento: lo descargado se reproduce sin servidor
+                when (dest) {
+                    Dest.Library -> LibraryTab(
+                        covers = viewModel.covers,
+                        artists = artists,
+                        albums = albums,
+                        playlistRows = playlistRows,
+                        busy = busy,
+                        onSelect = viewModel::choose,
+                    )
+                    Dest.Downloaded -> DownloadedTab(
+                        playable = playable,
+                        onPlay = { index ->
+                            onBeforePlay()
+                            viewModel.playFromList(index)
+                        },
+                        onQueueTrack = { index, next ->
+                            onBeforePlay()
+                            viewModel.queueTrack(index, next)
+                        },
+                    )
+                    Dest.Desktop -> DesktopTab(
+                        server = current?.let { "${it.host}:${it.port}" },
+                        pendingPlays = pendingPlays,
+                        tracks = tracks,
+                        playlists = playlists,
+                        artists = artists.size,
+                        albums = albums.size,
+                        busy = busy,
+                        onSync = viewModel::sync,
+                        onUnpair = viewModel::unpair,
+                        onPairRequest = { showPair = true },
+                    )
+                }
             }
         }
+    }
+    if (showQueue && playerState.hasItem) {
+        QueueSheet(
+            state = playerState,
+            onDismiss = { showQueue = false },
+            onJump = viewModel.player::jumpTo,
+            onRemove = viewModel.player::removeAt,
+            onClear = viewModel.player::clearQueue,
+        )
     }
     plan?.let { chosen ->
         AlertDialog(
@@ -114,16 +261,43 @@ fun SonotecaApp(viewModel: MainViewModel) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(planText(chosen))
                     if (chosen.onPhone > 0) {
+                        TextButton(
+                            onClick = {
+                                onBeforePlay()
+                                viewModel.playSelection()
+                            },
+                        ) { Text("Reproducir las ${chosen.onPhone} descargadas") }
+                        TextButton(
+                            onClick = {
+                                onBeforePlay()
+                                viewModel.queueSelection(next = true)
+                            },
+                        ) { Text("Reproducir a continuación") }
+                        TextButton(
+                            onClick = {
+                                onBeforePlay()
+                                viewModel.queueSelection(next = false)
+                            },
+                        ) { Text("Agregar al final de la cola") }
                         TextButton(onClick = viewModel::askDelete) { Text("Borrar ${chosen.onPhone} descargadas del teléfono") }
                     }
                 }
             },
             confirmButton = {
-                TextButton(onClick = viewModel::startDownload, enabled = chosen.pending.isNotEmpty() && chosen.fits) {
+                TextButton(onClick = viewModel::startDownload, enabled = chosen.pending.isNotEmpty() && chosen.fits && pairing != null) {
                     Text("Descargar")
                 }
             },
             dismissButton = { TextButton(onClick = viewModel::dismissPlan) { Text("Cancelar") } },
+        )
+    }
+    if (showPair && pairing == null) {
+        AlertDialog(
+            onDismissRequest = { showPair = false },
+            title = { Text("Emparejar con el escritorio") },
+            text = { PairScreen(busy = busy, onPair = viewModel::pair) },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { showPair = false }) { Text("Cerrar") } },
         )
     }
     deleteAsk?.let { ask ->
@@ -190,80 +364,345 @@ private fun PairScreen(busy: Boolean, onPair: (String, String) -> Unit) {
 }
 
 @Composable
-private fun LibraryScreen(
-    server: String,
-    tracks: Int,
-    playlists: Int,
+private fun LibraryTab(
+    covers: CoverLoader,
     artists: List<ArtistRow>,
     albums: List<AlbumRow>,
     playlistRows: List<PlaylistRow>,
     busy: Boolean,
-    onSync: () -> Unit,
-    onUnpair: () -> Unit,
     onSelect: (Selection) -> Unit,
 ) {
     var tab by rememberSaveable { mutableStateOf(0) }
+    var grid by rememberSaveable { mutableStateOf(false) }   // lista (como antes) o cuadrícula, para Artistas y Álbumes
     Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text("Escritorio: $server")
-        Text("$tracks pistas · $playlists listas · ${artists.size} artistas · ${albums.size} álbumes")
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = onSync, enabled = !busy) { Text(if (busy) "Sincronizando…" else "Sincronizar catálogo") }
-            TextButton(onClick = onUnpair, enabled = !busy) { Text("Olvidar") }
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text("Biblioteca", style = MaterialTheme.typography.headlineSmall)
+        // tres pestañas de igual ancho y con poco relleno
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            val tabPadding = PaddingValues(horizontal = 4.dp)
             listOf("Artistas", "Álbumes", "Listas").forEachIndexed { index, title ->
                 if (tab == index) {
-                    Button(onClick = { tab = index }) { Text(title) }
+                    Button(onClick = { tab = index }, modifier = Modifier.weight(1f), contentPadding = tabPadding) {
+                        Text(title, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                    }
                 } else {
-                    TextButton(onClick = { tab = index }) { Text(title) }
+                    TextButton(onClick = { tab = index }, modifier = Modifier.weight(1f), contentPadding = tabPadding) {
+                        Text(title, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                    }
                 }
             }
         }
+        if (tab < 2) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(selected = !grid, onClick = { grid = false }, label = { Text("Lista", maxLines = 1) })
+                FilterChip(selected = grid, onClick = { grid = true }, label = { Text("Cuadrícula", maxLines = 1) })
+            }
+        }
         HorizontalDivider()
-        LazyColumn(modifier = Modifier.weight(1f)) {
-            when (tab) {
-                0 -> items(artists, key = { it.name }) { artist ->
-                    SelectableRow(
-                        title = artist.name.ifEmpty { "(sin artista)" },
-                        subtitle = null,
-                        right = "${artist.downloaded}/${artist.tracks}",
-                        enabled = !busy,
-                        onClick = { onSelect(Selection.Artist(artist.name)) },
-                    )
+        if (tab < 2 && grid) {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (tab == 0) {
+                    gridItems(artists, key = { it.name }) { artist ->
+                        GridCell(
+                            covers = covers,
+                            coverKey = CoverKeys.artist(artist.name),
+                            sampleUuid = artist.sampleUuid,
+                            artist = true,
+                            title = artist.name.ifEmpty { "(sin artista)" },
+                            subtitle = null,
+                            right = "${artist.downloaded}/${artist.tracks}",
+                            enabled = !busy,
+                            onClick = { onSelect(Selection.Artist(artist.name)) },
+                        )
+                    }
+                } else {
+                    gridItems(albums, key = { it.artist + "||" + it.album }) { album ->
+                        GridCell(
+                            covers = covers,
+                            coverKey = CoverKeys.album(album.artist, album.album),
+                            sampleUuid = album.sampleUuid,
+                            artist = false,
+                            title = album.album.ifEmpty { "(sin álbum)" },
+                            subtitle = album.artist.ifEmpty { "(sin artista)" },
+                            right = "${album.downloaded}/${album.tracks}",
+                            enabled = !busy,
+                            onClick = { onSelect(Selection.Album(album.artist, album.album)) },
+                        )
+                    }
                 }
-                1 -> items(albums, key = { it.artist + "||" + it.album }) { album ->
-                    SelectableRow(
-                        title = album.album.ifEmpty { "(sin álbum)" },
-                        subtitle = album.artist.ifEmpty { "(sin artista)" },
-                        right = "${album.downloaded}/${album.tracks}",
-                        enabled = !busy,
-                        onClick = { onSelect(Selection.Album(album.artist, album.album)) },
-                    )
-                }
-                else -> items(playlistRows, key = { it.uuid }) { list ->
-                    SelectableRow(
-                        title = list.name,
-                        subtitle = null,
-                        right = "${list.downloaded}/${list.tracks}",
-                        enabled = !busy,
-                        onClick = { onSelect(Selection.Playlist(list.uuid, list.name)) },
-                    )
+            }
+        } else {
+            LazyColumn(modifier = Modifier.weight(1f)) {
+                when (tab) {
+                    0 -> items(artists, key = { it.name }) { artist ->
+                        SelectableRow(
+                            title = artist.name.ifEmpty { "(sin artista)" },
+                            subtitle = null,
+                            right = "${artist.downloaded}/${artist.tracks}",
+                            enabled = !busy,
+                            onClick = { onSelect(Selection.Artist(artist.name)) },
+                            leading = {
+                                CoverThumb(covers, CoverKeys.artist(artist.name), artist.sampleUuid, artist = true, modifier = Modifier.size(48.dp))
+                            },
+                        )
+                    }
+                    1 -> items(albums, key = { it.artist + "||" + it.album }) { album ->
+                        SelectableRow(
+                            title = album.album.ifEmpty { "(sin álbum)" },
+                            subtitle = album.artist.ifEmpty { "(sin artista)" },
+                            right = "${album.downloaded}/${album.tracks}",
+                            enabled = !busy,
+                            onClick = { onSelect(Selection.Album(album.artist, album.album)) },
+                            leading = {
+                                CoverThumb(covers, CoverKeys.album(album.artist, album.album), album.sampleUuid, artist = false, modifier = Modifier.size(48.dp))
+                            },
+                        )
+                    }
+                    else -> items(playlistRows, key = { it.uuid }) { list ->
+                        SelectableRow(
+                            title = list.name,
+                            subtitle = null,
+                            right = "${list.downloaded}/${list.tracks}",
+                            enabled = !busy,
+                            onClick = { onSelect(Selection.Playlist(list.uuid, list.name)) },
+                        )
+                    }
                 }
             }
         }
     }
 }
 
+/** Celda de la cuadrícula (3 columnas): la miniatura cuadrada, el nombre debajo y cuántas pistas están en el teléfono. */
 @Composable
-private fun SelectableRow(title: String, subtitle: String?, right: String, enabled: Boolean, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().clickable(enabled = enabled) { onClick() }.padding(vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
+private fun GridCell(
+    covers: CoverLoader,
+    coverKey: String,
+    sampleUuid: String,
+    artist: Boolean,
+    title: String,
+    subtitle: String?,
+    right: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable(enabled = enabled) { onClick() },
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
+        CoverThumb(covers, coverKey, sampleUuid, artist, modifier = Modifier.fillMaxWidth().aspectRatio(1f))
+        Text(title, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(right, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun DownloadedTab(playable: List<PlayableTrack>, onPlay: (Int) -> Unit, onQueueTrack: (Int, Boolean) -> Unit) {
+    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("Descargado", style = MaterialTheme.typography.headlineSmall)
+        Text("${playable.size} pistas en el teléfono", style = MaterialTheme.typography.bodySmall)
+        HorizontalDivider()
+        LazyColumn(modifier = Modifier.weight(1f)) {
+            if (playable.isEmpty()) {
+                item {
+                    Text(
+                        "Aún no has descargado música. En Biblioteca elige un artista, álbum o lista y pulsa «Descargar».",
+                        modifier = Modifier.padding(vertical = 12.dp),
+                    )
+                }
+            }
+            itemsIndexed(playable, key = { _, track -> track.uuid }) { index, track ->
+                DownloadedRow(
+                    track = track,
+                    onPlay = { onPlay(index) },
+                    onQueueNext = { onQueueTrack(index, true) },
+                    onQueueEnd = { onQueueTrack(index, false) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DesktopTab(
+    server: String?,
+    pendingPlays: Int,
+    tracks: Int,
+    playlists: Int,
+    artists: Int,
+    albums: Int,
+    busy: Boolean,
+    onSync: () -> Unit,
+    onUnpair: () -> Unit,
+    onPairRequest: () -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("Escritorio", style = MaterialTheme.typography.headlineSmall)
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(if (server != null) "Emparejado con $server" else "Sin emparejar: lo descargado se reproduce igual, sin servidor.")
+                Text("$tracks pistas · $playlists listas · $artists artistas · $albums álbumes", style = MaterialTheme.typography.bodySmall)
+                if (pendingPlays > 0) {
+                    Text("$pendingPlays reproducciones por subir al escritorio (se envían al conectar).", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (server != null) {
+                Button(onClick = onSync, enabled = !busy) { Text(if (busy) "Sincronizando…" else "Sincronizar catálogo") }
+                TextButton(onClick = onUnpair, enabled = !busy) { Text("Olvidar") }
+            } else {
+                Button(onClick = onPairRequest, enabled = !busy) { Text("Emparejar") }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SelectableRow(
+    title: String,
+    subtitle: String?,
+    right: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    leading: (@Composable () -> Unit)? = null,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable(enabled = enabled) { onClick() }.padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        leading?.invoke()
         Column(modifier = Modifier.weight(1f)) {
             Text(title)
             if (subtitle != null) Text(subtitle, style = MaterialTheme.typography.bodySmall)
         }
         Text(right)
+    }
+}
+
+@Composable
+private fun MiniPlayer(
+    state: PlayerUi,
+    onToggle: () -> Unit,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+    onSeek: (Long) -> Unit,
+    onShuffle: () -> Unit,
+    onRepeat: () -> Unit,
+    onQueue: () -> Unit,
+) {
+    var dragging by remember { mutableStateOf<Float?>(null) }
+    val duration = state.durationMs.coerceAtLeast(1L)
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+            Text(state.title.ifEmpty { "(sin título)" }, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+            if (state.artist.isNotEmpty()) Text(state.artist, style = MaterialTheme.typography.bodySmall, maxLines = 1)
+            state.error?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+            Slider(
+                value = dragging ?: state.positionMs.coerceIn(0L, duration).toFloat(),
+                onValueChange = { dragging = it },
+                onValueChangeFinished = {
+                    dragging?.let { onSeek(it.toLong()) }
+                    dragging = null
+                },
+                valueRange = 0f..duration.toFloat(),
+            )
+            Text(
+                PlaybackQueue.formatTime((dragging ?: state.positionMs.toFloat()).toLong()) + " / " + PlaybackQueue.formatTime(state.durationMs),
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onPrevious) { PathIcon(NeonIcons.PREV, description = "Anterior") }
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .background(Neon.playGradient)
+                        .clickable(onClick = onToggle)
+                        .semantics { contentDescription = if (state.isPlaying) "Pausar" else "Reproducir" },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    PathIcon(if (state.isPlaying) NeonIcons.PAUSE else NeonIcons.PLAY, size = 28.dp, tint = Neon.textOnAccent)
+                }
+                IconButton(onClick = onNext, enabled = state.hasNext) { PathIcon(NeonIcons.NEXT, description = "Siguiente") }
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                FilterChip(selected = state.shuffle, onClick = onShuffle, label = { Text("Aleatorio", maxLines = 1) })
+                FilterChip(
+                    selected = state.repeatMode != PlaybackModes.REPEAT_OFF,
+                    onClick = onRepeat,
+                    label = { Text(PlaybackModes.repeatLabel(state.repeatMode), maxLines = 1) },
+                )
+                AssistChip(onClick = onQueue, label = { Text("Cola (${state.queue.size})", maxLines = 1) })
+            }
+        }
+    }
+}
+
+/** Una pista de la pestaña «Descargado»: tocar la reproduce; el menú ⋮ la pone a continuación o al final de la cola. */
+@Composable
+private fun DownloadedRow(track: PlayableTrack, onPlay: () -> Unit, onQueueNext: () -> Unit, onQueueEnd: () -> Unit) {
+    var menu by remember { mutableStateOf(false) }
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(modifier = Modifier.weight(1f).clickable { onPlay() }.padding(vertical = 8.dp)) {
+            Text(track.title.ifEmpty { "(sin título)" })
+            Text(
+                (track.artist.ifEmpty { track.albumArtist }).ifEmpty { "(sin artista)" } + " · " + track.album.ifEmpty { "(sin álbum)" },
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        Text(PlaybackQueue.formatTime((track.duration * 1000).toLong()))
+        Box {
+            TextButton(onClick = { menu = true }) { Text("⋮") }
+            DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                DropdownMenuItem(text = { Text("Reproducir a continuación") }, onClick = { menu = false; onQueueNext() })
+                DropdownMenuItem(text = { Text("Agregar al final de la cola") }, onClick = { menu = false; onQueueEnd() })
+            }
+        }
+    }
+}
+
+/** La cola de reproducción («Reproduciendo»): tocar una pista salta a ella; «Quitar» la saca (no la que suena); «Vaciar» deja solo la que suena. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun QueueSheet(state: PlayerUi, onDismiss: () -> Unit, onJump: (Int) -> Unit, onRemove: (Int) -> Unit, onClear: () -> Unit) {
+    val listState = rememberLazyListState(initialFirstVisibleItemIndex = state.currentIndex.coerceAtLeast(0))
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Reproduciendo (${state.queue.size})", style = MaterialTheme.typography.titleMedium)
+            TextButton(onClick = onClear, enabled = state.queue.size > 1) { Text("Vaciar") }
+        }
+        LazyColumn(state = listState, modifier = Modifier.padding(horizontal = 16.dp)) {
+            itemsIndexed(state.queue, key = { index, item -> "$index-${item.uuid}" }) { index, item ->
+                val current = index == state.currentIndex
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f).clickable { onJump(index) }.padding(vertical = 8.dp)) {
+                        Text(
+                            item.title.ifEmpty { "(sin título)" },
+                            color = if (current) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                            fontWeight = if (current) FontWeight.Bold else FontWeight.Normal,
+                            maxLines = 1,
+                        )
+                        if (item.artist.isNotEmpty()) Text(item.artist, style = MaterialTheme.typography.bodySmall, maxLines = 1)
+                    }
+                    TextButton(onClick = { onRemove(index) }, enabled = !current) { Text("Quitar") }
+                }
+            }
+        }
     }
 }

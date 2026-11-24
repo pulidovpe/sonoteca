@@ -5,11 +5,90 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.21] - 2026-11-21
+**Miniaturas de portadas de álbumes y artistas en la app Android** (lista y cuadrícula), por petición de Pablo. Escritorio/servidor: solo una ruta nueva; el resto es Android.
+- **Servidor** (`sync/server.py`): nueva ruta `GET /v1/tracks/{uuid}/artist` con `default_artist_image_provider`: la imagen del artista de ÁLBUM de la pista con la regla del escritorio (`covers.artist_photo` y, si no hay, la portada de `covers.artist_cover_album`);
+  404 si no hay. 8 pruebas nuevas en `tests/test_sync_covers.py` (carpeta, foto preferida, PNG, sin imagen, foto ilegible, ruta con token y 404, `cover` sigue igual). Corridas aquí con corredor propio y `mutagen` simulado; pytest real y ruff los ejecuta la CI.
+- **Móvil**: `ArtistRow`/`AlbumRow` traen `sampleUuid` (`MIN(uuid)`; el esquema de Room no cambia), `SyncApi.image`, `cover/CoverLoader` (miniaturas de 320 px en `files/covers`, memoria 24 MB, 4 descargas a la vez, «no hay» recordado 24 h),
+  `cover/CoverKeys` (lógica pura: claves SHA-1, tamaño de muestreo; 5 pruebas JVM `CoverKeysTest`) y `ui/CoverThumb`. En Biblioteca ▸ Artistas/Álbumes, selector **Lista / Cuadrícula** (3 columnas, miniatura cuadrada con el nombre debajo, a petición de Pablo).
+  Sin imagen: la «cajita» de color plano `placeholder` del escritorio (nuevo token en `NeonPalette`, comprobado por `NeonParityTest`).
+- Verificado por Pablo: 1.0.19 y 1.0.20 en CI; el mini reproductor y el logo, por probar. **1.0.21 SIN compilar ni probar el Kotlin**; dudas mías: `LazyVerticalGrid` con `items` renombrado (`gridItems`) y `produceState` con dos claves.
+- **Corrección tras el primer push (no compilaba)**: `ui/CoverThumb.kt` usaba `6.dp` sin importar `androidx.compose.ui.unit.dp` («Unresolved reference 'dp'», línea 29 en el log de CI). Ya importado. Lo encontró el log de Pablo; una comprobación estática ampliada (extensiones de Compose sin import: `dp`, `size`, `padding`, `clip`, delegados de estado…) no halla ningún otro caso en el resto del código.
+- **Nota para ci**: el punto (A) del trabajo de escritorio que Pablo te pidió (5 s de escucha) **ya está hecho en 1.0.17** (`core/stats.py`, `tests/test_stats_cleanup.py`): no lo repitas.
+
+## [1.0.20] - 2026-11-20
+**Android: el mini reproductor se distingue de la lista, y se ven el logo y el nombre de Sonoteca.** Solo recursos y `MainActivity` + versión Python.
+- **Mini reproductor**: antes usaba casi el mismo azul oscuro que la lista (`#0a141d` frente a `#060e16`). Ahora `surfaceContainerHighest`, esquinas superiores redondeadas, borde de 1 dp y una línea divisoria sobre la barra de navegación.
+- **Icono de lanzador**: era el de la plantilla de Android; ahora es el logo de Sonoteca (icono adaptable con el logo en la zona segura sobre el fondo `neon_bg`, e iconos heredados). Generado desde `assets/icons/sonoteca-1024.png`; revisado con máscara circular y con cuadrada redondeada.
+- **Cabecera** con el logo (`drawable-nodpi/sonoteca_logo.png`) y el nombre en todas las pantallas.
+- Hay 2 archivos huérfanos de la plantilla que conviene borrar con `git rm` (`drawable/ic_launcher_background.xml` y `drawable/ic_launcher_foreground.xml`); ya no se referencian.
+- Verificado por Pablo: 1.0.19 (tema y navegación) en verde en CI y sin romper nada en el POCO. **1.0.20 SIN compilar ni probar**.
+- **Peticiones de Pablo para después** (en este orden): firma de la APK de release (pedido de ci, 1.0.21), miniaturas de portadas de álbumes y artistas en lista y en cuadrícula, y letras de las canciones descargadas.
+
+## [1.0.19] - 2026-11-20
+**Android: tema «Neón» y navegación inferior** (segunda fase del rediseño; solo Kotlin/recursos + versión Python).
+- **Mismos colores e iconos que el escritorio**: `ui/NeonPalette.kt` y `ui/NeonIcons.kt` generados a partir de `Theme.qml` (25 colores, 12 iconos SVG) y `ui/NeonTheme.kt` con un esquema oscuro de Material 3 estable (acento cian,
+  violeta/magenta de la marca, `surfaceContainer*` de la barra lateral a las superficies elevadas, divisores sutiles). Siempre oscuro; la ventana arranca oscura (`themes.xml`, `colors.xml`).
+- **`NeonParityTest`** (3 pruebas JVM): compara colores e iconos con `src/sonoteca/ui/qml/Theme.qml` (se omite si el archivo no está a mano), para que la CI avise si el escritorio y el móvil se separan.
+- **Barra de navegación inferior** con tres destinos: Biblioteca (pestañas Artistas/Álbumes/Listas), Descargado y Escritorio (estado, emparejar/olvidar, sincronizar). La pantalla única anterior se divide en `LibraryTab`, `DownloadedTab` y `DesktopTab`.
+- **Mini reproductor** con los iconos del escritorio (anterior/play/pausa/siguiente, dibujados con los mismos trazos) y el botón de reproducir con degradado cian → magenta.
+- **Corrección tras el primer push (no compilaba)**: el script que generó `NeonIcons.kt` dejó un guion bajo inicial en las constantes (`_ALBUM`, `_PLAY`…) y `MainActivity` usa `NeonIcons.ALBUM`, `NeonIcons.PLAY`…: «Unresolved reference» en `compileDebugKotlin`. Ya sin el guion bajo; todas las referencias a `NeonPalette`, `NeonIcons` y `Neon` comprobadas con un script.
+- Verificado por Pablo en el POCO: 1.0.18 (aleatorio, repetir y cola) funciona. **1.0.19 aún SIN probar en el móvil**; dudas mías: `PathParser`/`scale` de Compose para los iconos y los parámetros de `darkColorScheme` (Material 3 1.4).
+
+## [1.0.18] - 2026-11-19
+**Android: aleatorio, repetir y cola de reproducción** (primera fase del rediseño; solo Kotlin + versión Python).
+- Mini reproductor: botones **Aleatorio** y **Repetir** (sin repetir → todas → una, el mismo ciclo del escritorio) y **Cola (N)**. Se usan `shuffleModeEnabled` y `repeatMode` de Media3 y se recuerdan entre sesiones (SharedPreferences `player`).
+- **Cola** en una hoja inferior: tocar una pista salta a ella, «Quitar» la saca (nunca la que suena), «Vaciar» deja solo la que suena. «Agregar al final de la cola» y «Reproducir a continuación» desde el menú ⋮ de cada pista
+  de «Descargado» y desde el resumen de un artista/álbum/lista. Con repetir una pista, cada vuelta cuenta otra reproducción (reinicia el contador de 5 s).
+- Diferencias con el escritorio, a propósito por ahora: lo ya reproducido no sale de la lista y no se reordena arrastrando.
+- Lógica pura nueva `PlaybackModes` (ciclo de repetir y etiquetas) con 4 pruebas JVM (`PlaybackModesTest`), que incluyen comprobar que sus constantes coinciden con las de Media3.
+- **SIN compilar ni probar** el Kotlin (lo hacen Android Studio y `android.yml`). Dudas mías: `ModalBottomSheet` con `@OptIn(ExperimentalMaterial3Api)` y los chips de Material 3 (BOM 2026.02.01).
+
+## [1.0.17] - 2026-11-18
+**Una reproducción cuenta a los 5 s (antes 3 s), en el móvil y en el escritorio**, por decisión de Pablo. Móvil: `PlayCounter.COUNT_AFTER_MS` y sus pruebas JVM. Escritorio: `stats.COUNT_AFTER_MS` y `tests/test_stats_cleanup.py`
+(`test_ui_081` no cambia: usa pistas de ~1 s y el umbral es el menor entre el tiempo fijo y la duración). Las pistas de menos de 5 s siguen contando enteras. Las reproducciones ya contadas no se recalculan. `docs/SYNC.md` ya no fija el umbral: lo decide cada app.
+- Causa del cierre de la app tras 1.0.16, hallada en el `logcat -b crash` de Pablo: `AbstractMethodError ... LibraryDao.pendingPlayCount() ... LibraryDao_Impl`: el APK instalado mezclaba clases nuevas con un `LibraryDao_Impl`
+  (código generado por Room) de una compilación anterior. No es un fallo del código (la CI compila desde cero): se arregla con «Clean Project» + «Rebuild» y ejecutar con **Run** (no «Apply Changes»).
+
+## [1.0.16] - 2026-11-18
+**Android: el móvil anota las reproducciones y las sube al escritorio** (segunda mitad de «estadísticas»; el servidor llegó en 1.0.15). Solo Kotlin/Android + versión Python.
+- `PlayCounter` (lógica pura, 9 pruebas JVM nuevas en `PlayCounterTest`): misma regla que `stats.threshold_ms` del escritorio: 3 s de avance normal; saltar, retroceder y pausar no suman; una vez por reproducción.
+- `PlaybackService` cuenta (sondeo de 500 ms solo mientras suena) y guarda cada reproducción en Room aunque la app esté cerrada. Room **v3**: tabla `play_events`, `AutoMigration(2, 3)`.
+- `SyncApi.plays` (`POST /v1/plays`) y `SyncRepository.uploadPlays`: lotes de 500, se borran solo al recibir 200; si falla, quedan guardadas. `sync()` las sube antes del catálogo y lo anota en el mensaje
+  («Subidas N reproducciones…»); un fallo al subirlas no impide sincronizar el catálogo. Al abrir la app, si hay emparejamiento, intenta subirlas en silencio.
+- La pantalla principal muestra «N reproducciones por subir al escritorio».
+- **Tras compilar aparece `android/app/schemas/.../3.json`: hay que versionarlo** (`git add android/app/schemas`).
+- **SIN compilar ni probar el Kotlin** (lo hacen Android Studio y `android.yml`); sin probar contra el escritorio real. El Python solo sube la versión.
+- Verificado por Pablo: 1.0.15 (servidor de estadísticas) aplicada con `ci.yml` en verde (CI Tests #29).
+
+## [1.0.15] - 2026-11-18
+**Escritorio/servidor: recibe las estadísticas de reproducción del móvil** (primera mitad de «estadísticas»; el lado Android llega en la siguiente entrega). Solo Python.
+- Nueva ruta `POST /v1/plays` (`sync/plays.py`): eventos `{id, track_uuid, played_at}` idempotentes por `id`; cada uno suma 1 a `play_stats` y adelanta `last_played`. Responde
+  `{accepted, duplicates, unknown, invalid}`. Protocolo en `docs/SYNC.md`.
+- Nueva tabla `sync_play_events` **dentro de v10, sin subir el esquema**: las bases v10 que no la tienen (la de desarrollo y la real) se reparan solas al abrir, con copia previa `library.db.v10.bak`
+  (documentado en `docs/MIGRACIONES.md`). Primera vez que se abra una base existente con esta versión: **hacerlo con `SONOTECA_DATA_DIR=$HOME/sonoteca-dev`**, no con la biblioteca real.
+- El manifiesto trae `plays` por pista (total en el escritorio), para el «Inicio» del móvil. Campo nuevo y opcional: la API sigue en v1 y el móvil actual lo ignora.
+- 12 pruebas nuevas (`tests/test_sync_plays.py`: suma, reenvío idempotente, solapes, desconocidos/inválidos, límites, `last_played`, reloj adelantado, manifiesto, reparación con copia; y 2 de servidor de
+  punta a punta con TLS real). `tests/sync_support.py::downgrade_to_v9` también borra la tabla nueva. Corridas aquí con corredor propio: sync_plays, sync_server (26), sync_schema, sync_merge, sync_usb, db_backup, columns; pytest real y ruff los ejecuta la CI.
+- Verificado por Pablo: 1.0.14 completa (notificación, bloqueo, auriculares, llamadas; HyperOS no cerró el reproductor) y pipelines en verde. Decidido: estilo visual «Neón» fiel al escritorio sobre Material 3 estable.
+
+## [1.0.14] - 2026-11-17
+**Android fase 4a: reproductor local con Media3 1.11.0** (solo Kotlin/Android; el Python no cambia). Reproduce lo descargado en el teléfono, sin servidor ni cable.
+- Nuevo `playback/`: `PlaybackService` (`MediaSessionService` + ExoPlayer: segundo plano, notificación, pantalla de bloqueo, pausa al desconectar auriculares y en llamadas), `PlayerController`
+  (MediaController, estado para la UI) y `PlaybackQueue` (lógica pura con 6 pruebas JVM nuevas: recorte de cola a 500, URI permitidas, formato de tiempo).
+- Room: consultas nuevas `playableAll/OfArtist/OfAlbum/OfPlaylist` (POJO `PlayableTrack`; las listas en su orden). **El esquema no cambia** (sigue v2).
+- UI: pestaña «Descargado», botón «Reproducir las N descargadas» en el resumen, mini reproductor con barra de avance, permiso de notificaciones (Android 13+) al primer «reproducir».
+- **La biblioteca ya no desaparece al «Olvidar»**: con catálogo guardado se muestra «Sin emparejar», se puede reproducir y hay un botón «Emparejar»; «Descargar» exige emparejamiento.
+- Gradle: `media3-exoplayer` y `media3-session` 1.11.0 (catálogo de versiones); manifiesto: servicio `mediaPlayback` y permisos `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, `POST_NOTIFICATIONS`, `WAKE_LOCK`.
+- Verificado por Pablo en el POCO: compila, pestaña «Descargado», «Olvidar» y reproducción sin servidor ni cable con la pantalla apagada y bloqueada. Sin verificar: controles de la notificación y del bloqueo, auriculares, llamadas.
+- Ajuste tras la primera prueba: las cuatro pestañas ocupan el ancho a partes iguales (con el ancho natural de los botones «Descargado» no cabía y se veía amontonado a la derecha).
+- Corregido en esta copia: `SyncRepository.kt` traía otra vez el import duplicado de `TrackEntity` (ya estaba arreglado en el repositorio de Pablo).
+
 ## [1.0.13] - 2026-11-17
 **USB: el túnel `adb reverse` se rehace solo** al reconectar el cable o reiniciar adb (antes había que pulsar Intro en el servidor). Nueva clase `UsbWatcher` en `sync/usb.py`
 (sondeo cada ~2,5 s de `adb devices` y `adb reverse --list`; actúa solo con móviles recién conectados o sin el túnel; un fallo se avisa una vez); `sync-serve --solo-usb` la arranca en un hilo
 (`--sin-adb` la desactiva). 6 pruebas Python nuevas en `tests/test_sync_usb.py` con un adb simulado con estado (corridas aquí con corredor propio; pytest real lo verifica la CI).
-El formato exacto de `adb reverse --list` en Android 16/adb actual no se ha comprobado con adb real: Pablo debe probar desconectar y reconectar el POCO.
+Verificado por Pablo con adb real en el POCO: desconectar y reconectar el cable rehízo el túnel solo (sin repeticiones).
 - Las actualizaciones para el agente de CI pasan a vivir SOLO en `docs/agentes/CONTEXT_COMPACT_AGENTES.md` (sección «Novedades de principal»); se deja de crear archivos nuevos en `docs/agentes/canal/`.
 
 ## [1.0.12] - 2026-11-17

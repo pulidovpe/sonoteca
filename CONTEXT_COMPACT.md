@@ -1,4 +1,4 @@
-# Sonoteca — CONTEXTO COMPACTO (v1.0.13)
+# Sonoteca — CONTEXTO COMPACTO (v1.0.21)
 
 > Pégalo al inicio de un chat nuevo del **agente principal** (app, sincronización, Android). Va **junto con el árbol del repo**: lo más seguro es
 > `git archive --format=zip -o ~/Desktop/sonoteca-arbol.zip HEAD` desde la rama de trabajo, ya fusionada con `origin/main` (el zip de mis entregas
@@ -16,6 +16,9 @@
   `pytest.log`, carpetas `tmp*`/`hsperfdata_*` ni `build/`.
 - **Orden de aplicación de un zip (decírselo siempre)**: commit de lo pendiente → `git fetch origin && git merge origin/main` → `unzip -o` → `git status` y `git diff --stat` (revisar que no cambie
   nada de `.github`/`docs/CI.md`; si cambia, `git checkout origin/main -- .github docs/CI.md`) → commit. Nunca copiar carpetas con Finder (reemplaza y borra: ya pasó).
+- **Cada comando `git` que dé a Pablo debe decir en qué carpeta se ejecuta**: el repo está en `/Users/pulidovpe/workspace/mis-proyectos/sonoteca` (poner `cd` explícito delante; `unzip -o` también se ejecuta ahí). Orden de Pablo, 2026-11-22.
+- **Antes de entregar Kotlin nuevo** (no puedo compilar Android): (1) compilar y ejecutar la lógica pura con el compilador real (`kotlinc` 2.2.10 de la release de GitHub `JetBrains/kotlin`, descargable aquí), (2) comprobar imports de extensiones de Compose (`dp`, `size`, `padding`, `clip`, `getValue`…) en TODOS los `.kt` con un script, (3) nombres sin definir/argumentos con nombre. Los errores de CI llegan sin las líneas `e: file://`: pedírselas a Pablo con `gh run view … --log-failed | grep "e: file"`.
+- **NUNCA enviar en un zip un archivo de `tests/` o `src/` que yo no haya creado desde cero**: mi copia está vieja y ya pisó dos veces las correcciones de lint de `main` (2026-11-17, 9 archivos; 2026-11-19, `tests/test_stats_cleanup.py`). Para cambiarlos, dar un comando/script que edite el archivo real tras `git checkout origin/main -- <ruta>` y pedir `git diff origin/main -- <ruta>` para verificar.
 - **Zips = SOLO los archivos que cambian en esa entrega** (más CHANGELOG, `__init__.py` y este contexto), no el árbol entero: mi copia de `tests/` y `src/` puede estar vieja y un `unzip -o` pisó
   las correcciones de lint de `main` (2026-11-17, 9 archivos; arreglado con `git checkout origin/main -- tests src/sonoteca/player/qt_backend.py`). Si `git diff --stat` muestra archivos que la entrega no menciona, restaurarlos desde `origin/main`.
   Pablo debe pasarme un árbol fresco (`git archive` tras fusionar `origin/main`) al empezar un chat nuevo.
@@ -26,7 +29,7 @@
   (`java Archivo.java`) contra el servidor Python. Usa rutas absolutas y `bash -c` (el shell por defecto es `sh`: sin `<( )`).
 
 ## Estado (2026-11-17)
-- **App de escritorio** (Python 3.12 + PySide6/QML, SQLite **esquema v10**): ver «Qué es / Mapa / UI / Trampas» abajo. Versión actual **1.0.13**. `feature/android` ya se fusionó en `main` (PR #5).
+- **App de escritorio** (Python 3.12 + PySide6/QML, SQLite **esquema v10**): ver «Qué es / Mapa / UI / Trampas» abajo. Versión actual **1.0.21**. `feature/android` ya se fusionó en `main` (PR #5).
 - **Sincronización con Android** (HECHA y verificada por USB con tu biblioteca): servidor HTTPS en `src/sonoteca/sync/` (`manifest, merge, pairing, tls, server, usb`), comandos `sonoteca sync-serve [--solo-usb]
   [--sin-adb]` y `sync-devices`. Protocolo en `docs/SYNC.md`. Decisiones: identidad estable `tracks.uuid` + `files.content_hash` (SHA-256 con caché); **HTTPS autofirmado con la huella fijada** al
   emparejar (código de 6 dígitos de un solo uso → token); listas con `uuid`/`updated_at` y «última modificación gana» + `deleted_playlists`; manifiesto con `pending_hash` (si > 0, **no se borra nada local**);
@@ -34,13 +37,13 @@
 - **Migraciones** (`docs/MIGRACIONES.md`): `migrate()` copia a `library.db.v<N>.bak` (API de copia de SQLite) ANTES de subir el esquema; aparta tablas ajenas con nombre de v10 a `<nombre>_incompatible`;
   v10 se autorrepara. **Desarrollo siempre con `SONOTECA_DATA_DIR=$HOME/sonoteca-dev`**, nunca la biblioteca real (la real quedó en v10 por un descuido mío: el binario 1.0.0 ya no la abre;
   `~/Library/Application Support/sonoteca/library.db.v9.bak` es la vía de vuelta; hay otras copias manuales de Pablo y del otro agente: no tocar).
-- **App Android** (`android/`, Kotlin 2.2.10 + Compose + Room; paquete `io.github.pulidovpe.sonoteca`): `net/` (PairingInfo, PinnedTls, SyncApi con HttpsURLConnection, ManifestModel), `db/` (Room **v2**,
-  `AutoMigration(1,2)`: tracks, playlists, playlist_tracks, downloads), `download/` (Naming, Plan, FileDownloader reanudable con `Range` + SHA-256, TrackDownloader → MediaStore `Music/Sonoteca/<Artista>/<Álbum>/`),
+- **App Android** (`android/`, Kotlin 2.2.10 + Compose + Room; paquete `io.github.pulidovpe.sonoteca`): `net/` (PairingInfo, PinnedTls, SyncApi con HttpsURLConnection, ManifestModel), `playback/` (PlaybackQueue pura, PlaybackService, PlayerController), `db/` (Room **v3**,
+  `AutoMigration(1,2)` y `(2,3)`: tracks, playlists, playlist_tracks, downloads, play_events; hay que versionar `app/schemas/.../3.json`), `download/` (Naming, Plan, FileDownloader reanudable con `Range` + SHA-256, TrackDownloader → MediaStore `Music/Sonoteca/<Artista>/<Álbum>/`),
   `Selection`, `SyncRepository`, `MainViewModel`, `MainActivity` (pestañas Artistas/Álbumes/Listas). **Toolchain verificada**: AGP 9.5.1 (Kotlin integrado: SIN plugin `kotlin-android`), Gradle 9.6.0, KSP 2.3.10,
   Room 2.8.5 (`androidx.room`; Room 3 existe, sin usar), Compose BOM 2026.02.01, **JDK 25** (`gradle-daemon-jvm.properties`), compileSdk/targetSdk 37, minSdk 29. Avisar al agente de CI si cambia compileSdk, JDK o AGP.
 - **Fases Android**: 1 servidor+v10 ✅ · 2 proyecto, Room, TLS fijado, emparejado, manifiesto ✅ (1609 pistas y 11 listas en el POCO) · 3a descarga por artista ✅ (183 MB reales) · 3b álbum/listas/borrar del teléfono ✅ (1.0.11: Pablo verificó en el POCO por USB álbum, artista, lista, borrar y volver a descargar; CI Android verde, 34 pruebas JVM) ·
   1.0.12 catálogo se renueva solo al emparejar ✅ (pipelines verdes, probado en el POCO) ·
-  **1.0.13 = `adb reverse` automático al reconectar el cable (`UsbWatcher`; SIN verificar con adb real)** · 4 reproductor Media3 + UI, crear/editar listas en el móvil y subirlas con `PUT` · 5 Wi-Fi/USB pulidos (NSD, QR, permiso `ACCESS_LOCAL_NETWORK` de Android 17
+  1.0.13 `adb reverse` automático al reconectar el cable (`UsbWatcher`) ✅ (verificado con adb real) · **4a reproductor local Media3 1.11.0 = 1.0.14: compila y funciona en el POCO** (Pablo: pestaña «Descargado», «Olvidar» sin servidor ni cable, reproducción con pantalla apagada y bloqueada; solo lo descargado). Verificado también: notificación, controles de bloqueo, auriculares, llamadas; HyperOS no ha cerrado el servicio · **Cambio de plan (Pablo, 2026-11-18)**: se DEJA la creación/edición de listas en el móvil; en su lugar: **estadísticas** (móvil anota reproducciones sin conexión, las sube con `POST /v1/plays` al conectar; servidor 1.0.15 ✅ (CI verde) · **lado Android = 1.0.16/1.0.17: `PlayCounter` (5 s por decisión de Pablo, también en el escritorio desde 1.0.17: `stats.COUNT_AFTER_MS`) + Room v3 + subida al abrir/sincronizar; compila en CI; en el POCO falló por un APK con clases mezcladas (`AbstractMethodError` en `LibraryDao_Impl`): arreglado con Clean + Assemble (confirmado por Pablo); conteo y subida contra el escritorio real SIN verificar**) y luego rediseño: estilo «Neón» fiel al escritorio sobre Material 3 estable (BOM 2026.02.01; material3 1.4.0 estable, 1.5.0-rc01), orden acordado: **aleatorio/repetir/cola = 1.0.18 ✅ (verificado por Pablo en el POCO)** → **tema «Neón» y navegación inferior = 1.0.19 ✅ (el primer push NO compiló: constantes de `NeonIcons` con `_` inicial; corregido; CI verde y sin problemas en el POCO) · 1.0.20 = mini reproductor con tono/borde propio, logo+nombre en cabecera e icono de lanzador de Sonoteca (antes el de la plantilla; SIN compilar ni probar); `NeonPalette/NeonIcons` generados de `Theme.qml`, `NeonParityTest`)** → portadas y reproductor completo → letras sincronizadas → Inicio «más escuchado» · 5 Wi-Fi/USB pulidos (NSD, QR, permiso `ACCESS_LOCAL_NETWORK` de Android 17
   por `targetSdk 37`) · 6 Windows/Linux · cierre **1.1.0** (etiqueta `v1.1.0`; APK firmado y PyInstaller con `cryptography`, aún sin probar).
 - **Huecos conocidos**: descarga en segundo plano (WorkManager: versión sin verificar), limpiar descargas huérfanas, portadas/letras en el móvil, qué hace Android con los archivos de `Música/Sonoteca` tras desinstalar y reinstalar
   (sin verificar), pruebas de instrumentación (no hacen falta y fallan en Xiaomi).
@@ -57,6 +60,17 @@
 - Biblioteca: ~9 GB de música (1609 pistas, 11 listas); el POCO tiene 256 GB y ~90 GB libres.
 - Pablo no responde siempre a todas las preguntas de un mensaje: confirmar lo crítico una a una. Pega marcadores como `<TU_BASE_V10>` literalmente si no se le avisa: dar comandos sin marcadores.
 
+## Peticiones de Pablo (2026-11-20, por hacer en este orden)
+1. **Firma de la APK de release + versionName/versionCode desde `src/sonoteca/__init__.py`** (ahora 1.0.22: Pablo adelantó las portadas; lo espera el agente 2; ver su archivo).
+2. ✅(sin verificar, 1.0.21) **Miniaturas de portadas de álbumes y artistas** en lista y en cuadrícula (cuadrícula de 3 columnas con el nombre DEBAJO, decidido por Pablo; ruta nueva `/v1/tracks/{uuid}/artist`; placeholder = color plano de las cajitas del escritorio). El primer push de 1.0.21 NO compiló: `CoverThumb.kt` usaba `.dp` sin importar `androidx.compose.ui.unit.dp` (corregido).
+3. **Letras** de las canciones descargadas (existen en el servidor: `/lyrics`; LRC sincronizado en el escritorio).
+4. Después: reproductor a pantalla completa y «Inicio» con lo más escuchado.
+
+## Pendientes pedidos por ci (2026-11-18; detalle en `docs/agentes/CONTEXT_COMPACT_AGENTES.md`)
+- ✅ Pruebas de Windows: las resolvieron ci y Pablo (7 pruebas, 2026-11-19); ya no son mías. (Antes: HOME↔USERPROFILE, separadores, `sys.platform`, rutas Windows en cadenas JS de QML; la 3 = «papelera falsa» de `test_duplicates_delete` usa la ruta absoluta en el nombre del destino: usar `Path(ruta).name` + contador); `find_adb` YA contempla Windows (el fallo de la 4 es de la prueba). **Para tocar `tests/` pedir antes a Pablo un `git archive` fresco** (mi copia está vieja).
+- `signingConfigs.release` por variables de entorno, opcional (build local sin firmar debe seguir compilando), y enlazar `versionName/versionCode` de Android con la versión de Python; nadie ha compilado `assembleRelease` aún (R8 activo).
+- NO mandar `docs/agentes/CONTEXT_COMPACT_AGENTES.md` en un zip sin partir de la última versión que Pablo suba (el otro agente lo edita también).
+
 ## Agentes y CI (resumen; detalle en `docs/agentes/` y `docs/CI.md`)
 - Dos agentes: **principal** (yo: `src/ tests/ android/ packaging/` y el resto de `docs/`) y **ci** (`.github/**`, `docs/CI.md`, la sección «Pipelines» del README). No se ven: **Pablo copia los archivos**. **Desde 2026-11-17 (orden de Pablo) NO se crean más archivos en
   `docs/agentes/canal/`**: toda actualización para el agente de CI va SOLO en `docs/agentes/CONTEXT_COMPACT_AGENTES.md` (sección «Novedades de principal»; se actualiza ese archivo, no se crean otros).
@@ -66,7 +80,7 @@
 - Corregir los 26 tests viejos se aplazó (rama `fix/…` aparte, sin tocar `tests/test_sync_*`).
 
 ## Qué NO se ha verificado nunca (no afirmarlo)
-`UsbWatcher` con adb real (formato de `adb reverse --list`); ejecución de las pruebas Python con pytest real/ruff en mis entregas (las verifica la CI); GUI/Qt; PyInstaller con `sync/`; Wi-Fi (solo USB probado); Android 17; WorkManager.
+Kotlin de 1.0.16 (conteo de reproducciones, Room v3, subida), `POST /v1/plays` con el móvil real y la reparación de v10 en la biblioteca real; ejecución de las pruebas Python con pytest real/ruff en mis entregas (las verifica la CI); GUI/Qt; PyInstaller con `sync/`; Wi-Fi (solo USB probado); Android 17; WorkManager.
 
 
 ## Qué es

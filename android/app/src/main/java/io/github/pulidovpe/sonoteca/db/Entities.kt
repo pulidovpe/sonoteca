@@ -24,6 +24,14 @@ data class TrackEntity(
     val hasLyrics: Boolean,
 )
 
+/** Una reproducción anotada en el teléfono, pendiente de subir al escritorio (`POST /v1/plays`). Se borra al recibir el 200. */
+@Entity(tableName = "play_events")
+data class PlayEventEntity(
+    @PrimaryKey val eventId: String,
+    val trackUuid: String,
+    val playedAt: String,
+)
+
 @Entity(tableName = "playlists")
 data class PlaylistEntity(
     @PrimaryKey val uuid: String,
@@ -51,8 +59,23 @@ data class DownloadEntity(
 
 data class DownloadedHash(val trackUuid: String, val hash: String)
 
-data class ArtistRow(val name: String, val tracks: Int, val downloaded: Int)
+/** Una pista descargada y lista para reproducir (resultado de consultas; no es una tabla). `uri` es la entrada de MediaStore. */
+data class PlayableTrack(
+    val uuid: String,
+    val title: String,
+    val artist: String,
+    val albumArtist: String,
+    val album: String,
+    val trackNo: Int,
+    val discNo: Int,
+    val duration: Double,
+    val uri: String,
+)
 
-data class AlbumRow(val artist: String, val album: String, val tracks: Int, val downloaded: Int)
+/** `sampleUuid`: UUID de una pista del artista (el escritorio resuelve su imagen a partir de ella). */
+data class ArtistRow(val name: String, val tracks: Int, val downloaded: Int, val sampleUuid: String)
+
+/** `sampleUuid`: UUID de una pista del álbum (el escritorio resuelve su portada a partir de ella). */
+data class AlbumRow(val artist: String, val album: String, val tracks: Int, val downloaded: Int, val sampleUuid: String)
 
 data class PlaylistRow(val uuid: String, val name: String, val tracks: Int, val downloaded: Int)

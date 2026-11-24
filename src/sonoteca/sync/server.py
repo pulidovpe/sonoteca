@@ -18,13 +18,13 @@ from urllib.parse import urlencode
 
 from ..core import content_hash
 from ..core.db import connect
-from . import API_VERSION, DEFAULT_PORT, merge, pairing, tls
+from . import API_VERSION, DEFAULT_PORT, merge, pairing, plays, tls
 from .manifest import build_manifest
 
 MAX_BODY = 2 * 1024 * 1024
 CHUNK = 256 * 1024
 _UUID = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
-_ROUTE_TRACK = re.compile(rf"^/v1/tracks/({_UUID})/(file|cover|lyrics)$")
+_ROUTE_TRACK = re.compile(rf"^/v1/tracks/({_UUID})/(file|cover|artist|lyrics)$")
 _ROUTE_PLAYLIST = re.compile(rf"^/v1/playlists/({_UUID})$")
 _MIME = {".mp3": "audio/mpeg", ".m4a": "audio/mp4", ".aac": "audio/aac", ".flac": "audio/flac",
          ".ogg": "audio/ogg", ".opus": "audio/ogg", ".wav": "audio/wav"}
@@ -48,6 +48,36 @@ def default_cover_provider(conn, track_id: int) -> tuple[bytes, str] | None:
     if not data:
         return None
     return data, "image/png" if data[:8] == b"\x89PNG\r\n\x1a\n" else "image/jpeg"
+
+
+def _image_with_mime(data: bytes) -> tuple[bytes, str]:
+    return data, "image/png" if data[:8] == b"\x89PNG\r\n\x1a\n" else "image/jpeg"
+
+
+def default_artist_image_provider(conn, track_id: int) -> tuple[bytes, str] | None:
+    """Imagen del artista de ÁLBUM de la pista, con la misma regla que la app de escritorio (`covers.artist_has_image`):
+    su foto descargada y, si no hay, la portada del álbum que lo representa (`covers.artist_cover_album`). Sin nada, None."""
+    from ..core import covers
+
+    row = conn.execute("SELECT al.album_artist_id AS artist_id FROM tracks t JOIN albums al ON al.id = t.album_id"
+                       " WHERE t.id = ?", (track_id,)).fetchone()
+    if row is None or not row["artist_id"]:
+        return None
+    photo = covers.artist_photo(row["artist_id"])
+    if photo is not None:
+        try:
+            data = photo.read_bytes()
+        except OSError:
+            data = b""
+        if data:
+            return _image_with_mime(data)
+    album_id = covers.artist_cover_album(conn, row["artist_id"])
+    source = covers.album_cover_source(conn, album_id) if album_id else None
+    if source is None:
+        return None
+    kind, path = source
+    data = covers.extract_embedded_cover(path) if kind == "embedded" else path.read_bytes()
+    return _image_with_mime(data) if data else None
 
 
 def lan_addresses() -> list[str]:
@@ -101,11 +131,13 @@ class SyncServer(ThreadingHTTPServer):
 
     def __init__(self, address: tuple[str, int], db_path: str, tls_dir: Path | None = None,
                  cover_provider: CoverProvider = default_cover_provider,
-                 log: Callable[[str], None] | None = None, name: str | None = None) -> None:
+                 log: Callable[[str], None] | None = None, name: str | None = None,
+                 artist_image_provider: CoverProvider = default_artist_image_provider) -> None:
         super().__init__(address, _Handler)
         self.db_path = str(db_path)
         self.pairing = pairing.PairingState()
         self.cover_provider = cover_provider
+        self.artist_image_provider = artist_image_provider
         self.log = log or (lambda message: None)
         self.server_name = name or socket.gethostname()
         self.hasher = _Hasher(self.db_path)
@@ -202,9 +234,11 @@ class _Handler(BaseHTTPRequestHandler):
     def _authenticated(self, conn) -> bool:
         header = self.headers.get("Authorization", "")
         token = header[7:].strip() if header.lower().startswith("bearer ") else ""
-        if pairing.authenticate(conn, token) is None:
+        device = pairing.authenticate(conn, token)
+        if device is None:
             self._error(401, "token inválido; vuelve a emparejar el dispositivo")
             return False
+        self.device_id, self.device_name = device["device_id"], device["name"]
         return True
 
     # --- enrutado ---------------------------------------------------------------------------------------------------
@@ -234,7 +268,11 @@ class _Handler(BaseHTTPRequestHandler):
 
     @_guarded
     def do_POST(self) -> None:   # noqa: N802
-        if self.path.split("?", 1)[0] != "/v1/pair":
+        path = self.path.split("?", 1)[0]
+        if path == "/v1/plays":
+            self._receive_plays()
+            return
+        if path != "/v1/pair":
             self._error(404, "ruta desconocida")
             return
         body = self._read_json()
@@ -255,6 +293,26 @@ class _Handler(BaseHTTPRequestHandler):
             conn.close()
         self.server.log(f"dispositivo emparejado: {name.strip()[:80]}")
         self._json(200, {"token": token, "fingerprint": self.server.fingerprint, "api": API_VERSION})
+
+    def _receive_plays(self) -> None:
+        """Estadísticas de reproducción del móvil (eventos con id único: reenviar un lote no cuenta dos veces)."""
+        conn = connect(self.server.db_path)
+        try:
+            if not self._authenticated(conn):
+                return
+            body = self._read_json()
+            if body is None:
+                return
+            try:
+                result = plays.apply_plays(conn, self.device_id, body)
+            except plays.PlaysError as exc:
+                self._error(400, str(exc))
+                return
+            if result["accepted"]:
+                self.server.log(f"estadísticas de {self.device_name}: {result['accepted']} reproducciones nuevas")
+            self._json(200, result)
+        finally:
+            conn.close()
 
     @_guarded
     def do_PUT(self) -> None:   # noqa: N802
@@ -309,10 +367,11 @@ class _Handler(BaseHTTPRequestHandler):
             return
         if what == "file":
             self._send_file(conn, row)
-        elif what == "cover":
-            found = self.server.cover_provider(conn, row["id"])
+        elif what in ("cover", "artist"):
+            provider = self.server.cover_provider if what == "cover" else self.server.artist_image_provider
+            found = provider(conn, row["id"])
             if found is None:
-                self._error(404, "la pista no tiene portada")
+                self._error(404, "la pista no tiene portada" if what == "cover" else "el artista no tiene imagen")
                 return
             data, mime = found
             self.send_response(200)
@@ -403,5 +462,7 @@ def _parse_range(header: str, size: int) -> tuple[int, int] | None:
 
 def make_server(db_path: str | Path, host: str = "0.0.0.0", port: int = DEFAULT_PORT, tls_dir: Path | None = None,
                 cover_provider: CoverProvider = default_cover_provider,
-                log: Callable[[str], None] | None = None) -> SyncServer:
-    return SyncServer((host, port), str(db_path), tls_dir=tls_dir, cover_provider=cover_provider, log=log)
+                log: Callable[[str], None] | None = None,
+                artist_image_provider: CoverProvider = default_artist_image_provider) -> SyncServer:
+    return SyncServer((host, port), str(db_path), tls_dir=tls_dir, cover_provider=cover_provider, log=log,
+                      artist_image_provider=artist_image_provider)

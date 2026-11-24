@@ -29,3 +29,5 @@ cp library.db.v9.bak library.db
 ```
 Lo creado en la base nueva después de la migración (listas, reproducciones) se pierde al volver: la copia es de antes de migrar.
 Si falta `sync_devices` u otra pieza de v10 con la versión en 10, se repara sola al abrir (y se deja `library.db.v10.bak`).
+**1.0.15** añadió a v10 la tabla `sync_play_events` (reproducciones del móvil, idempotentes) **sin subir el esquema**: una base v10 anterior que no la tiene se repara sola al abrir, con la copia previa
+`library.db.v10.bak` (si ya existe una `.v10.bak`, se conserva la más antigua: no se pisa). El resto de la base no cambia.

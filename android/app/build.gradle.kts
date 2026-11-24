@@ -55,6 +55,8 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.session)
     // En las pruebas JVM, org.json de android.jar es un esqueleto que falla: se usa la biblioteca real
     testImplementation(libs.org.json)
     testImplementation(libs.junit)
