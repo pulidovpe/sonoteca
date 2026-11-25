@@ -32,6 +32,8 @@ QueuePage 1.0 QueuePage.qml
 ListTrackRow 1.0 ListTrackRow.qml
 NamePrompt 1.0 NamePrompt.qml
 ConfirmDialog 1.0 ConfirmDialog.qml
+MigrationNoticeDialog 1.0 MigrationNoticeDialog.qml
+StartupError 1.0 StartupError.qml
 PlaylistPicker 1.0 PlaylistPicker.qml
 PlaylistsPage 1.0 PlaylistsPage.qml
 PlaylistDetail 1.0 PlaylistDetail.qml

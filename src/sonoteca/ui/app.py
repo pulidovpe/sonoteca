@@ -68,8 +68,17 @@ def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int
         app.setWindowIcon(QIcon(str(ICON_PATH)))   # barra de tareas / Dock / ventana (el icono del archivo lo pone el empaquetado)
     app.setApplicationName("sonoteca")
     app.setApplicationDisplayName("Sonoteca")
+    from sonoteca.core import migration_notice
+    from sonoteca.core.db import default_db_path
+
+    real_db = Path(db_path) if db_path is not None else default_db_path()
+    version_before = migration_notice.peek_version(real_db)
     engine = QQmlApplicationEngine()
-    controller = LibraryController(db_path)
+    try:
+        controller = LibraryController(db_path)
+    except Exception as exc:  # noqa: BLE001  (cualquier fallo al abrir o actualizar la base se muestra en claro, no como traceback)
+        return _startup_error(app, engine, real_db, version_before, exc)
+    controller.set_migration_notice(migration_notice.after_open(real_db, version_before))
     provider = CoverProvider(db_path)
     engine.addImageProvider("cover", provider)
     backend = QtPlayerBackend()
@@ -142,6 +151,21 @@ def run(db_path: Path | str | None = None, argv: list[str] | None = None) -> int
     # errores como «Cannot call method 'stats' of null» al cerrar la ventana.
     del engine
     return code
+
+
+def _startup_error(app, engine, db_path: Path, version_before: int, exc: BaseException) -> int:
+    """No se pudo abrir ni actualizar la base: ventana con el motivo, la copia de seguridad (si hay) y la carpeta de datos."""
+    from PySide6.QtCore import QUrl
+
+    from sonoteca.core import migration_notice
+
+    info = migration_notice.describe_failure(db_path, exc, version_before)
+    print(f"[sonoteca] no se pudo abrir la biblioteca: {info['details']}", file=sys.stderr)
+    engine.rootContext().setContextProperty("startupError", info)
+    engine.load(QUrl.fromLocalFile(str(QML_DIR / "StartupError.qml")))
+    if engine.rootObjects():
+        app.exec()
+    return 1
 
 
 def main() -> int:

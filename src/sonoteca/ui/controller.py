@@ -131,6 +131,16 @@ class LibraryController(QObject):
             })
         return out
 
+    _migration_notice: dict = {}   # lo rellena app.py tras abrir la base (ver core/migration_notice.py)
+
+    def set_migration_notice(self, notice: dict) -> None:
+        self._migration_notice = dict(notice)
+
+    @Slot(result="QVariantMap")
+    def migrationNotice(self) -> dict:
+        """Qué pasó con la base al abrir: {migrated, fromVersion, toVersion, backup, folderUrl}."""
+        return dict(self._migration_notice) or {"migrated": False}
+
     @Slot(int, result="QVariantList")
     def albumTrackIds(self, album_id: int) -> list[int]:
         """Ids de todas las pistas del álbum, en orden de disco y pista (menú ⋮ de las cajas de álbum)."""

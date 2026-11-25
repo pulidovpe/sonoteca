@@ -169,7 +169,10 @@ ApplicationWindow {
 
     property string section: "home"
     property bool firstRunPrompt: true   // con la biblioteca vacía, ofrece buscar la música al abrir
-    Component.onCompleted: if (firstRunPrompt && library.stats().tracks === 0) scanDialog.openDialog(true)
+    Component.onCompleted: {
+        if (firstRunPrompt && library.stats().tracks === 0) scanDialog.openDialog(true)
+        migrationNotice.showIfNeeded()
+    }
     property bool searching: false
     property bool videoOpen: false
     property var stats: (Theme.dataRevision, library.stats())
@@ -1042,6 +1045,7 @@ ApplicationWindow {
     Binding { target: DragState; property: "inputBlocked"; value: tagEditor.visible || tagEditor.opened || albumLookup.visible || albumLookup.opened }   // también aquí, por si el aviso del propio editor no llega
     TrackMenu { id: trackMenu; onRemoveRequested: (ids) => win.confirmRemoveFromLibrary(ids); onDeleteRequested: (id) => win.confirmDeleteFile(id); onArtistRequested: (id, name) => win.openArtist(id, name); onAlbumRequested: (id) => win.openAlbum(id); onLyricsRequested: (id) => win.showLyrics(id); onEditRequested: (ids) => win.editTags(ids); onListPickerRequested: (ids) => win.showPlaylistPicker(ids) }
     PlaylistMenu { id: playlistMenu; onRenameRequested: (id, name) => win.renamePlaylist(id, name); onDeleteRequested: (id, name) => win.deletePlaylist(id, name) }
+    MigrationNoticeDialog { id: migrationNotice }
     NamePrompt { id: namePrompt }
     ConfirmDialog { id: confirmDialog }
     PlaylistPicker { id: playlistPicker; onNewRequested: (ids) => win.pickerNewList(ids); onDuplicatesFound: (listId, ids, count) => duplicateDialog.openFor(listId, ids, count) }
