@@ -239,3 +239,56 @@ jobs:
           path: pytest.log
           if-no-files-found: ignore
           retention-days: 7
+
+  # Actualización de la base: una biblioteca creada por una versión ANTIGUA (el tag) debe abrirse con el código actual, migrarse sin
+  # perder datos y dejar copia de seguridad; y la app antigua debe negarse a abrir la base ya migrada (no corromperla).
+  # Para probar otra versión de partida, añade su tag a la matriz.
+  upgrade:
+    name: Actualización de la base (desde ${{ matrix.tag }})
+    runs-on: ${{ inputs.runner || 'ubuntu-24.04' }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        tag: [v1.0.0]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Código antiguo (${{ matrix.tag }})
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ matrix.tag }}
+          path: old
+
+      - name: Checkout de las herramientas de CI
+        uses: actions/checkout@v6
+        with:
+          path: ci-tools
+          sparse-checkout: .github
+          sparse-checkout-cone-mode: true
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: pyproject.toml
+
+      # Solo las dependencias base: la base de datos no necesita Qt.
+      - name: Instalar el proyecto
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f packaging/build-constraints.txt ]; then C="-c packaging/build-constraints.txt"; else C=""; fi
+          pip install $C -e .
+
+      - name: Crear una biblioteca con el código antiguo
+        run: |
+          mkdir -p work
+          PYTHONPATH="$PWD/old/src" python ci-tools/.github/scripts/upgrade_check.py create work/library.db work/expected.json
+
+      - name: Migrar con el código actual y comprobar los datos
+        run: python ci-tools/.github/scripts/upgrade_check.py verify work/library.db work/expected.json --keep work/migrada.db
+
+      - name: La app antigua se niega a abrir la base migrada
+        run: PYTHONPATH="$PWD/old/src" python ci-tools/.github/scripts/upgrade_check.py refuse work/migrada.db
