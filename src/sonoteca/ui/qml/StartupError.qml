@@ -18,14 +18,14 @@ ApplicationWindow {
         spacing: 16
         Text { width: parent.width; text: startupError.title; color: Theme.text; font.pixelSize: 24; font.weight: Font.Bold; wrapMode: Text.WordWrap }
         Text { width: parent.width; text: startupError.message; color: Theme.textSoft; font.pixelSize: 15; wrapMode: Text.WordWrap }
-        Text { visible: startupError.backup !== ""; width: parent.width; text: "Copia de seguridad:"; color: Theme.textDim; font.pixelSize: 13 }
+        Text { visible: !!startupError.backup; width: parent.width; text: "Copia de seguridad:"; color: Theme.textDim; font.pixelSize: 13 }
         TextEdit {
-            visible: startupError.backup !== ""
+            visible: !!startupError.backup
             width: parent.width
             readOnly: true
             selectByMouse: true
             wrapMode: TextEdit.WrapAnywhere
-            text: startupError.backup
+            text: startupError.backup || ""
             color: Theme.text
             font.pixelSize: 13
         }

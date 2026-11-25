@@ -5,7 +5,7 @@ import "."
 // Aviso tras actualizar la base de datos: qué pasó y dónde quedó la copia de seguridad anterior
 Popup {
     id: root
-    property var info: ({})
+    property var info: ({"migrated": false, "fromVersion": 0, "toVersion": 0, "backup": "", "folderUrl": ""})
 
     function showIfNeeded() {
         info = library.migrationNotice()
@@ -33,7 +33,7 @@ Popup {
             wrapMode: Text.WordWrap
         }
         Text {
-            visible: root.info.backup !== ""
+            visible: !!root.info.backup
             width: parent.width
             text: "Antes de actualizar se guard\u00f3 una copia de seguridad:"
             color: Theme.textDim
@@ -41,12 +41,12 @@ Popup {
             wrapMode: Text.WordWrap
         }
         TextEdit {
-            visible: root.info.backup !== ""
+            visible: !!root.info.backup
             width: parent.width
             readOnly: true
             selectByMouse: true
             wrapMode: TextEdit.WrapAnywhere
-            text: root.info.backup
+            text: root.info.backup || ""
             color: Theme.text
             font.pixelSize: 13
         }
@@ -60,7 +60,7 @@ Popup {
         Row {
             anchors.right: parent.right
             spacing: 10
-            PillButton { visible: root.info.folderUrl !== ""; label: "Abrir carpeta de la copia"; onClicked: Qt.openUrlExternally(root.info.folderUrl) }
+            PillButton { visible: !!root.info.folderUrl; label: "Abrir carpeta de la copia"; onClicked: Qt.openUrlExternally(root.info.folderUrl) }
             PillButton { label: "Entendido"; primary: true; onClicked: root.close() }
         }
     }
