@@ -134,4 +134,24 @@ class ManifestParserTest {
     fun anOldServerManifestIsNotCompleteByDefault() {
         assertFalse(parseManifest(json).complete)
     }
+
+    @Test
+    fun anUnavailableTrackAndTheMissingAndVideoCountsAreParsed() {
+        val gone = json
+            .replace("\"pending_hash\": 0,", "\"pending_hash\": 0,\n \"missing_files\": 1,\n \"video_tracks\": 2,")
+            .replaceFirst("\"size\": 100,", "\"size\": null,\n   \"available\": false,")
+        val manifest = parseManifest(gone)
+        assertEquals(1, manifest.missingFiles)
+        assertEquals(2, manifest.videoTracks)
+        assertFalse(manifest.tracks[0].available)
+        assertEquals(2, manifest.tracks.count { it.available })
+    }
+
+    @Test
+    fun anOldServerManifestHasEveryTrackAvailableAndNoCounts() {
+        val manifest = parseManifest(json)
+        assertTrue(manifest.tracks.all { it.available })
+        assertEquals(0, manifest.missingFiles)
+        assertEquals(0, manifest.videoTracks)
+    }
 }

@@ -19,6 +19,8 @@ data class ManifestTrack(
     val genre: String,
     val hasCover: Boolean,
     val hasLyrics: Boolean,
+    /** false = su archivo ya no está en el disco del escritorio (borrado, movido o disco desconectado): no se puede descargar. */
+    val available: Boolean = true,
 )
 
 data class ManifestPlaylist(val uuid: String, val name: String, val updatedAt: String, val tracks: List<String>)
@@ -35,6 +37,10 @@ data class Manifest(
     val deletedPlaylists: List<DeletedPlaylist>,
     /** El manifiesto trae TODAS las pistas (aunque sin huella): se puede borrar con seguridad lo que no aparece. Servidores antiguos: false. */
     val complete: Boolean = false,
+    /** Pistas del escritorio cuyo archivo no está en su disco. */
+    val missingFiles: Int = 0,
+    /** Vídeos de la biblioteca del escritorio: no se sincronizan (solo audio). */
+    val videoTracks: Int = 0,
 )
 
 // `isNull` es true si la clave falta o vale null; con org.json, optString sobre un null devolvería el texto "null".
@@ -62,6 +68,7 @@ fun parseManifest(json: String): Manifest {
                 genre = t.text("genre"),
                 hasCover = !t.isNull("has_cover") && t.getBoolean("has_cover"),
                 hasLyrics = !t.isNull("has_lyrics") && t.getBoolean("has_lyrics"),
+                available = t.isNull("available") || t.getBoolean("available"),   // un servidor antiguo no lo manda: disponible
             )
         }
     }
@@ -89,6 +96,8 @@ fun parseManifest(json: String): Manifest {
         generatedAt = root.text("generated_at"),
         pendingHash = root.int("pending_hash"),
         complete = !root.isNull("complete") && root.getBoolean("complete"),
+        missingFiles = root.int("missing_files"),
+        videoTracks = root.int("video_tracks"),
         tracks = tracks,
         playlists = playlists,
         deletedPlaylists = deleted,

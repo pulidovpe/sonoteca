@@ -66,4 +66,23 @@ class PlanTest {
         assertEquals(1, plan.alreadyDone)          // u1; u2 aún no está lista y u3 falta
         assertEquals(300L, plan.pendingBytes)
     }
+
+    @Test
+    fun tracksWhoseFileIsGoneFromTheDesktopAreNotOfferedForDownload() {
+        val list = listOf(track("u1", "h1", 100), track("u2", "h2", 200), track("u3", "h3", 300), track("u4", "", 0))
+        val plan = buildPlan("A", list, mapOf("u1" to "h1"), freeBytes = 10_000_000_000L, unavailable = setOf("u2", "u4"))
+        assertEquals(listOf("u3"), plan.pending.map { it.uuid })
+        assertEquals(2, plan.unavailable)
+        assertEquals(0, plan.notReady)              // u4 está ausente: no cuenta además como «sin huella»
+        assertEquals(1, plan.alreadyDone)           // solo u1
+        assertEquals(300L, plan.pendingBytes)
+    }
+
+    @Test
+    fun anUnavailableTrackThatIsAlreadyOnThePhoneKeepsCountingAsOnPhone() {
+        val list = listOf(track("u1", "h1", 100))
+        val plan = buildPlan("A", list, mapOf("u1" to "h1"), freeBytes = 10_000_000_000L, unavailable = setOf("u1"))
+        assertEquals(1, plan.onPhone)               // se puede seguir reproduciendo y borrando
+        assertEquals(0, plan.pending.size)
+    }
 }

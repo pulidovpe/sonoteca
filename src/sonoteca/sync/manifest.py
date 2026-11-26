@@ -1,6 +1,7 @@
 """Manifiesto de sincronización: lo que el móvil necesita saber de la biblioteca (sin tocar archivos ni internet)."""
 from __future__ import annotations
 
+import os
 import sqlite3
 from datetime import datetime, timezone
 
@@ -12,7 +13,7 @@ _HASH_CURRENT = "(f.content_hash IS NOT NULL AND f.hash_size IS f.size AND f.has
 
 _TRACKS = f"""
     SELECT t.uuid, CASE WHEN {_HASH_CURRENT} THEN f.content_hash END AS hash,
-           CASE WHEN {_HASH_CURRENT} THEN f.hash_size END AS size, f.format, t.title,
+           CASE WHEN {_HASH_CURRENT} THEN f.hash_size END AS size, f.format, f.path AS path, t.title,
            ar.name AS artist, aa.name AS album_artist, al.title AS album,
            t.track_no, t.disc_no, COALESCE(t.year, al.year) AS year, t.duration, t.genre, t.has_cover,
            COALESCE((SELECT ps.plays FROM play_stats ps WHERE ps.track_id = t.id), 0) AS plays,
@@ -39,15 +40,23 @@ def build_manifest(conn: sqlite3.Connection) -> dict:
     calcula en segundo plano): así el móvil ve el catálogo completo y puede borrar con seguridad lo que ya no existe
     (`complete: true`). Antes solo se anunciaban las pistas con huella, y mientras hubiera pendientes el móvil no borraba
     nada: no aparecían las novedades y seguían viéndose artistas y nombres viejos."""
-    tracks, pending = [], 0
+    tracks, pending, missing = [], 0, 0
     for row in conn.execute(_TRACKS + " ORDER BY al.id, t.disc_no, t.track_no, t.id"):
         item = dict(row)
+        path = item.pop("path")
         item["has_cover"] = bool(item["has_cover"])
         item["has_lyrics"] = bool(item["has_lyrics"])
+        # Una pista cuyo archivo ya NO está en el disco del escritorio (borrado, movido, disco externo desconectado) se anuncia
+        # como no disponible: sigue en el catálogo del móvil (lo ya descargado no se pierde), pero no se ofrece para descargar
+        # (pedirla daría 410) y NO cuenta como «huella pendiente» para siempre.
+        item["available"] = os.path.exists(path)
+        if not item["available"]:
+            item["hash"], item["size"] = None, None
+            missing += 1
+        elif item["hash"] is None:
+            pending += 1
         tracks.append(item)
-    pending = conn.execute(
-        "SELECT COUNT(*) FROM files WHERE kind = 'audio' AND (content_hash IS NULL OR hash_size IS NOT size"
-        " OR hash_mtime_ns IS NOT mtime_ns)").fetchone()[0]
+    video = conn.execute("SELECT COUNT(*) FROM tracks t JOIN files f ON f.id = t.file_id WHERE f.kind <> 'audio'").fetchone()[0]
 
     playlists = []
     for pl in conn.execute("SELECT id, uuid, name, updated_at FROM playlists ORDER BY name COLLATE NOCASE"):
@@ -58,4 +67,5 @@ def build_manifest(conn: sqlite3.Connection) -> dict:
         playlists.append({"uuid": pl["uuid"], "name": pl["name"], "updated_at": pl["updated_at"], "tracks": uuids})
     deleted = [dict(r) for r in conn.execute("SELECT uuid, deleted_at FROM deleted_playlists ORDER BY deleted_at")]
     return {"api": API_VERSION, "schema": SCHEMA_VERSION, "generated_at": now_iso(), "pending_hash": pending, "complete": True,
+            "missing_files": missing, "video_tracks": video,
             "tracks": tracks, "playlists": playlists, "deleted_playlists": deleted}

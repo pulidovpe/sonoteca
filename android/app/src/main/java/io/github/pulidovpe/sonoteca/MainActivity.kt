@@ -331,8 +331,12 @@ fun SonotecaApp(viewModel: MainViewModel, onBeforePlay: () -> Unit) {
 }
 
 private fun planText(plan: DownloadPlan): String = when {
-    plan.pending.isEmpty() && plan.notReady == 0 -> "Las ${plan.totalTracks} pistas ya están descargadas."
-    plan.pending.isEmpty() -> "No hay nada que descargar ahora: ${plan.notReady} pistas aún no están listas en el escritorio (calcula su huella); sincroniza otra vez en unos minutos."
+    plan.pending.isEmpty() && plan.notReady == 0 && plan.unavailable == 0 -> "Las ${plan.totalTracks} pistas ya están descargadas."
+    plan.pending.isEmpty() -> buildString {
+        append("No hay nada que descargar ahora.")
+        if (plan.notReady > 0) append(" ${plan.notReady} pistas aún no están listas en el escritorio (calcula su huella): sincroniza otra vez en unos minutos.")
+        if (plan.unavailable > 0) append(" ${plan.unavailable} pistas no están en el disco del escritorio (¿disco externo desconectado o archivos movidos?).")
+    }
     else -> buildString {
         append("Faltan ${plan.pending.size} de ${plan.totalTracks} pistas (${formatBytes(plan.pendingBytes)}).")
         if (plan.replacing > 0) append(" ${plan.replacing} cambiaron en el escritorio y se bajarán de nuevo.")
@@ -340,6 +344,7 @@ private fun planText(plan: DownloadPlan): String = when {
         if (!plan.fits) append("\nNo hay espacio suficiente (se deja un margen de 200 MB).")
         append("\nSe guardarán en Música/Sonoteca.")
         if (plan.notReady > 0) append("\n${plan.notReady} pistas más aún no están listas en el escritorio: sincroniza otra vez en unos minutos.")
+        if (plan.unavailable > 0) append("\n${plan.unavailable} pistas más no están en el disco del escritorio y no se pueden descargar.")
     }
 }
 
@@ -648,6 +653,7 @@ private fun DesktopTab(
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(if (server != null) "Emparejado con $server" else "Sin emparejar: lo descargado se reproduce igual, sin servidor.")
                 Text("$tracks pistas · $playlists listas · $artists artistas · $albums álbumes", style = MaterialTheme.typography.bodySmall)
+                Text("Los vídeos del escritorio no se sincronizan: solo audio.", style = MaterialTheme.typography.bodySmall)
                 if (pendingPlays > 0) {
                     Text("$pendingPlays reproducciones por subir al escritorio (se envían al conectar).", style = MaterialTheme.typography.bodySmall)
                 }

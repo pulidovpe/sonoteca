@@ -5,6 +5,18 @@ El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y e
 [versionado semántico](https://semver.org/lang/es/) mientras esté en alfa (0.x: la interfaz y la base de
 datos pueden cambiar entre versiones; la base se migra sola con `PRAGMA user_version`).
 
+## [1.0.25] - 2026-11-25
+**Sincronización: «48 de 50» y «solo logra bajar 44»** (bug de Pablo con una lista de 50 pistas). Servidor + Android.
+- **Causas** (la primera, probada con un caso de juguete; la segunda, hipótesis a confirmar con la base real): (1) **los vídeos** (mp4) del escritorio no se sincronizan, así que una lista con vídeos trae menos pistas; (2) **pistas cuyo archivo ya no existe en el disco del escritorio**
+  se ofrecían para descargar y el servidor respondía 410, y las que nunca habían tenido huella se quedaban «pendientes» para siempre («no termina»).
+- **Servidor** (`sync/manifest.py`): cada pista lleva `available` (`os.path.exists`); si no existe, `hash`/`size` en `null`, no cuenta como pendiente. Nuevos `missing_files` y `video_tracks`. 3 pruebas nuevas en `tests/test_sync_manifest.py`.
+- **Móvil**: lee `available`, `missing_files` y `video_tracks`; guarda las no disponibles en preferencias (sin migración de Room, para no depender de `3.json`); el plan de descarga **no las ofrece** y las cuenta (`DownloadPlan.unavailable`); el diálogo y el mensaje de sincronizar explican
+  «N pistas no están en el disco del escritorio» y «los N vídeos no se sincronizan»; la pestaña Escritorio lo recuerda. Pruebas JVM nuevas: 2 en `ManifestParserTest`, 2 en `PlanTest`.
+- **`tools/diagnostico_sync.py`** (solo lectura): para cada lista cuenta audio / vídeo / archivo ausente / sin huella, para ver exactamente qué pasa con la base real. Probado con una biblioteca de juguete.
+- Verificado aquí: pruebas de sincronización en verde (el manifiesto con 8), el plan con no disponibles compilado y ejecutado con el compilador real de Kotlin, y **`ruff` (el linter de la CI) instalado y pasado sobre todo el Python que he tocado: sin errores** (corregí en el script de diagnóstico bucles en una línea que habrían roto la CI).
+  **SIN compilar ni probar el resto del Kotlin.**
+- Pendiente: el reproductor ampliado pasa a 1.0.26.
+
 ## [1.0.24] - 2026-11-24
 **Android: lo descargado se organiza por Pistas, Artistas, Álbumes y Listas** (petición de Pablo antes del reproductor ampliado). Solo Kotlin + versión Python.
 - **Descargado** tiene ahora sub-pestañas **Pistas / Artistas / Álbumes / Listas**. Artistas, Álbumes y Listas muestran **solo lo que ya tiene alguna pista descargada**, con portadas (y el collage de las listas), en lista o cuadrícula (la elección se recuerda),

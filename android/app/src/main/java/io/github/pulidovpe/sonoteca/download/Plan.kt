@@ -20,9 +20,11 @@ data class DownloadPlan(
     val onPhone: Int = 0,
     /** Pistas de la selección que el escritorio aún no puede entregar (sin huella): no se descargan todavía. */
     val notReady: Int = 0,
+    /** Pistas de la selección cuyo archivo ya no está en el disco del escritorio: no se pueden descargar. */
+    val unavailable: Int = 0,
 ) {
     val pendingBytes: Long = pending.sumOf { it.size }
-    val alreadyDone: Int = totalTracks - pending.size - notReady
+    val alreadyDone: Int = totalTracks - pending.size - notReady - unavailable
     val fits: Boolean = pendingBytes + FREE_SPACE_MARGIN_BYTES <= freeBytes
 }
 
@@ -31,12 +33,14 @@ fun buildPlan(
     tracks: List<TrackEntity>,
     downloadedHashes: Map<String, String>,
     freeBytes: Long,
+    unavailable: Set<String> = emptySet(),
 ): DownloadPlan {
-    val pending = tracks.filter { it.hash.isNotEmpty() && downloadedHashes[it.uuid] != it.hash }
-    val notReady = tracks.count { it.hash.isEmpty() }
+    val gone = tracks.count { it.uuid in unavailable }
+    val pending = tracks.filter { it.uuid !in unavailable && it.hash.isNotEmpty() && downloadedHashes[it.uuid] != it.hash }
+    val notReady = tracks.count { it.uuid !in unavailable && it.hash.isEmpty() }
     val replacing = pending.count { downloadedHashes.containsKey(it.uuid) }
     val onPhone = tracks.count { downloadedHashes.containsKey(it.uuid) }
-    return DownloadPlan(label, tracks.size, pending, replacing, freeBytes, onPhone, notReady)
+    return DownloadPlan(label, tracks.size, pending, replacing, freeBytes, onPhone, notReady, gone)
 }
 
 fun formatBytes(bytes: Long): String {

@@ -26,6 +26,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class SyncRepository(private val context: Context, private val db: AppDatabase, private val store: PairingStore) {
+    // Pistas cuyo archivo no está en el disco del escritorio (lo dice el manifiesto en cada sincronización). Se guardan aparte, en
+    // preferencias, para no tocar el esquema de la base de datos.
+    private val catalogPrefs = context.getSharedPreferences("catalog", Context.MODE_PRIVATE)
+
+    private fun unavailableUuids(): Set<String> = catalogPrefs.getStringSet(KEY_UNAVAILABLE, emptySet()) ?: emptySet()
+
     val artists = db.library().artists()
     val trackCount = db.library().trackCount()
     val playlistCount = db.library().playlistCount()
@@ -66,6 +72,7 @@ class SyncRepository(private val context: Context, private val db: AppDatabase, 
             // con `complete` el manifiesto trae todas las pistas, así que lo que falta ya no existe; un servidor antiguo solo es fiable sin pendientes
             allowDeletes = manifest.complete || manifest.pendingHash == 0,
         )
+        catalogPrefs.edit().putStringSet(KEY_UNAVAILABLE, manifest.tracks.filter { !it.available }.map { it.uuid }.toSet()).apply()
         summary(manifest) + when {
             uploaded == null -> " No se pudieron subir las reproducciones: se reintentará."
             uploaded > 0 -> " Subidas $uploaded reproducciones al escritorio."
@@ -111,7 +118,7 @@ class SyncRepository(private val context: Context, private val db: AppDatabase, 
     /** Qué falta por descargar de una selección (artista, álbum o lista) y cuánto espacio libre hay. */
     suspend fun plan(selection: Selection): DownloadPlan = withContext(Dispatchers.IO) {
         val have = db.library().downloadedHashes().associate { it.trackUuid to it.hash }
-        buildPlan(selection.label, tracksFor(selection), have, freeBytes())
+        buildPlan(selection.label, tracksFor(selection), have, freeBytes(), unavailableUuids())
     }
 
     /**
@@ -145,10 +152,15 @@ class SyncRepository(private val context: Context, private val db: AppDatabase, 
 
     private fun summary(m: Manifest): String {
         val base = "${m.tracks.size} pistas y ${m.playlists.size} listas sincronizadas."
-        return if (m.pendingHash > 0) {
-            "$base El escritorio aún calcula la huella de ${m.pendingHash} archivos: esas pistas ya se ven, pero no se pueden descargar todavía; sincroniza otra vez en unos minutos."
-        } else {
-            base
+        return buildString {
+            append(base)
+            if (m.pendingHash > 0) {
+                append(" El escritorio aún calcula la huella de ${m.pendingHash} archivos: esas pistas ya se ven, pero no se pueden descargar todavía; sincroniza otra vez en unos minutos.")
+            }
+            if (m.missingFiles > 0) {
+                append(" ${m.missingFiles} pistas están en la biblioteca del escritorio pero su archivo no está en su disco (¿disco externo desconectado o archivos movidos?): no se pueden descargar.")
+            }
+            if (m.videoTracks > 0) append(" Los ${m.videoTracks} vídeos del escritorio no se sincronizan (solo audio).")
         }
     }
 
@@ -167,3 +179,5 @@ private const val PLAY_BATCH = 500   // reproducciones por petición (y por cons
  */
 internal fun keepKnownHash(entity: TrackEntity, before: TrackHashRow?): TrackEntity =
     if (entity.hash.isEmpty() && before != null) entity.copy(hash = before.hash, size = before.size) else entity
+
+private const val KEY_UNAVAILABLE = "unavailable"

@@ -57,6 +57,9 @@ Errores: JSON `{"error": "..."}` con 400 (petición inválida), 401 (token), 403
 Con `complete: true` el móvil **borra de su catálogo las pistas que ya no están** aunque haya pendientes (antes solo anunciaba las pistas con huella y, mientras hubiera pendientes, no borraba nada:
 no aparecían las novedades y seguían viéndose artistas y nombres viejos). Un servidor antiguo no manda `complete`: el móvil sigue borrando solo si `pending_hash` es 0.
 Si el móvil ya conoce una pista y el manifiesto no trae su huella (el archivo cambió), **conserva la huella anterior** hasta recibir la nueva.
+**Archivos ausentes y vídeos (desde 1.0.25)**: cada pista lleva `available`; es `false` si su archivo ya NO existe en el disco del escritorio (borrado, movido, disco externo desconectado): se anuncia con `hash`/`size` en `null`, el móvil la
+conserva en su catálogo (lo ya descargado no se pierde) pero no la ofrece para descargar (el servidor respondería 410) y NO cuenta en `pending_hash` (antes se quedaba «pendiente» para siempre). El manifiesto añade `missing_files` (cuántas pistas no están en el disco)
+y `video_tracks` (vídeos de la biblioteca: no se sincronizan, solo audio). Un servidor antiguo no manda ninguno: el móvil lo toma como disponible y sin cuentas.
 Cada pista: `uuid, hash, size, format, title, artist, album_artist, album, track_no, disc_no, year, duration, genre,
 has_cover, has_lyrics, plays`. `plays` = reproducciones totales de la pista en el escritorio (0 si ninguna; incluye las que ya subió el móvil). Cada lista: `uuid, name, updated_at, tracks` (uuid de pista, en orden).
 
